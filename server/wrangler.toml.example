@@ -1,0 +1,30 @@
+name = "pignal-server"
+main = "src/index.ts"
+compatibility_date = "2025-01-07"
+compatibility_flags = ["nodejs_compat"]
+
+[[durable_objects.bindings]]
+name = "PERSONAL_POOL"
+class_name = "PersonalPoolDO"
+
+[[durable_objects.bindings]]
+name = "MCP_AGENT"
+class_name = "SelfHostedMcpAgent"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["PersonalPoolDO", "SelfHostedMcpAgent"]
+
+# Rules for DO migrations import
+[[rules]]
+type = "Text"
+globs = ["**/*.sql"]
+fallthrough = true
+
+# Uncomment and customize for custom domain
+# [[routes]]
+# pattern = "my-pignal.workers.dev"
+# custom_domain = true
+
+# Secrets (set via `wrangler secret put SERVER_TOKEN`)
+# SERVER_TOKEN - your authentication token
