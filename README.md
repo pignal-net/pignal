@@ -17,7 +17,11 @@ Not AI memory. Not a chat log. **Yours** — structured, searchable, and permane
 
 In an era where AI does the thinking, pignal makes sure **you** keep the knowledge.
 
-Self-hosted on Cloudflare. Free forever. Your data never leaves your account.
+Self-hosted on Cloudflare. Free forever. **Your data never leaves your account**.
+
+<p align="center">
+  <img src="document/flow.drawio.png" alt="Architecture — MCP clients connect to your self-hosted Pignal on Cloudflare, storing private signals and syncing public ones to pignal.net" width="720" />
+</p>
 
 <p align="center">
   <img src="document/web.png" alt="Pignal source page — browsing vouched signals by category" width="720" />
@@ -48,6 +52,31 @@ Self-hosted on Cloudflare. Free forever. Your data never leaves your account.
 - **REST API** — full CRUD at `/api/*` with bearer token auth
 - **Web dashboard** — manage signals, types, and workspaces at `/pignal`
 - **Public source page** — vouch for a signal and it becomes your shared record
+
+---
+
+<p align="center">
+  <img src="document/web.png" alt="Pignal source page — browsing vouched signals by category" width="720" />
+</p>
+
+<p align="center">
+  <sub>Live at <a href="https://developers.pignal.net">developers.pignal.net</a></sub>
+</p>
+
+### Lighthouse scores (Desktop)
+
+<p align="center">
+  <img src="document/web-performance.png" alt="Lighthouse scores — Performance 100, Accessibility 100, Best Practices 100, SEO 100" width="480" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Performance-100-brightgreen" alt="Performance: 100" />
+  <img src="https://img.shields.io/badge/Accessibility-100-brightgreen" alt="Accessibility: 100" />
+  <img src="https://img.shields.io/badge/Best%20Practices-100-brightgreen" alt="Best Practices: 100" />
+  <img src="https://img.shields.io/badge/SEO-100-brightgreen" alt="SEO: 100" />
+</p>
+
+---
 
 ## Deploy
 
@@ -225,8 +254,6 @@ All `/api/*` endpoints require `Authorization: Bearer <SERVER_TOKEN>`.
 | GET | `/.well-known/pignal` | Federation discovery |
 
 ---
-
-## Architecture
 
 ```
 pignal/
