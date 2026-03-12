@@ -255,7 +255,7 @@ Request → Worker → Token Auth → Store Middleware → Route Handler → Sig
 
 ## Federation
 
-Every instance serves `/.well-known/pignal` with owner info, capabilities, and stats. Optionally register with [Pignal Hub](https://hub.pignal.net) for directory listing and cross-instance discovery.
+Every instance serves `/.well-known/pignal` with owner info, capabilities, and stats. Optionally register with [pignal.net](https://pignal.net) for directory listing and cross-instance discovery.
 
 ---
 
