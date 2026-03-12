@@ -285,8 +285,8 @@ section h2 {
   font-weight: 500;
   white-space: nowrap;
   text-decoration: none;
-  color: var(--pico-muted-color);
-  background: color-mix(in srgb, var(--pico-muted-color) 10%, transparent);
+  color: color-mix(in srgb, var(--pico-muted-color) 70%, black);
+  background: color-mix(in srgb, var(--pico-muted-color) 15%, transparent);
   transition: background 0.15s, color 0.15s;
 }
 .workspace-badge:hover {
@@ -307,8 +307,8 @@ section h2 {
   white-space: nowrap;
 }
 .visibility-badge[data-visibility="private"] {
-  color: var(--pico-muted-color);
-  background: color-mix(in srgb, var(--pico-muted-color) 12%, transparent);
+  color: color-mix(in srgb, var(--pico-muted-color) 70%, black);
+  background: color-mix(in srgb, var(--pico-muted-color) 15%, transparent);
 }
 .visibility-badge[data-visibility="unlisted"] {
   color: var(--app-info);
@@ -329,7 +329,7 @@ section h2 {
   font-weight: 500;
   letter-spacing: 0.02em;
   white-space: nowrap;
-  color: var(--app-success);
+  color: color-mix(in srgb, var(--app-success) 68%, black);
   background: var(--app-success-bg);
 }
 .validation-badge a {
@@ -370,7 +370,7 @@ section h2 {
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--pico-muted-color);
+  color: color-mix(in srgb, var(--pico-muted-color) 62%, black);
   background: var(--pico-muted-border-color);
   text-decoration: none;
   white-space: nowrap;
@@ -1289,7 +1289,7 @@ article header {
 }
 .filter-mode-btn.active {
   background: color-mix(in srgb, var(--pico-primary) 12%, transparent);
-  color: var(--pico-primary);
+  color: color-mix(in srgb, var(--pico-primary) 70%, black);
   font-weight: 600;
 }
 .filter-bar-items {

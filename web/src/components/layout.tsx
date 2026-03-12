@@ -10,7 +10,9 @@ interface LayoutProps {
 
 export function Layout({ title, head, children }: LayoutProps) {
   return (
-    <html lang="en" data-theme="light">
+    <>
+      {raw('<!DOCTYPE html>')}
+      <html lang="en" data-theme="light">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -23,5 +25,6 @@ export function Layout({ title, head, children }: LayoutProps) {
         {children}
       </body>
     </html>
+    </>
   );
 }
