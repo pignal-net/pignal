@@ -27,29 +27,6 @@ Self-hosted on Cloudflare. Free forever. **Your data never leaves your account**
 
 ---
 
-<p align="center">
-  <img src="document/web.png" alt="Pignal source page — browsing vouched signals by category" width="720" />
-</p>
-
-<p align="center">
-  <sub>Live at <a href="https://developers.pignal.net">developers.pignal.net</a></sub>
-</p>
-
-### Lighthouse scores (Desktop)
-
-<p align="center">
-  <img src="document/web-performance.png" alt="Lighthouse scores — Performance 100, Accessibility 100, Best Practices 100, SEO 100" width="480" />
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Performance-100-brightgreen" alt="Performance: 100" />
-  <img src="https://img.shields.io/badge/Accessibility-100-brightgreen" alt="Accessibility: 100" />
-  <img src="https://img.shields.io/badge/Best%20Practices-100-brightgreen" alt="Best Practices: 100" />
-  <img src="https://img.shields.io/badge/SEO-100-brightgreen" alt="SEO: 100" />
-</p>
-
----
-
 ## What's Inside
 
 - **MCP server** — capture signals directly from Claude, mid-conversation
