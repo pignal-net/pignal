@@ -3,19 +3,32 @@ main = "src/index.ts"
 compatibility_date = "2025-01-07"
 compatibility_flags = ["nodejs_compat"]
 
-[[durable_objects.bindings]]
-name = "PERSONAL_POOL"
-class_name = "PersonalPoolDO"
+[placement]
+mode = "smart"
 
+# D1 database for signal storage
+[[d1_databases]]
+binding = "DB"
+database_name = "pignal-server-db"
+database_id = "" # Replace with actual ID after creation
+migrations_dir = "migrations"
+
+# MCP Agent DO (required by agents SDK for SSE sessions)
 [[durable_objects.bindings]]
 name = "MCP_AGENT"
 class_name = "SelfHostedMcpAgent"
 
 [[migrations]]
 tag = "v1"
-new_sqlite_classes = ["PersonalPoolDO", "SelfHostedMcpAgent"]
+new_sqlite_classes = ["SelfHostedMcpAgent"]
 
-# Rules for DO migrations import
+# Treat vendored static assets as text for raw string imports
+[[rules]]
+type = "Text"
+globs = ["**/static/*.js", "**/static/*.css", "**/static/*.svg"]
+fallthrough = true
+
+# Treat SQL migration files as text (needed if DO module is transitively imported)
 [[rules]]
 type = "Text"
 globs = ["**/*.sql"]
