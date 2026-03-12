@@ -19,9 +19,13 @@ In an era where AI does the thinking, pignal makes sure **you** keep the knowled
 
 Self-hosted on Cloudflare. Free forever. **Your data never leaves your account**.
 
+---
+
 <p align="center">
   <img src="document/flow.drawio.png" alt="Architecture — MCP clients connect to your self-hosted Pignal on Cloudflare, storing private signals and syncing public ones to pignal.net" width="720" />
 </p>
+
+---
 
 <p align="center">
   <img src="document/web.png" alt="Pignal source page — browsing vouched signals by category" width="720" />
