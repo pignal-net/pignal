@@ -1,0 +1,353 @@
+import type {
+  SignalWithMeta,
+  SignalStoreRpc,
+  MetadataResult,
+  SignalTypeWithActions,
+  WorkspaceSelect,
+} from '@pignal/db';
+
+import {
+  saveSignalToolSchema,
+  listSignalsToolSchema,
+  searchSignalsToolSchema,
+  validateSignalToolSchema,
+  updateSignalToolSchema,
+  createWorkspaceToolSchema,
+  createTypeToolSchema,
+  vouchSignalToolSchema,
+  batchVouchSignalsToolSchema,
+  type SaveSignalToolInput,
+  type ListSignalsToolInput,
+  type SearchSignalsToolInput,
+  type ValidateSignalToolInput,
+  type UpdateSignalToolInput,
+  type CreateWorkspaceToolInput,
+  type CreateTypeToolInput,
+  type VouchSignalToolInput,
+  type BatchVouchSignalsToolInput,
+} from '../validation/schemas';
+
+// --- Metadata fields for formatting ---
+
+export const METADATA_FIELDS = [
+  'type_id',
+  'workspace_id',
+  'validation_action_id',
+  'source_ai',
+  'created_at',
+  'updated_at',
+] as const;
+
+export type MetadataField = (typeof METADATA_FIELDS)[number];
+
+// --- Formatting utilities ---
+
+export function formatSignal(s: SignalWithMeta, include?: Set<MetadataField>): string {
+  const meta = [s.typeName, s.workspaceName ?? 'No workspace'];
+  if (s.validationActionLabel) meta.push(s.validationActionLabel);
+  if (s.isArchived === 1) meta.push('Archived');
+
+  if (s.tags?.length) meta.push(`Tags: ${s.tags.join(', ')}`);
+
+  const lines = [`ID: ${s.id}`, `**${s.keySummary}**`, meta.join(' | ')];
+
+  if (include) {
+    const extra: string[] = [];
+    if (include.has('type_id')) extra.push(`Type ID: ${s.typeId}`);
+    if (include.has('workspace_id')) extra.push(`Workspace ID: ${s.workspaceId ?? 'None'}`);
+    if (include.has('validation_action_id'))
+      extra.push(`Validation Action ID: ${s.validationActionId ?? 'None'}`);
+    if (include.has('source_ai')) extra.push(`Source AI: ${s.sourceAi}`);
+    if (include.has('created_at')) extra.push(`Created: ${s.createdAt}`);
+    if (include.has('updated_at')) extra.push(`Updated: ${s.updatedAt}`);
+    if (extra.length) lines.push(extra.join(' | '));
+  }
+
+  lines.push('---', `Content:\n${s.content}`);
+
+  return lines.join('\n');
+}
+
+export function toIncludeSet(fields?: MetadataField[]): Set<MetadataField> | undefined {
+  return fields?.length ? new Set(fields) : undefined;
+}
+
+export function formatWorkspace(w: WorkspaceSelect): string {
+  const lines = [`ID: ${w.id}`, `**${w.name}** (${w.visibility})`];
+  if (w.description) lines.push(w.description);
+  return lines.join('\n');
+}
+
+export function formatType(t: SignalTypeWithActions): string {
+  const lines = [`ID: ${t.id}`, `**${t.icon ?? '•'} ${t.name}**`];
+  if (t.description) lines.push(t.description);
+  if (t.color) lines.push(`Color: ${t.color}`);
+  if (t.guidance) {
+    const g = t.guidance;
+    if (g.whenToUse) lines.push(`When to use: ${g.whenToUse}`);
+    if (g.pattern) lines.push(`Pattern: "${g.pattern}"`);
+    if (g.example) lines.push(`Example: "${g.example}"`);
+    if (g.contentHints) lines.push(`Content tip: ${g.contentHints}`);
+  }
+  if (t.actions.length) {
+    lines.push(`Validation actions: ${t.actions.map((a) => a.label).join(', ')}`);
+  }
+  return lines.join('\n');
+}
+
+// --- Dynamic metadata text builder ---
+
+interface QualityGuidelines {
+  keySummary?: { tips?: string };
+  content?: { tips?: string };
+  formatting?: string[];
+  avoid?: string[];
+}
+
+interface ValidationLimits {
+  keySummary?: { min?: number; max?: number };
+  content?: { min?: number; max?: number };
+}
+
+function parseJsonSetting<T>(value: string | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+export function buildMetadataText(metadata: MetadataResult): string {
+  const guidelines = parseJsonSetting<QualityGuidelines>(
+    metadata.settings.quality_guidelines,
+    {}
+  );
+  const limits = parseJsonSetting<ValidationLimits>(
+    metadata.settings.validation_limits,
+    {}
+  );
+
+  const qualityLines = ['== QUALITY GUIDELINES ==', ''];
+
+  const ktMin = limits.keySummary?.min ?? 20;
+  const ktMax = limits.keySummary?.max ?? 140;
+  qualityLines.push(`keySummary (${ktMin}-${ktMax} chars):`);
+  if (guidelines.keySummary?.tips) {
+    qualityLines.push(`- ${guidelines.keySummary.tips}`);
+  }
+  qualityLines.push('');
+
+  const cMax = limits.content?.max ?? 10000;
+  qualityLines.push(`content (up to ${cMax.toLocaleString()} chars):`);
+  if (guidelines.content?.tips) {
+    qualityLines.push(`- ${guidelines.content.tips}`);
+  }
+  qualityLines.push('');
+
+  if (guidelines.formatting?.length) {
+    qualityLines.push('CONTENT FORMATTING — pick the right markdown for the data:');
+    for (const fmt of guidelines.formatting) {
+      qualityLines.push(`- ${fmt}`);
+    }
+    qualityLines.push('');
+  }
+
+  if (guidelines.avoid?.length) {
+    qualityLines.push('AVOID:');
+    for (const item of guidelines.avoid) {
+      qualityLines.push(`- ${item}`);
+    }
+    qualityLines.push('');
+  }
+
+  qualityLines.push(
+    'General:',
+    '- Always choose the most specific type that fits.',
+    '- Assign a workspace if the signal clearly belongs to one context.'
+  );
+
+  const typesText = metadata.types
+    .map((t) => {
+      const actions = t.actions.map((a) => `  - ${a.label} (${a.id})`).join('\n');
+      const lines = [`${t.icon ?? '•'} ${t.name} (${t.id}): ${t.description ?? ''}`];
+      if (t.guidance) {
+        if (t.guidance.whenToUse) lines.push(`  When to use: ${t.guidance.whenToUse}`);
+        if (t.guidance.pattern) lines.push(`  keySummary pattern: "${t.guidance.pattern}"`);
+        if (t.guidance.example) lines.push(`  Example: "${t.guidance.example}"`);
+        if (t.guidance.contentHints) lines.push(`  Content tip: ${t.guidance.contentHints}`);
+      }
+      lines.push(`  Validation actions:\n${actions}`);
+      return lines.join('\n');
+    })
+    .join('\n\n');
+
+  const workspacesText = metadata.workspaces
+    .map((w) => `- ${w.name} (${w.id})${w.description ? `: ${w.description}` : ''}`)
+    .join('\n');
+
+  return [
+    qualityLines.join('\n'),
+    '',
+    '== TYPES ==',
+    typesText,
+    '',
+    '== WORKSPACES ==',
+    workspacesText,
+  ].join('\n');
+}
+
+// --- Tool operation functions ---
+
+export async function saveSignal(
+  store: SignalStoreRpc,
+  input: SaveSignalToolInput,
+  sourceAi: string
+): Promise<SignalWithMeta> {
+  return store.create({
+    id: crypto.randomUUID(),
+    keySummary: input.keySummary,
+    content: input.content,
+    typeId: input.typeId,
+    workspaceId: input.workspaceId,
+    sourceAi,
+    tags: input.tags,
+  });
+}
+
+export async function listSignals(
+  store: SignalStoreRpc,
+  input: ListSignalsToolInput
+): Promise<{ items: SignalWithMeta[]; total: number }> {
+  return store.list({
+    typeId: input.typeId,
+    workspaceId: input.workspaceId,
+    isArchived: input.isArchived,
+    limit: input.limit ?? 20,
+    offset: input.offset ?? 0,
+  });
+}
+
+export async function searchSignals(
+  store: SignalStoreRpc,
+  input: SearchSignalsToolInput
+): Promise<{ items: SignalWithMeta[]; total: number }> {
+  return store.list({
+    q: input.query,
+    typeId: input.typeId,
+    workspaceId: input.workspaceId,
+    limit: input.limit ?? 20,
+  });
+}
+
+export async function validateSignal(
+  store: SignalStoreRpc,
+  input: ValidateSignalToolInput
+): Promise<SignalWithMeta | null> {
+  return store.validate(input.signalId, input.actionId);
+}
+
+export async function getMetadata(store: SignalStoreRpc): Promise<MetadataResult> {
+  return store.getMetadata();
+}
+
+export async function updateSignal(
+  store: SignalStoreRpc,
+  input: UpdateSignalToolInput
+): Promise<SignalWithMeta | null> {
+  const { signalId, ...updateFields } = input;
+  return store.update(signalId, updateFields);
+}
+
+export async function createWorkspace(
+  store: SignalStoreRpc,
+  input: CreateWorkspaceToolInput
+): Promise<WorkspaceSelect> {
+  return store.createWorkspace({
+    id: crypto.randomUUID(),
+    name: input.name,
+    description: input.description,
+    visibility: input.visibility,
+  });
+}
+
+export async function createType(
+  store: SignalStoreRpc,
+  input: CreateTypeToolInput
+): Promise<SignalTypeWithActions> {
+  return store.createType({
+    id: crypto.randomUUID(),
+    name: input.name,
+    description: input.description,
+    color: input.color,
+    icon: input.icon,
+    guidance: input.guidance,
+    actions: input.actions,
+  });
+}
+
+export async function vouchSignal(
+  store: SignalStoreRpc,
+  input: VouchSignalToolInput
+): Promise<SignalWithMeta | null> {
+  return store.vouch(input.signalId, {
+    visibility: input.visibility,
+    slug: input.slug,
+  });
+}
+
+export async function batchVouchSignals(
+  store: SignalStoreRpc,
+  input: BatchVouchSignalsToolInput
+): Promise<{ succeeded: { id: string; slug: string | null; visibility: string }[]; failed: { id: string; error: string }[] }> {
+  const succeeded: { id: string; slug: string | null; visibility: string }[] = [];
+  const failed: { id: string; error: string }[] = [];
+
+  for (const item of input.signals) {
+    try {
+      const result = await store.vouch(item.signalId, {
+        visibility: item.visibility,
+        slug: item.slug,
+      });
+      if (result) {
+        succeeded.push({
+          id: result.id,
+          slug: result.slug,
+          visibility: result.visibility ?? item.visibility,
+        });
+      } else {
+        failed.push({ id: item.signalId, error: 'Signal not found' });
+      }
+    } catch (err) {
+      failed.push({
+        id: item.signalId,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      });
+    }
+  }
+
+  return { succeeded, failed };
+}
+
+// --- Re-export schemas for tool registration ---
+
+export {
+  saveSignalToolSchema,
+  listSignalsToolSchema,
+  searchSignalsToolSchema,
+  validateSignalToolSchema,
+  updateSignalToolSchema,
+  createWorkspaceToolSchema,
+  createTypeToolSchema,
+  vouchSignalToolSchema,
+  batchVouchSignalsToolSchema,
+  type SaveSignalToolInput,
+  type ListSignalsToolInput,
+  type SearchSignalsToolInput,
+  type ValidateSignalToolInput,
+  type UpdateSignalToolInput,
+  type CreateWorkspaceToolInput,
+  type CreateTypeToolInput,
+  type VouchSignalToolInput,
+  type BatchVouchSignalsToolInput,
+};

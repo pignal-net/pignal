@@ -1,0 +1,43 @@
+name = "pignal-server"
+main = "src/index.ts"
+compatibility_date = "2025-01-07"
+compatibility_flags = ["nodejs_compat"]
+
+[placement]
+mode = "smart"
+
+# D1 database for signal storage
+[[d1_databases]]
+binding = "DB"
+database_name = "pignal-server-db"
+database_id = "" # Replace with actual ID after creation
+migrations_dir = "migrations"
+
+# MCP Agent DO (required by agents SDK for SSE sessions)
+[[durable_objects.bindings]]
+name = "MCP_AGENT"
+class_name = "SelfHostedMcpAgent"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SelfHostedMcpAgent"]
+
+# Treat vendored static assets as text for raw string imports
+[[rules]]
+type = "Text"
+globs = ["**/static/*.js", "**/static/*.css", "**/static/*.svg"]
+fallthrough = true
+
+# Treat SQL migration files as text (needed if DO module is transitively imported)
+[[rules]]
+type = "Text"
+globs = ["**/*.sql"]
+fallthrough = true
+
+# Uncomment and customize for custom domain
+# [[routes]]
+# pattern = "my-pignal.workers.dev"
+# custom_domain = true
+
+# Secrets (set via `wrangler secret put SERVER_TOKEN`)
+# SERVER_TOKEN - your authentication token

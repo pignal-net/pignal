@@ -1,0 +1,5 @@
+packages:
+  - 'db'
+  - 'core'
+  - 'web'
+  - 'server'

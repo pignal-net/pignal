@@ -1,0 +1,13 @@
+{
+  "name": "pignal",
+  "private": true,
+  "scripts": {
+    "dev:server": "pnpm --filter @pignal/server dev",
+    "deploy:server": "pnpm --filter @pignal/server deploy",
+    "db:migrate": "pnpm --filter @pignal/server db:migrate",
+    "db:migrate:prod": "pnpm --filter @pignal/server db:migrate:prod",
+    "type-check": "pnpm -r type-check",
+    "lint": "pnpm -r lint",
+    "check-all": "pnpm -r check-all"
+  }
+}

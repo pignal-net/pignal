@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Wrangler
+.wrangler/
+.wrangler-state/
+.dev.vars
+wrangler.toml
+
+# Build output
+dist/
+
+# OS
+.DS_Store
+Thumbs.db

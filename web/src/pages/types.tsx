@@ -1,0 +1,374 @@
+import type { Context } from 'hono';
+import type { SignalStoreRpc, TypeGuidance, SignalTypeWithActions } from '@pignal/db';
+import type { WebEnv } from '../types';
+import { AppLayout } from '../components/app-layout';
+import { getCsrfToken } from '../middleware/csrf';
+import { isHtmxRequest, toastTrigger } from '../lib/htmx';
+
+type WebVars = { store: SignalStoreRpc };
+
+function TypeCard({ type, csrfToken }: { type: SignalTypeWithActions; csrfToken: string }) {
+  const guidance = type.guidance;
+
+  if (type.isSystem) {
+    return (
+      <article id={`type-${type.id}`}>
+        <div class="grid">
+          <label>
+            Name
+            <input type="text" value={type.name} disabled />
+          </label>
+          <label>
+            Description
+            <input type="text" value={type.description ?? ''} disabled />
+          </label>
+          <label>
+            Icon
+            <input type="text" value={type.icon ?? ''} disabled />
+          </label>
+        </div>
+        {guidance && (
+          <details>
+            <summary>AI Guidance</summary>
+            <div class="grid">
+              <label>
+                When to use
+                <input type="text" value={guidance.whenToUse ?? ''} disabled />
+              </label>
+              <label>
+                keySummary pattern
+                <input type="text" value={guidance.pattern ?? ''} disabled />
+              </label>
+            </div>
+            <label>
+              Example
+              <textarea disabled rows={2}>{guidance.example ?? ''}</textarea>
+            </label>
+            <label>
+              Content hints
+              <input type="text" value={guidance.contentHints ?? ''} disabled />
+            </label>
+          </details>
+        )}
+        {type.actions.length > 0 && (
+          <p><small><strong>Actions:</strong> {type.actions.map((a) => a.label).join(', ')}</small></p>
+        )}
+      </article>
+    );
+  }
+
+  return (
+    <article id={`type-${type.id}`}>
+      <form method="post" action={`/pignal/types/${type.id}/update`}
+        hx-post={`/pignal/types/${type.id}/update`}
+        hx-target={`#type-${type.id}`}
+        hx-swap="outerHTML">
+        <input type="hidden" name="_csrf" value={csrfToken} />
+        <div class="grid">
+          <label>
+            Name
+            <input type="text" name="name" value={type.name} required maxlength={50} />
+          </label>
+          <label>
+            Description
+            <input type="text" name="description" value={type.description ?? ''} maxlength={500} />
+          </label>
+        </div>
+        <div class="grid">
+          <label>
+            Color
+            <input type="color" name="color" value={type.color ?? '#6B7280'} />
+          </label>
+          <label>
+            Icon
+            <input type="text" name="icon" value={type.icon ?? ''} maxlength={10} placeholder="e.g. 💡" />
+          </label>
+        </div>
+
+        <details>
+          <summary>AI Guidance</summary>
+          <div class="grid">
+            <label>
+              When to use
+              <input type="text" name="guidance_whenToUse" value={guidance?.whenToUse ?? ''} maxlength={500} />
+            </label>
+            <label>
+              keySummary pattern
+              <input type="text" name="guidance_pattern" value={guidance?.pattern ?? ''} maxlength={500} />
+            </label>
+          </div>
+          <label>
+            Example
+            <textarea name="guidance_example" maxlength={1000} rows={2}>{guidance?.example ?? ''}</textarea>
+          </label>
+          <label>
+            Content hints
+            <input type="text" name="guidance_contentHints" value={guidance?.contentHints ?? ''} maxlength={500} />
+          </label>
+        </details>
+
+        {type.actions.length > 0 && (
+          <p><small><strong>Actions:</strong> {type.actions.map((a) => a.label).join(', ')}</small></p>
+        )}
+
+        <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+          <button type="button" class="outline secondary btn-sm"
+            hx-post={`/pignal/types/${type.id}/delete`}
+            hx-target={`#type-${type.id}`}
+            hx-swap="outerHTML"
+            hx-confirm="Delete this type?"
+            hx-include="closest form">
+            Delete
+          </button>
+          <button type="submit" class="btn-sm">Save</button>
+        </div>
+      </form>
+    </article>
+  );
+}
+
+function parseGuidanceFromBody(body: Record<string, unknown>): TypeGuidance | null {
+  const whenToUse = ((body.guidance_whenToUse as string) || '').trim();
+  const pattern = ((body.guidance_pattern as string) || '').trim();
+  const example = ((body.guidance_example as string) || '').trim();
+  const contentHints = ((body.guidance_contentHints as string) || '').trim();
+
+  if (!whenToUse && !pattern && !example && !contentHints) {
+    return null;
+  }
+
+  return {
+    ...(whenToUse ? { whenToUse } : {}),
+    ...(pattern ? { pattern } : {}),
+    ...(example ? { example } : {}),
+    ...(contentHints ? { contentHints } : {}),
+  };
+}
+
+export async function typesPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+  const store = c.get('store');
+  const types = await store.listTypes();
+  const csrfToken = getCsrfToken(c);
+  const flash = c.req.query('success') ? { type: 'success' as const, message: c.req.query('success')! } :
+    c.req.query('error') ? { type: 'error' as const, message: c.req.query('error')! } : undefined;
+
+  return c.html(
+    <AppLayout
+      title="Types"
+      currentPath="/pignal/types"
+      csrfToken={csrfToken}
+      flash={flash}
+    >
+      <div id="types-list">
+        {types.map((type) => (
+          <TypeCard type={type} csrfToken={csrfToken} />
+        ))}
+      </div>
+
+      <article>
+        <header>
+          <h2>Create Type</h2>
+        </header>
+        <form method="post" action="/pignal/types"
+          hx-post="/pignal/types"
+          hx-target="#types-list"
+          hx-swap="beforeend"
+          data-reset-on-success>
+          <input type="hidden" name="_csrf" value={csrfToken} />
+          <div class="grid">
+            <label>
+              Name
+              <input type="text" name="name" required maxlength={50} />
+            </label>
+            <label>
+              Description
+              <input type="text" name="description" maxlength={500} />
+            </label>
+          </div>
+          <div class="grid">
+            <label>
+              Color
+              <input type="color" name="color" value="#6B7280" />
+            </label>
+            <label>
+              Icon
+              <input type="text" name="icon" maxlength={10} placeholder="e.g. 💡" />
+            </label>
+          </div>
+
+          <details>
+            <summary>AI Guidance</summary>
+            <div class="grid">
+              <label>
+                When to use
+                <input type="text" name="guidance_whenToUse" maxlength={500} />
+              </label>
+              <label>
+                keySummary pattern
+                <input type="text" name="guidance_pattern" maxlength={500} />
+              </label>
+            </div>
+            <label>
+              Example
+              <textarea name="guidance_example" maxlength={1000} rows={2}></textarea>
+            </label>
+            <label>
+              Content hints
+              <input type="text" name="guidance_contentHints" maxlength={500} />
+            </label>
+          </details>
+
+          <label>
+            Actions (comma-separated labels)
+            <input type="text" name="actions" required placeholder="e.g. Confirmed, Wrong, Uncertain" />
+          </label>
+          <button type="submit">Create Type</button>
+        </form>
+      </article>
+    </AppLayout>
+  );
+}
+
+export async function createTypeHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+  const store = c.get('store');
+  const body = await c.req.parseBody();
+
+  const name = (body.name as string || '').trim();
+  const description = (body.description as string || '').trim();
+  const color = body.color as string || undefined;
+  const icon = ((body.icon as string) || '').trim() || undefined;
+  const guidance = parseGuidanceFromBody(body as Record<string, unknown>);
+  const actionsStr = (body.actions as string || '').trim();
+
+  if (!name || !actionsStr) {
+    if (isHtmxRequest(c)) {
+      c.header('HX-Trigger', toastTrigger('Name and actions are required', 'error'));
+      c.header('HX-Reswap', 'none');
+      return c.body(null, 204);
+    }
+    return c.redirect('/pignal/types?error=Name+and+actions+are+required');
+  }
+
+  const actions = actionsStr.split(',').map((a, i) => ({
+    label: a.trim(),
+    sortOrder: i,
+  })).filter((a) => a.label);
+
+  if (actions.length === 0) {
+    if (isHtmxRequest(c)) {
+      c.header('HX-Trigger', toastTrigger('At least one action is required', 'error'));
+      c.header('HX-Reswap', 'none');
+      return c.body(null, 204);
+    }
+    return c.redirect('/pignal/types?error=At+least+one+action+is+required');
+  }
+
+  const typeId = crypto.randomUUID();
+
+  try {
+    const created = await store.createType({
+      id: typeId,
+      name,
+      description: description || undefined,
+      color,
+      icon,
+      guidance: guidance ?? undefined,
+      actions,
+    });
+
+    if (isHtmxRequest(c)) {
+      c.header('HX-Trigger', toastTrigger('Type created'));
+      const csrfToken = getCsrfToken(c);
+      return c.html(
+        <TypeCard type={created} csrfToken={csrfToken} />
+      );
+    }
+    return c.redirect('/pignal/types?success=Type+created');
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to create type';
+    if (isHtmxRequest(c)) {
+      c.header('HX-Trigger', toastTrigger(msg, 'error'));
+      c.header('HX-Reswap', 'none');
+      return c.body(null, 204);
+    }
+    return c.redirect(`/pignal/types?error=${encodeURIComponent(msg)}`);
+  }
+}
+
+export async function updateTypeHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+  const id = c.req.param('id')!;
+  const store = c.get('store');
+  const body = await c.req.parseBody();
+
+  const name = (body.name as string || '').trim();
+  const description = (body.description as string || '').trim();
+  const color = ((body.color as string) || '').trim() || null;
+  const icon = ((body.icon as string) || '').trim() || null;
+  const guidance = parseGuidanceFromBody(body as Record<string, unknown>);
+
+  try {
+    const updated = await store.updateType(id, {
+      ...(name ? { name } : {}),
+      description: description || undefined,
+      color,
+      icon,
+      guidance,
+    });
+
+    if (!updated) {
+      if (isHtmxRequest(c)) {
+        c.header('HX-Trigger', toastTrigger('Type not found', 'error'));
+        c.header('HX-Reswap', 'none');
+        return c.body(null, 204);
+      }
+      return c.redirect('/pignal/types?error=Type+not+found');
+    }
+
+    if (isHtmxRequest(c)) {
+      c.header('HX-Trigger', toastTrigger('Type updated'));
+      const csrfToken = getCsrfToken(c);
+      return c.html(
+        <TypeCard type={updated} csrfToken={csrfToken} />
+      );
+    }
+    return c.redirect('/pignal/types?success=Type+updated');
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to update type';
+    if (isHtmxRequest(c)) {
+      c.header('HX-Trigger', toastTrigger(msg, 'error'));
+      c.header('HX-Reswap', 'none');
+      return c.body(null, 204);
+    }
+    return c.redirect(`/pignal/types?error=${encodeURIComponent(msg)}`);
+  }
+}
+
+export async function deleteTypeHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+  const id = c.req.param('id')!;
+  const store = c.get('store');
+
+  try {
+    const deleted = await store.deleteType(id);
+    if (!deleted) {
+      if (isHtmxRequest(c)) {
+        c.header('HX-Trigger', toastTrigger('Type not found', 'error'));
+        c.header('HX-Reswap', 'none');
+        return c.body(null, 204);
+      }
+      return c.redirect('/pignal/types?error=Type+not+found');
+    }
+    if (isHtmxRequest(c)) {
+      c.header('HX-Trigger', toastTrigger('Type deleted'));
+      return c.html('');
+    }
+    return c.redirect('/pignal/types?success=Type+deleted');
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to delete type';
+    if (isHtmxRequest(c)) {
+      c.header('HX-Trigger', toastTrigger(msg, 'error'));
+      c.header('HX-Reswap', 'none');
+      return c.body(null, 204);
+    }
+    return c.redirect(`/pignal/types?error=${encodeURIComponent(msg)}`);
+  }
+}
