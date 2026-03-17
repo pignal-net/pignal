@@ -28,6 +28,12 @@ type = "Text"
 globs = ["**/static/*.js", "**/static/*.css", "**/static/*.svg"]
 fallthrough = true
 
+# Import PNG files as binary data
+[[rules]]
+type = "Data"
+globs = ["**/static/*.png"]
+fallthrough = true
+
 # Treat SQL migration files as text (needed if DO module is transitively imported)
 [[rules]]
 type = "Text"
