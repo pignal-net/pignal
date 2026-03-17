@@ -26,8 +26,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Build Worker bundle
-        working-directory: server
-        run: pnpm exec wrangler deploy src/index.ts --dry-run --outdir dist --config wrangler.toml
+        run: pnpm --filter @pignal/server exec wrangler deploy --dry-run --outdir server/dist
 
       - name: Create Release
         env:
