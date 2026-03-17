@@ -27,7 +27,7 @@ jobs:
 
       - name: Build Worker bundle
         working-directory: server
-        run: npx wrangler deploy --dry-run --outdir dist
+        run: pnpm exec wrangler deploy src/index.ts --dry-run --outdir dist --config wrangler.toml
 
       - name: Create Release
         env:
