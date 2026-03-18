@@ -33,6 +33,14 @@ jobs:
         working-directory: server
         run: npx wrangler deploy --dry-run --outdir dist
 
+      - name: Package bundle
+        working-directory: server
+        run: |
+          mkdir -p dist/migrations
+          cp migrations/*.sql dist/migrations/
+          cd dist
+          tar -czf ../bundle.tar.gz --exclude='*.map' --exclude='README.md' .
+
       - name: Create Release
         env:
           COMMIT_SHA: ${{ github.sha }}
@@ -40,6 +48,6 @@ jobs:
         with:
           tag_name: build-${{ github.sha }}
           name: Build ${{ github.sha }}
-          files: server/dist/index.js
+          files: server/bundle.tar.gz
           generate_release_notes: false
           make_latest: true
