@@ -30,7 +30,7 @@ export interface Template {
 }
 ```
 
-**Registration**: Templates are registered in `web/src/templates/registry.ts`. The `getTemplate()` function reads the `source_template` setting and returns the matching template (defaulting to `blog`).
+**Registration**: Templates are registered in `web/src/templates/registry.ts`. The `getTemplate()` function receives the template name from the `TEMPLATE` env var and returns the matching template (defaulting to `blog`).
 
 **Example** (`shop/index.ts`):
 
@@ -360,7 +360,7 @@ interface TemplateMcpConfig {
 
 The `schemaDescriptions` field lets templates override the generic `.describe()` text on individual Zod schema fields. Keys use `toolName.fieldName` format (e.g., `"save_item.keySummary"`). The MCP agent applies these at tool registration time, restoring domain-specific quality to field-level guidance without modifying core schemas.
 
-The MCP agent reads the `source_template` setting at startup and uses the matching config for:
+The MCP agent reads the `TEMPLATE` env var at startup and uses the matching config for:
 - **Server instructions** — shown to AI clients on connect
 - **Tool descriptions** — per-tool text describing what each tool does in domain terms
 - **Response labels** — text returned after tool execution (e.g., "Product created!" for shop)
@@ -572,7 +572,7 @@ Templates read configuration from the `settings` map. Key settings:
 |---|---|---|
 | `source_title` | `'My Pignal'` | Source display name |
 | `source_description` | `''` | Source description for meta tags |
-| `source_template` | `'blog'` | Active template name (selectable in admin UI at `/pignal/settings`) |
+| `TEMPLATE` (env var) | `'blog'` | Active template name (set in `wrangler.toml` under `[vars]`) |
 | `source_show_toc` | `'true'` | Show table of contents on post pages |
 | `source_show_reading_time` | `'true'` | Show reading time estimates |
 | `source_card_style` | `''` | Card style hint (`'grid'` or default) |
@@ -593,7 +593,7 @@ Templates read configuration from the `settings` map. Key settings:
 |---------|---------|-----|
 | Missing wrangler CSS rule | CSS not loading; `styles` field is empty or undefined | Add `{ type = "Text", globs = ["**/*.css"] }` to `[[rules]]` in `server/wrangler.toml` |
 | CSS imported as module instead of text | `styles` renders as `[object Object]` in the page | Ensure the wrangler `Text` rule is present; do not use CSS module syntax (`import styles from './styles.module.css'`) |
-| Template not registered | Template exists on disk but is not selectable via `source_template` | Add import and entry to `TEMPLATES` record in `web/src/templates/registry.ts` |
+| Template not registered | Template exists on disk but not available via `TEMPLATE` env var | Add import and entry to `TEMPLATES` record in `web/src/templates/registry.ts` |
 | CSS class collisions | Styles bleed between templates or override base styles | Prefix all CSS classes with `<template-name>-` (e.g., `.shop-grid`, `.blog-hero`) |
 | Hardcoded colors | Theme breaks in dark mode | Use Pico CSS variables (`--pico-*`) and app tokens (`--app-*`) only |
 | Missing HTMX anchors | Filter/search/pagination stops working | Include `#source-loading` and `#source-results` divs in `SourcePage` |

@@ -215,7 +215,7 @@ Pignal's template system lets you customize the layout, vocabulary, and MCP beha
 
 ### Switching templates
 
-Set `source_template` in the admin UI at `/pignal/settings`, or set `TEMPLATE` in `wrangler.toml` under `[vars]`.
+Set `TEMPLATE = "shop"` (or your template name) under `[vars]` in `wrangler.toml`, then redeploy.
 
 ### Creating a new template
 
@@ -225,53 +225,6 @@ Set `source_template` in the admin UI at `/pignal/settings`, or set `TEMPLATE` i
 4. (Optional) Add seed data in `templates/seeds/<name>.sql`
 
 See [`templates/TEMPLATE_GUIDE.md`](./templates/TEMPLATE_GUIDE.md) for the full contract, prop types, and checklist.
-
----
-
-## Web UI
-
-Admin dashboard at `/pignal` and public source page at `/`.
-
-| Page | Path | Description |
-|------|------|-------------|
-| Dashboard | `/pignal` | Stats overview + recent items |
-| Items | `/pignal/items` | Search, filter, paginate with HTMX |
-| Detail | `/pignal/items/:id` | View item, validate, archive, set visibility |
-| Types | `/pignal/types` | Manage item types + actions |
-| Workspaces | `/pignal/workspaces` | Manage workspaces |
-| Settings | `/pignal/settings` | Source page config, template selection, runtime settings |
-| Source Page | `/` | Vouched items with JSON-LD, OG tags, pagination (template-driven) |
-| Item Post | `/item/:slug` | Individual item with semantic HTML (template-driven) |
-| Atom Feed | `/feed.xml` | Atom feed |
-| LLMs | `/llms.txt` | Source guide for LLMs ([llmstxt.org](https://llmstxt.org)) |
-
----
-
-## REST API
-
-All `/api/*` endpoints require `Authorization: Bearer <SERVER_TOKEN>`.
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Health check (no auth) |
-| GET/POST | `/api/items` | List / Create items |
-| GET/PATCH/DELETE | `/api/items/:id` | Get / Update / Delete item |
-| POST | `/api/items/:id/validate` | Validate an item |
-| POST | `/api/items/:id/archive` | Archive an item |
-| POST | `/api/items/:id/unarchive` | Unarchive an item |
-| POST | `/api/items/:id/vouch` | Vouch for an item (set visibility) |
-| GET/POST | `/api/types` | List / Create types |
-| GET/PATCH/DELETE | `/api/types/:id` | Type CRUD |
-| POST | `/api/types/:id/actions` | Add action to type |
-| GET/POST | `/api/workspaces` | List / Create workspaces |
-| GET/PATCH/DELETE | `/api/workspaces/:id` | Workspace CRUD |
-| GET/PUT | `/api/settings` | Get / Update settings |
-| GET | `/api/stats` | Usage statistics |
-| \* | `/mcp` | MCP endpoint (SSE transport) |
-| GET | `/api/public/items` | Vouched items (no auth) |
-| GET | `/api/public/items/:slug` | Item by slug (no auth) |
-| GET | `/api/public/shared/:token` | Unlisted item (no auth) |
-| GET | `/.well-known/pignal` | Federation discovery |
 
 ---
 

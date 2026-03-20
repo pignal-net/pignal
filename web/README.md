@@ -22,7 +22,7 @@ HMAC-SHA256 signed session cookies, CSRF double-submit pattern, CSP/HSTS/X-Frame
 
 ## Templates
 
-The public source page uses a pluggable template system (`src/templates/`). Templates define `SourcePage`, `ItemPost`, and `Layout` components, plus vocabulary (domain-specific language) and scoped CSS. Available templates: `blog` (default, vertical feed) and `shop` (grid catalog). Selected via the `source_template` setting. See `src/templates/TEMPLATE_GUIDE.md` for the full contract and how to create new templates.
+The public source page uses a pluggable template system (`src/templates/`). Templates define `SourcePage`, `ItemPost`, `Layout`, and `PartialResults` components. Template config (vocabulary, SEO, MCP) lives in `@pignal/templates`. Available templates: `blog` (default, vertical feed) and `shop` (grid catalog). Selected via the `TEMPLATE` env var in `wrangler.toml`. See `templates/TEMPLATE_GUIDE.md` for the full contract and how to create new templates.
 
 ## Customization
 

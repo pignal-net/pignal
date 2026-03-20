@@ -117,7 +117,7 @@ Items can have tags — a JSON array of lowercase strings stored as text in SQLi
 
 ### Public Page Filtering
 
-The public source page (`/`) supports filtering by type (`?type=`), workspace (`?workspace=`), and tag (`?tag=`). Only workspaces with `visibility: 'public'` are shown. The sidebar uses collapsible `<details>/<summary>` sections for Categories and Workspaces. The page layout is determined by the active template (selected via the `source_template` setting).
+The public source page (`/`) supports filtering by type (`?type=`), workspace (`?workspace=`), and tag (`?tag=`). Only workspaces with `visibility: 'public'` are shown. The sidebar uses collapsible `<details>/<summary>` sections for Categories and Workspaces. The page layout is determined by the active template (set via `TEMPLATE` env var in `wrangler.toml`).
 
 ### Federation
 
@@ -191,9 +191,9 @@ See `templates/TEMPLATE_GUIDE.md` for the full contract, prop types, and checkli
 
 Template CSS is imported as binary text data via wrangler rules (configured in `wrangler.toml` with `type = "Text"` for `.css` and `.png` files). The styles are injected into the page at render time via the template's `styles` field. Base Pico CSS and `app.css` styles are always available.
 
-### The `source_template` Setting
+### The `TEMPLATE` Environment Variable
 
-Users select their active template via the `source_template` setting (configurable in the admin UI at `/pignal/settings`). When changed, the public source page immediately renders using the new template's components, vocabulary, and styles.
+The active template is set via the `TEMPLATE` env var in `wrangler.toml` under `[vars]` (defaults to `blog`). When changed and redeployed, the public source page renders using the new template's components, vocabulary, and styles.
 
 ## Code Conventions
 

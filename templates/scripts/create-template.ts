@@ -437,7 +437,7 @@ const stylesCss = `/* ${pascal} template styles */
 
 fs.mkdirSync(templateDir, { recursive: true });
 
-fs.writeFileSync(path.join(templateDir, 'index.ts'), indexTs);
+fs.writeFileSync(path.join(templateDir, 'index.tsx'), indexTs);
 fs.writeFileSync(path.join(templateDir, 'source-page.tsx'), sourcePageTsx);
 fs.writeFileSync(path.join(templateDir, 'item-post.tsx'), itemPostTsx);
 fs.writeFileSync(path.join(templateDir, 'layout.tsx'), layoutTsx);
@@ -481,7 +481,7 @@ Template "${name}" created successfully!
 
 Files created:
   ${templateDir}/
-    index.ts          Template definition and exports
+    index.tsx         Template definition and exports
     source-page.tsx   Source page (feed/list view)
     item-post.tsx     Item post page (detail view)
     layout.tsx        Layout wrapper (uses PublicLayout)
@@ -497,7 +497,7 @@ Next steps:
   4. Add your styles to styles.css (use ${name}-* prefix)
   5. (Optional) Add a custom header/footer in layout.tsx
   6. (Optional) Add seed data in templates/seeds/${name}.sql
-  7. Set "source_template" to "${name}" in your instance settings
+  7. Set TEMPLATE = "${name}" under [vars] in server/wrangler.toml
   8. Run \`pnpm dev:server\` and preview at http://localhost:8787
 
 See templates/TEMPLATE_GUIDE.md for full documentation.

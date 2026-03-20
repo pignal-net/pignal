@@ -57,6 +57,6 @@ Note: Drizzle schema changes in `db/src/schema.ts` do NOT auto-generate migratio
 5. **Registry** — Import template in `web/src/templates/registry.ts` and add to the `TEMPLATES` record
 6. **Seeds** — (Optional) Add seed SQL in `templates/seeds/<name>.sql`
 7. **Wrangler rule** — Ensure `server/wrangler.toml` has a rule for `**/*.css` with `type = "Text"` (required for CSS text imports)
-8. **Verify** — `pnpm check-all`. Select template via `source_template` setting in admin UI at `/pignal/settings`
+8. **Verify** — `pnpm check-all`. Set `TEMPLATE = "<name>"` under `[vars]` in `server/wrangler.toml` and run `pnpm dev:server`
 
 See `templates/TEMPLATE_GUIDE.md` for full contract, prop types, and checklist.
