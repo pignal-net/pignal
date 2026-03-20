@@ -1,6 +1,6 @@
 # @pignal/web
 
-Lightweight web interface: admin dashboard + SEO-optimized public source page, rendered with Hono JSX SSR.
+Lightweight web interface: admin dashboard + SEO-optimized public source page with pluggable templates, rendered with Hono JSX SSR.
 
 ## Stack
 
@@ -12,21 +12,25 @@ No bundler. No build step. Total client payload ~27 KB.
 
 ## Pages
 
-**Admin** (session cookie required): Dashboard, Signals (list + detail), Types, Workspaces, Settings, API Keys, Login.
+**Admin** (session cookie required): Dashboard, Items (list + detail), Types, Workspaces, Settings, API Keys, Login.
 
-**Public** (no auth, SEO-optimized): Source page, signal posts, raw markdown, shared links, Atom feed, sitemap, llms.txt.
+**Public** (no auth, SEO-optimized): Source page (template-driven), item posts, raw markdown, shared links, Atom feed, sitemap, llms.txt.
 
 ## Security
 
 HMAC-SHA256 signed session cookies, CSRF double-submit pattern, CSP/HSTS/X-Frame-Options headers, safe markdown rendering with HTML escaping.
 
+## Templates
+
+The public source page uses a pluggable template system (`src/templates/`). Templates define `SourcePage`, `ItemPost`, and `Layout` components, plus vocabulary (domain-specific language) and scoped CSS. Available templates: `blog` (default, vertical feed) and `shop` (grid catalog). Selected via the `source_template` setting. See `src/templates/TEMPLATE_GUIDE.md` for the full contract and how to create new templates.
+
 ## Customization
 
-Source page appearance is settings-driven (accent color, logo, custom CSS, card layout, social links, footer) — no redeployment needed.
+Source page appearance is settings-driven (accent color, logo, custom CSS, card layout, social links, footer, template selection) — no redeployment needed.
 
 ## Dependencies
 
-- `@pignal/core` — SignalStore access
+- `@pignal/core` — ItemStore access
 - `@pignal/db` — Type definitions
 - `hono` — HTTP framework + JSX SSR
 - `marked` — Markdown rendering

@@ -1,6 +1,6 @@
 # @pignal/server
 
-Self-hosted Cloudflare Worker providing REST API, MCP endpoint, and web UI for managing signals. Deploys to Cloudflare's free tier ($0/month).
+Self-hosted Cloudflare Worker providing REST API, MCP endpoint, and web UI for managing items. Deploys to Cloudflare's free tier ($0/month).
 
 ## Setup
 
@@ -14,12 +14,12 @@ See the root [README](../README.md) for deployment instructions and MCP client c
 
 ## Architecture
 
-Request flow: Worker -> Token Auth -> Store Middleware -> Route Handler -> SignalStore -> D1
+Request flow: Worker -> Token Auth -> Store Middleware -> Route Handler -> ItemStore -> D1
 
 | Component | Description |
 |-----------|-------------|
 | REST API | Full CRUD at `/api/*` with bearer token auth |
-| MCP Server | SSE endpoint at `/mcp` with 5 signal tools |
+| MCP Server | SSE endpoint at `/mcp` with 5 item tools |
 | Web UI | Public source page at `/`, admin dashboard at `/pignal` |
 | Federation | `/.well-known/pignal` for cross-instance discovery |
 | Auth | Bearer token (API), HMAC session cookies (web UI) |
@@ -30,6 +30,6 @@ Migrations live in `migrations/`. Run `pnpm db:migrate` for local, `pnpm db:migr
 
 ## Dependencies
 
-- `@pignal/core` — Business logic (SignalStore, route factories, MCP tools)
+- `@pignal/core` — Business logic (ItemStore, route factories, MCP tools)
 - `@pignal/web` — Web UI components
 - `@pignal/db` — Schema and types

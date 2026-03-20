@@ -1,4 +1,4 @@
-export { createSignalRoutes } from './signals';
+export { createItemRoutes } from './items';
 export { createTypeRoutes } from './types';
 export { createWorkspaceRoutes } from './workspaces';
 export { createStatsRoutes } from './stats';

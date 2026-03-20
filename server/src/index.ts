@@ -5,7 +5,7 @@ import { HTTPException } from 'hono/http-exception';
 import { drizzle } from 'drizzle-orm/d1';
 
 import {
-  createSignalRoutes,
+  createItemRoutes,
   createTypeRoutes,
   createWorkspaceRoutes,
   createStatsRoutes,
@@ -14,11 +14,12 @@ import {
 } from '@pignal/core/routes';
 import { ApiKeyStore } from '@pignal/core/store/api-keys';
 import { getDefaultToolManifest } from '@pignal/core/mcp/manifest';
+import { getTemplateConfig } from '@pignal/templates';
 import { createWebRoutes } from '@pignal/web';
 
 import { SelfHostedMcpAgent } from './mcp/agent';
 import { tokenAuth } from './middleware/token-auth';
-import { requirePermission, requireByMethod, resolveSignalPermission, mcpPermissionCheck, enforceWorkspaceRestriction } from './middleware/permission-auth';
+import { requirePermission, requireByMethod, resolveItemPermission, mcpPermissionCheck, enforceWorkspaceRestriction } from './middleware/permission-auth';
 import { storeMiddleware } from './middleware/store';
 import type { Env, Variables } from './types';
 
@@ -27,7 +28,7 @@ export { SelfHostedMcpAgent };
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-// Store middleware — creates SignalStore from D1 for every request
+// Store middleware — creates ItemStore from D1 for every request
 app.use('*', storeMiddleware);
 
 // CORS for REST API routes
@@ -47,7 +48,7 @@ app.get('/.well-known/pignal', async (c) => {
   const store = c.get('store');
   const types = await store.listTypes();
   const recentPublic = await store.listPublic({ limit: 1 });
-  const lastSignalAt = recentPublic.items[0]?.vouchedAt ?? null;
+  const lastItemAt = recentPublic.items[0]?.vouchedAt ?? null;
   const settings = await store.getSettings();
 
   // Extract GitHub username from GitHub URL (e.g. "https://github.com/octocat" → "octocat")
@@ -71,22 +72,22 @@ app.get('/.well-known/pignal', async (c) => {
       name: settings.owner_name ?? '',
     },
     capabilities: {
-      signals: true,
+      items: true,
       mcp: true,
       web_ui: true,
       federation: true,
     },
     stats: {
-      public_signal_count: recentPublic.total,
-      signal_type_count: types.length,
-      last_signal_at: lastSignalAt,
+      public_item_count: recentPublic.total,
+      item_type_count: types.length,
+      last_item_at: lastItemAt,
     },
     endpoints: {
       api: '/api',
       mcp: '/mcp',
-      public_signals: '/api/public/signals',
+      public_items: '/api/public/items',
     },
-    tools: getDefaultToolManifest(),
+    tools: getDefaultToolManifest(getTemplateConfig(c.env.TEMPLATE || 'blog').mcp),
   });
 });
 
@@ -98,8 +99,8 @@ app.route('/api/public', createPublicRoutes({
 
 // Permission enforcement for authenticated API routes
 // Applied after tokenAuth (which sets authPermissions on context)
-app.use('/api/signals', tokenAuth, resolveSignalPermission, enforceWorkspaceRestriction);
-app.use('/api/signals/*', tokenAuth, resolveSignalPermission, enforceWorkspaceRestriction);
+app.use('/api/items', tokenAuth, resolveItemPermission, enforceWorkspaceRestriction);
+app.use('/api/items/*', tokenAuth, resolveItemPermission, enforceWorkspaceRestriction);
 app.use('/api/types', tokenAuth, requireByMethod('get_metadata', 'manage_types'));
 app.use('/api/types/*', tokenAuth, requireByMethod('get_metadata', 'manage_types'));
 app.use('/api/workspaces', tokenAuth, requireByMethod('get_metadata', 'manage_workspaces'));
@@ -113,7 +114,7 @@ app.use('/api/metadata', tokenAuth, requirePermission('get_metadata'));
 const noAuthConfig = {
   getStore: (c: { get: (key: 'store') => Variables['store'] }) => c.get('store'),
 };
-app.route('/api/signals', createSignalRoutes(noAuthConfig));
+app.route('/api/items', createItemRoutes(noAuthConfig));
 app.route('/api/types', createTypeRoutes(noAuthConfig));
 app.route('/api/workspaces', createWorkspaceRoutes(noAuthConfig));
 app.route('/api/settings', createSettingsRoutes(noAuthConfig));
@@ -141,6 +142,7 @@ app.all('/mcp/*', tokenAuth, mcpPermissionCheck, (c) => {
 app.route('/', createWebRoutes({
   getStore: (c) => c.get('store'),
   getApiKeyStore: (c) => new ApiKeyStore(drizzle(c.env.DB)),
+  getTemplateName: (c) => c.env.TEMPLATE || 'blog',
 }));
 
 // Global error handler

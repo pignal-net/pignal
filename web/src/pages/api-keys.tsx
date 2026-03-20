@@ -1,23 +1,23 @@
 import type { Context } from 'hono';
 import type { ApiKeyInfo, WorkspaceSelect } from '@pignal/db';
 import type { ApiKeyStore } from '@pignal/core/store/api-keys';
-import type { SignalStoreRpc } from '@pignal/db';
+import type { ItemStoreRpc } from '@pignal/db';
 import type { WebEnv } from '../types';
 import { AppLayout } from '../components/app-layout';
 import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
 
-type WebVars = { apiKeyStore: ApiKeyStore; store: SignalStoreRpc };
+type WebVars = { apiKeyStore: ApiKeyStore; store: ItemStoreRpc };
 
 /** Flat permission list for the UI. Each maps to a specific API/tool capability. */
 const PERMISSION_LIST = [
-  { value: 'save_signal', label: 'Save Signal', desc: 'Create new signals via REST API or MCP' },
-  { value: 'list_signals', label: 'List Signals', desc: 'List, view, and search signals' },
-  { value: 'edit_signal', label: 'Edit Signal', desc: 'Update, archive/unarchive, and vouch signals' },
-  { value: 'delete_signal', label: 'Delete Signal', desc: 'Permanently delete signals' },
-  { value: 'validate_signal', label: 'Validate Signal', desc: 'Apply validation actions to signals' },
+  { value: 'save_item', label: 'Save Item', desc: 'Create new items via REST API or MCP' },
+  { value: 'list_items', label: 'List Items', desc: 'List, view, and search items' },
+  { value: 'edit_item', label: 'Edit Item', desc: 'Update, archive/unarchive, and vouch items' },
+  { value: 'delete_item', label: 'Delete Item', desc: 'Permanently delete items' },
+  { value: 'validate_item', label: 'Validate Item', desc: 'Apply validation actions to items' },
   { value: 'get_metadata', label: 'Get Metadata', desc: 'View types, workspaces, stats, and settings' },
-  { value: 'manage_types', label: 'Manage Types', desc: 'Create, update, and delete signal types' },
+  { value: 'manage_types', label: 'Manage Types', desc: 'Create, update, and delete item types' },
   { value: 'manage_workspaces', label: 'Manage Workspaces', desc: 'Create, update, and delete workspaces' },
   { value: 'manage_settings', label: 'Manage Settings', desc: 'Modify server settings' },
 ] as const;

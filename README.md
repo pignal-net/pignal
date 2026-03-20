@@ -2,7 +2,7 @@
   <img src="web/src/static/logo.svg" alt="pignal" width="80" height="80" />
 </p>
 
-<h1 align="center">Pignal - A personal knowledge ledger, built from your AI conversations. Built for humans.</h1>
+<h1 align="center">Pignal — A lightweight, self-hosted content platform powered by Cloudflare</h1>
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg" alt="License: AGPL-3.0" /></a>
@@ -11,33 +11,36 @@
   <a href="https://modelcontextprotocol.io/"><img src="https://img.shields.io/badge/MCP-compatible-8A2BE2.svg" alt="MCP" /></a>
 </p>
 
-Every insight you reach, decision you land, technique that clicks — pignal lets you capture it as a signal, verify it over time, and share the ones worth standing behind.
+One Worker, one database, any domain. Pignal gives you a complete content platform — blog, shop, portfolio, docs, wiki — with a single deploy to Cloudflare Workers + D1.
 
-Not AI memory. Not a chat log. **Yours** — structured, searchable, and permanent.
+**Template-driven** — pick a layout and vocabulary that matches your domain. 
 
-In an era where AI does the thinking, pignal makes sure **you** keep the knowledge.
+**MCP-native** — create structured content directly from AI conversations via Model Context Protocol. 
 
-Self-hosted on Cloudflare. Free forever. **Your data never leaves your account**.
+**Edge-first** — SSR at Cloudflare's edge with Lighthouse 100 scores and sub-50ms responses.
+
+Runs within Cloudflare's free tier. Self-hosted, no third-party dependencies. **Your data never leaves your account**.
 
 ---
 
 <p align="center">
-  <img src="document/flow.drawio.png" alt="Architecture — MCP clients connect to your self-hosted Pignal on Cloudflare, storing private signals and syncing public ones to pignal.net" width="720" />
+  <img src="document/flow.drawio.png" alt="Architecture — MCP clients connect to your self-hosted Pignal on Cloudflare, storing private items and syncing public ones to pignal.net" width="720" />
 </p>
 
 ---
 
 ## What's Inside
 
-- **MCP server** — capture signals directly from Claude, mid-conversation
+- **Template system** — pluggable layouts (blog, shop, and more) with domain-specific vocabulary and styles
+- **MCP server** — create structured content directly from Claude, mid-conversation
 - **REST API** — full CRUD at `/api/*` with bearer token auth
-- **Web dashboard** — manage signals, types, and workspaces at `/pignal`
-- **Public source page** — vouch for a signal and it becomes your shared record
+- **Web dashboard** — manage items, types, workspaces, and settings at `/pignal`
+- **Public source pages** — publish content with SEO-optimized HTML, JSON-LD, and Atom feeds
 
 ---
 
 <p align="center">
-  <img src="document/web.png" alt="Pignal source page — browsing vouched signals by category" width="720" />
+  <img src="document/web.png" alt="Pignal source page — browsing vouched items by category" width="720" />
 </p>
 
 <p align="center">
@@ -97,6 +100,8 @@ cp wrangler.toml.example wrangler.toml
 
 Edit `wrangler.toml` and replace the placeholder `database_id` with the value from step 3.
 
+To use a non-default template, add `TEMPLATE = "shop"` (or your template name) under `[vars]` in `wrangler.toml`.
+
 ### 5. Set your secret token
 
 ```bash
@@ -106,11 +111,14 @@ npx wrangler secret put SERVER_TOKEN
 # Paste the token when prompted
 ```
 
-### 6. Apply migrations
+### 6. Apply migrations and seed data
 
 ```bash
-pnpm db:migrate:prod         # Create tables and seed data in production D1
+pnpm db:migrate:prod                                             # Create tables in production D1
+npx wrangler d1 execute pignal-server-db --remote --file=../templates/seeds/blog.sql   # Seed blog template data
 ```
+
+Replace `blog.sql` with `shop.sql` (or your template's seed file) if using a different template.
 
 ### 7. Deploy
 
@@ -182,27 +190,58 @@ Add to `claude_desktop_config.json` (requires [`mcp-remote`](https://github.com/
 | Tool | Description |
 |------|-------------|
 | `get_metadata` | Get types, workspaces, settings, and quality guidelines — **call first** |
-| `save_signal` | Capture a signal from the current conversation |
-| `list_signals` | Browse signals with filters (type, workspace, archived, visibility) |
-| `search_signals` | Full-text search across all signals |
-| `validate_signal` | Record that you confirmed, applied, or revisited a signal |
+| `save_item` | Capture an item from the current conversation |
+| `list_items` | Browse items with filters (type, workspace, archived, visibility) |
+| `search_items` | Full-text search across all items |
+| `validate_item` | Record that you confirmed, applied, or revisited an item |
+| `update_item` | Edit an existing item |
+| `vouch_item` | Change item visibility (private/unlisted/vouched) |
+| `batch_vouch_items` | Change visibility for multiple items at once |
+| `create_workspace` | Create a new workspace |
+| `create_type` | Create a new item type with validation actions |
+
+Tool descriptions and field-level schema guidance adapt automatically to the active template (e.g., blog says "Signal saved!", shop says "Product created!").
+
+---
+
+## Templates
+
+Pignal's template system lets you customize the layout, vocabulary, and MCP behavior for your domain. Two built-in templates ship out of the box:
+
+| Template | Layout | Vocabulary | Use case |
+|----------|--------|------------|----------|
+| **blog** (default) | Vertical feed + article pages | signal, type, workspace | Knowledge base, blog, docs |
+| **shop** | Sidebar + product grid | product, category, collection | Product catalog, portfolio |
+
+### Switching templates
+
+Set `source_template` in the admin UI at `/pignal/settings`, or set `TEMPLATE` in `wrangler.toml` under `[vars]`.
+
+### Creating a new template
+
+1. Add a `TemplateConfig` in `templates/src/config.ts` — vocabulary, SEO hints, MCP instructions, and `schemaDescriptions`
+2. Run `pnpm template:create <name>` from `templates/` to scaffold JSX components in `web/src/templates/<name>/`
+3. Customize `source-page.tsx`, `item-post.tsx`, `layout.tsx`, and `styles.css`
+4. (Optional) Add seed data in `templates/seeds/<name>.sql`
+
+See [`templates/TEMPLATE_GUIDE.md`](./templates/TEMPLATE_GUIDE.md) for the full contract, prop types, and checklist.
 
 ---
 
 ## Web UI
 
-Admin dashboard at `/pignal` and public source page at `/`. See [CUSTOMIZATION.md](./docs/CUSTOMIZATION.md) for theming and layout options.
+Admin dashboard at `/pignal` and public source page at `/`.
 
 | Page | Path | Description |
 |------|------|-------------|
-| Dashboard | `/pignal` | Stats overview + recent signals |
-| Signals | `/pignal/signals` | Search, filter, paginate with HTMX |
-| Detail | `/pignal/signals/:id` | View signal, validate, archive, set visibility |
-| Types | `/pignal/types` | Manage signal types + actions |
+| Dashboard | `/pignal` | Stats overview + recent items |
+| Items | `/pignal/items` | Search, filter, paginate with HTMX |
+| Detail | `/pignal/items/:id` | View item, validate, archive, set visibility |
+| Types | `/pignal/types` | Manage item types + actions |
 | Workspaces | `/pignal/workspaces` | Manage workspaces |
-| Settings | `/pignal/settings` | Source page config, runtime settings |
-| Source Page | `/` | Vouched signals with JSON-LD, OG tags, pagination |
-| Signal Post | `/source/:slug` | Individual signal with semantic HTML |
+| Settings | `/pignal/settings` | Source page config, template selection, runtime settings |
+| Source Page | `/` | Vouched items with JSON-LD, OG tags, pagination (template-driven) |
+| Item Post | `/item/:slug` | Individual item with semantic HTML (template-driven) |
 | Atom Feed | `/feed.xml` | Atom feed |
 | LLMs | `/llms.txt` | Source guide for LLMs ([llmstxt.org](https://llmstxt.org)) |
 
@@ -215,12 +254,12 @@ All `/api/*` endpoints require `Authorization: Bearer <SERVER_TOKEN>`.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Health check (no auth) |
-| GET/POST | `/api/signals` | List / Create signals |
-| GET/PATCH/DELETE | `/api/signals/:id` | Get / Update / Delete signal |
-| POST | `/api/signals/:id/validate` | Validate a signal |
-| POST | `/api/signals/:id/archive` | Archive a signal |
-| POST | `/api/signals/:id/unarchive` | Unarchive a signal |
-| POST | `/api/signals/:id/vouch` | Vouch for a signal (set visibility) |
+| GET/POST | `/api/items` | List / Create items |
+| GET/PATCH/DELETE | `/api/items/:id` | Get / Update / Delete item |
+| POST | `/api/items/:id/validate` | Validate an item |
+| POST | `/api/items/:id/archive` | Archive an item |
+| POST | `/api/items/:id/unarchive` | Unarchive an item |
+| POST | `/api/items/:id/vouch` | Vouch for an item (set visibility) |
 | GET/POST | `/api/types` | List / Create types |
 | GET/PATCH/DELETE | `/api/types/:id` | Type CRUD |
 | POST | `/api/types/:id/actions` | Add action to type |
@@ -228,29 +267,33 @@ All `/api/*` endpoints require `Authorization: Bearer <SERVER_TOKEN>`.
 | GET/PATCH/DELETE | `/api/workspaces/:id` | Workspace CRUD |
 | GET/PUT | `/api/settings` | Get / Update settings |
 | GET | `/api/stats` | Usage statistics |
-| * | `/mcp` | MCP endpoint (SSE transport) |
-| GET | `/api/public/signals` | Vouched signals (no auth) |
-| GET | `/api/public/signals/:slug` | Signal by slug (no auth) |
-| GET | `/api/public/shared/:token` | Unlisted signal (no auth) |
+| \* | `/mcp` | MCP endpoint (SSE transport) |
+| GET | `/api/public/items` | Vouched items (no auth) |
+| GET | `/api/public/items/:slug` | Item by slug (no auth) |
+| GET | `/api/public/shared/:token` | Unlisted item (no auth) |
 | GET | `/.well-known/pignal` | Federation discovery |
 
 ---
 
+## Architecture
+
 ```
 pignal/
-├── db/       @pignal/db      Drizzle ORM schemas + TypeScript types
-├── core/     @pignal/core    SignalStore, route factories, MCP tools, validation, federation
-├── web/      @pignal/web     Hono JSX SSR (admin dashboard + source page)
-└── server/   @pignal/server  Hono Worker with D1 storage + token auth
+├── db/         @pignal/db         Drizzle ORM schemas + TypeScript types
+├── core/       @pignal/core       ItemStore, route factories, MCP tools, validation, federation
+├── templates/  @pignal/templates  Template configs, vocabulary, SEO, MCP config, seed SQL
+├── web/        @pignal/web        Hono JSX SSR (admin dashboard + template JSX components)
+└── server/     @pignal/server     Hono Worker with D1 storage + token auth
 ```
 
 ```
-Request → Worker → Token Auth → Store Middleware → Route Handler → SignalStore → D1
+Request → Worker → Token Auth → Store Middleware → Route Handler → ItemStore → D1
 ```
 
-- **@pignal/db** defines schemas: signals (with visibility), signal_types, type_actions, workspaces, settings
-- **@pignal/core** implements `SignalStore` (pure business logic), route factories, Zod validation, MCP tools, and federation (`/.well-known/pignal`)
-- **@pignal/web** provides admin dashboard (HTMX) and SEO-optimized source page (JSON-LD, OG tags, semantic HTML)
+- **@pignal/db** defines schemas: items (with visibility), item_types, type_actions, workspaces, settings
+- **@pignal/core** implements `ItemStore` (pure business logic), route factories, Zod validation, MCP tools, and federation (`/.well-known/pignal`). Template-agnostic.
+- **@pignal/templates** provides template configs (vocabulary, SEO, MCP instructions, schema descriptions), `Template` interface, prop types, and seed SQL. Adding a new template config = changes only here.
+- **@pignal/web** provides admin dashboard (HTMX), template JSX components (blog, shop), and SEO-optimized source page (JSON-LD, OG tags, semantic HTML)
 - **@pignal/server** wires everything: D1 storage, token auth, REST at `/api/*`, MCP at `/mcp`, web UI at `/`
 
 ## Federation
@@ -262,9 +305,11 @@ Every instance serves `/.well-known/pignal` with owner info, capabilities, and s
 ## Local Development
 
 ```bash
+pnpm install
 cd server
 cp .dev.vars.example .dev.vars   # set SERVER_TOKEN
-pnpm db:migrate                  # create tables and seed data in local D1
+pnpm db:migrate                  # create tables in local D1
+pnpm db:seed:blog                # seed blog template data (or db:seed:shop for shop)
 pnpm dev                         # http://localhost:8787
 ```
 

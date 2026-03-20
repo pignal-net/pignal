@@ -8,11 +8,11 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./store": "./src/store/signal-store.ts",
+    "./store": "./src/store/item-store.ts",
     "./store/api-keys": "./src/store/api-keys.ts",
     "./auth/permissions": "./src/auth/permissions.ts",
     "./routes": "./src/routes/index.ts",
-    "./routes/signals": "./src/routes/signals.ts",
+    "./routes/items": "./src/routes/items.ts",
     "./routes/types": "./src/routes/types.ts",
     "./routes/workspaces": "./src/routes/workspaces.ts",
     "./routes/stats": "./src/routes/stats.ts",

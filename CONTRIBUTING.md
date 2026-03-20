@@ -62,11 +62,12 @@ Use the [feature request template](https://github.com/pignal-net/pignal/issues/n
 
 ## Architecture
 
-See the [README](./README.md#architecture) for package structure and data flow. The four packages are:
+See the [README](./README.md#architecture) for package structure and data flow. The five packages are:
 
 - **@pignal/db** — Drizzle schemas + types
-- **@pignal/core** — SignalStore, route factories, validation, MCP tools
-- **@pignal/web** — Hono JSX SSR (admin + public pages)
+- **@pignal/core** — ItemStore, route factories, validation, MCP tools (template-agnostic)
+- **@pignal/templates** — Template configs, vocabulary, SEO, MCP config, seed SQL
+- **@pignal/web** — Hono JSX SSR (admin + template components + public pages)
 - **@pignal/server** — Cloudflare Worker entry point
 
 ## Tests

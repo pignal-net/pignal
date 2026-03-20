@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import type { SignalStoreRpc } from '@pignal/db';
+import type { ItemStoreRpc } from '@pignal/db';
 import type { WebEnv } from '../types';
 import type { TypeActionSelect } from '@pignal/db';
 import { AppLayout } from '../components/app-layout';
@@ -11,7 +11,7 @@ import { formatDate } from '../lib/time';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
 import { raw } from 'hono/html';
 
-type WebVars = { store: SignalStoreRpc };
+type WebVars = { store: ItemStoreRpc };
 
 /* --- Sidebar panel components (returned as HTMX partials) --- */
 
@@ -32,8 +32,8 @@ function ValidationPanel({ id, actions, currentActionLabel, csrfToken }: {
       {actions.length > 0 && (
         <div class="action-row">
           {actions.map((action) => (
-            <form method="post" action={`/pignal/signals/${id}/validate`}
-              hx-post={`/pignal/signals/${id}/validate`}
+            <form method="post" action={`/pignal/items/${id}/validate`}
+              hx-post={`/pignal/items/${id}/validate`}
               hx-target="#validation-section"
               hx-swap="outerHTML">
               <input type="hidden" name="_csrf" value={csrfToken} />
@@ -43,8 +43,8 @@ function ValidationPanel({ id, actions, currentActionLabel, csrfToken }: {
               </button>
             </form>
           ))}
-          <form method="post" action={`/pignal/signals/${id}/validate`}
-            hx-post={`/pignal/signals/${id}/validate`}
+          <form method="post" action={`/pignal/items/${id}/validate`}
+            hx-post={`/pignal/items/${id}/validate`}
             hx-target="#validation-section"
             hx-swap="outerHTML">
             <input type="hidden" name="_csrf" value={csrfToken} />
@@ -72,8 +72,8 @@ function VisibilityPanel({ id, visibility, shareToken, slug, sourceUrl, csrfToke
   return (
     <article id="visibility-section">
       <h3>Visibility</h3>
-      <form method="post" action={`/pignal/signals/${id}/visibility`}
-        hx-post={`/pignal/signals/${id}/visibility`}
+      <form method="post" action={`/pignal/items/${id}/visibility`}
+        hx-post={`/pignal/items/${id}/visibility`}
         hx-target="#visibility-section"
         hx-swap="outerHTML">
         <input type="hidden" name="_csrf" value={csrfToken} />
@@ -91,10 +91,10 @@ function VisibilityPanel({ id, visibility, shareToken, slug, sourceUrl, csrfToke
       )}
       {visibility === 'vouched' && slug && (
         <div class="share-info">
-          <small>Source: <a href={`/signal/${slug}`}>{sourceUrl}/signal/{slug}</a></small>
+          <small>Source: <a href={`/item/${slug}`}>{sourceUrl}/item/{slug}</a></small>
           {workspaceVisibility === 'private' && workspaceName && (
             <small class="warning-note" style="display:block;color:var(--pico-color-red-500,#dc3545);margin-top:0.25rem;">
-              Workspace "{workspaceName}" is private. Change it to public in <a href="/pignal/workspaces">Workspace Settings</a> so others can see this signal.
+              Workspace "{workspaceName}" is private. Change it to public in <a href="/pignal/workspaces">Workspace Settings</a> so others can see this item.
             </small>
           )}
         </div>
@@ -114,8 +114,8 @@ function ActionsPanel({ id, isArchived, isPinned, csrfToken }: {
       <h3>Actions</h3>
       <div class="action-row">
         {!isPinned ? (
-          <form method="post" action={`/pignal/signals/${id}/pin`}
-            hx-post={`/pignal/signals/${id}/pin`}
+          <form method="post" action={`/pignal/items/${id}/pin`}
+            hx-post={`/pignal/items/${id}/pin`}
             hx-target="#actions-section"
             hx-swap="outerHTML">
             <input type="hidden" name="_csrf" value={csrfToken} />
@@ -124,8 +124,8 @@ function ActionsPanel({ id, isArchived, isPinned, csrfToken }: {
             </button>
           </form>
         ) : (
-          <form method="post" action={`/pignal/signals/${id}/unpin`}
-            hx-post={`/pignal/signals/${id}/unpin`}
+          <form method="post" action={`/pignal/items/${id}/unpin`}
+            hx-post={`/pignal/items/${id}/unpin`}
             hx-target="#actions-section"
             hx-swap="outerHTML">
             <input type="hidden" name="_csrf" value={csrfToken} />
@@ -135,8 +135,8 @@ function ActionsPanel({ id, isArchived, isPinned, csrfToken }: {
           </form>
         )}
         {!isArchived ? (
-          <form method="post" action={`/pignal/signals/${id}/archive`}
-            hx-post={`/pignal/signals/${id}/archive`}
+          <form method="post" action={`/pignal/items/${id}/archive`}
+            hx-post={`/pignal/items/${id}/archive`}
             hx-target="#actions-section"
             hx-swap="outerHTML">
             <input type="hidden" name="_csrf" value={csrfToken} />
@@ -145,8 +145,8 @@ function ActionsPanel({ id, isArchived, isPinned, csrfToken }: {
             </button>
           </form>
         ) : (
-          <form method="post" action={`/pignal/signals/${id}/unarchive`}
-            hx-post={`/pignal/signals/${id}/unarchive`}
+          <form method="post" action={`/pignal/items/${id}/unarchive`}
+            hx-post={`/pignal/items/${id}/unarchive`}
             hx-target="#actions-section"
             hx-swap="outerHTML">
             <input type="hidden" name="_csrf" value={csrfToken} />
@@ -162,47 +162,47 @@ function ActionsPanel({ id, isArchived, isPinned, csrfToken }: {
 
 /* --- Full page render --- */
 
-export async function signalDetailPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function itemDetailPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
   const store = c.get('store');
-  const [signal, types] = await Promise.all([store.get(id), store.listTypes()]);
+  const [item, types] = await Promise.all([store.get(id), store.listTypes()]);
 
-  if (!signal) {
-    return c.html(<p>Signal not found.</p>, 404);
+  if (!item) {
+    return c.html(<p>Item not found.</p>, 404);
   }
-  const currentType = types.find((t) => t.id === signal.typeId);
+  const currentType = types.find((t) => t.id === item.typeId);
   const actions = currentType?.actions ?? [];
   const csrfToken = getCsrfToken(c);
   const sourceUrl = new URL(c.req.url).origin;
-  const workspace = signal.workspaceId ? await store.getWorkspace(signal.workspaceId) : null;
-  const renderedContent = renderMarkdown(signal.content);
+  const workspace = item.workspaceId ? await store.getWorkspace(item.workspaceId) : null;
+  const renderedContent = renderMarkdown(item.content);
 
   return c.html(
-    <AppLayout title={signal.keySummary} currentPath="/pignal/signals" csrfToken={csrfToken}>
+    <AppLayout title={item.keySummary} currentPath="/pignal/items" csrfToken={csrfToken}>
       <nav class="breadcrumb">
-        <a href="/pignal/signals">&larr; Back to signals</a>
+        <a href="/pignal/items">&larr; Back to items</a>
       </nav>
 
       <div class="detail-layout">
         <article>
           <header>
-            <h1>{signal.keySummary}</h1>
+            <h1>{item.keySummary}</h1>
             <div class="post-meta">
-              <TypeBadge typeName={signal.typeName} />
-              <VisibilityBadge visibility={signal.visibility ?? 'private'} />
-              {signal.workspaceName && <span>{signal.workspaceName}</span>}
-              <time datetime={signal.createdAt}>{formatDate(signal.createdAt)}</time>
-              <span>Source: {signal.sourceAi}</span>
+              <TypeBadge typeName={item.typeName} />
+              <VisibilityBadge visibility={item.visibility ?? 'private'} />
+              {item.workspaceName && <span>{item.workspaceName}</span>}
+              <time datetime={item.createdAt}>{formatDate(item.createdAt)}</time>
+              <span>Source: {item.sourceAi}</span>
             </div>
           </header>
           <div class="content">
             {raw(renderedContent)}
           </div>
-          {signal.tags && signal.tags.length > 0 && (
-            <footer class="signal-tags-footer">
-              <div class="signal-tags">
-                {signal.tags.map((t) => (
-                  <a href={`/pignal/signals?tag=${encodeURIComponent(t)}`} class="signal-tag">#{t}</a>
+          {item.tags && item.tags.length > 0 && (
+            <footer class="item-tags-footer">
+              <div class="item-tags">
+                {item.tags.map((t) => (
+                  <a href={`/pignal/items?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
                 ))}
               </div>
             </footer>
@@ -213,23 +213,23 @@ export async function signalDetailPage(c: Context<{ Bindings: WebEnv; Variables:
           <ValidationPanel
             id={id}
             actions={actions}
-            currentActionLabel={signal.validationActionLabel}
+            currentActionLabel={item.validationActionLabel}
             csrfToken={csrfToken}
           />
           <VisibilityPanel
             id={id}
-            visibility={signal.visibility ?? 'private'}
-            shareToken={signal.shareToken}
-            slug={signal.slug}
+            visibility={item.visibility ?? 'private'}
+            shareToken={item.shareToken}
+            slug={item.slug}
             sourceUrl={sourceUrl}
             csrfToken={csrfToken}
             workspaceVisibility={workspace?.visibility ?? null}
-            workspaceName={signal.workspaceName}
+            workspaceName={item.workspaceName}
           />
           <ActionsPanel
             id={id}
-            isArchived={signal.isArchived === 1}
-            isPinned={!!signal.pinnedAt}
+            isArchived={item.isArchived === 1}
+            isPinned={!!item.pinnedAt}
             csrfToken={csrfToken}
           />
         </aside>
@@ -248,8 +248,8 @@ export async function validateHandler(c: Context<{ Bindings: WebEnv; Variables: 
   await store.validate(id, actionId || null);
 
   if (isHtmxRequest(c)) {
-    const [signal, types] = await Promise.all([store.get(id), store.listTypes()]);
-    const currentType = types.find((t) => t.id === signal!.typeId);
+    const [item, types] = await Promise.all([store.get(id), store.listTypes()]);
+    const currentType = types.find((t) => t.id === item!.typeId);
     const actions = currentType?.actions ?? [];
     const csrfToken = getCsrfToken(c);
 
@@ -258,64 +258,64 @@ export async function validateHandler(c: Context<{ Bindings: WebEnv; Variables: 
       <ValidationPanel
         id={id}
         actions={actions}
-        currentActionLabel={signal!.validationActionLabel}
+        currentActionLabel={item!.validationActionLabel}
         csrfToken={csrfToken}
       />
     );
   }
-  return c.redirect(`/pignal/signals/${id}`);
+  return c.redirect(`/pignal/items/${id}`);
 }
 
 export async function archiveHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
   const store = c.get('store');
-  const signal = await store.archive(id);
+  const item = await store.archive(id);
 
   if (isHtmxRequest(c)) {
     const csrfToken = getCsrfToken(c);
-    c.header('HX-Trigger', toastTrigger('Signal archived'));
-    return c.html(<ActionsPanel id={id} isArchived={true} isPinned={!!signal?.pinnedAt} csrfToken={csrfToken} />);
+    c.header('HX-Trigger', toastTrigger('Item archived'));
+    return c.html(<ActionsPanel id={id} isArchived={true} isPinned={!!item?.pinnedAt} csrfToken={csrfToken} />);
   }
-  return c.redirect(`/pignal/signals/${id}`);
+  return c.redirect(`/pignal/items/${id}`);
 }
 
 export async function unarchiveHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
   const store = c.get('store');
-  const signal = await store.unarchive(id);
+  const item = await store.unarchive(id);
 
   if (isHtmxRequest(c)) {
     const csrfToken = getCsrfToken(c);
-    c.header('HX-Trigger', toastTrigger('Signal unarchived'));
-    return c.html(<ActionsPanel id={id} isArchived={false} isPinned={!!signal?.pinnedAt} csrfToken={csrfToken} />);
+    c.header('HX-Trigger', toastTrigger('Item unarchived'));
+    return c.html(<ActionsPanel id={id} isArchived={false} isPinned={!!item?.pinnedAt} csrfToken={csrfToken} />);
   }
-  return c.redirect(`/pignal/signals/${id}`);
+  return c.redirect(`/pignal/items/${id}`);
 }
 
 export async function pinHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
   const store = c.get('store');
-  const signal = await store.pin(id);
+  const item = await store.pin(id);
 
   if (isHtmxRequest(c)) {
     const csrfToken = getCsrfToken(c);
-    c.header('HX-Trigger', toastTrigger('Signal pinned'));
-    return c.html(<ActionsPanel id={id} isArchived={signal?.isArchived === 1} isPinned={true} csrfToken={csrfToken} />);
+    c.header('HX-Trigger', toastTrigger('Item pinned'));
+    return c.html(<ActionsPanel id={id} isArchived={item?.isArchived === 1} isPinned={true} csrfToken={csrfToken} />);
   }
-  return c.redirect(`/pignal/signals/${id}`);
+  return c.redirect(`/pignal/items/${id}`);
 }
 
 export async function unpinHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
   const store = c.get('store');
-  const signal = await store.unpin(id);
+  const item = await store.unpin(id);
 
   if (isHtmxRequest(c)) {
     const csrfToken = getCsrfToken(c);
-    c.header('HX-Trigger', toastTrigger('Signal unpinned'));
-    return c.html(<ActionsPanel id={id} isArchived={signal?.isArchived === 1} isPinned={false} csrfToken={csrfToken} />);
+    c.header('HX-Trigger', toastTrigger('Item unpinned'));
+    return c.html(<ActionsPanel id={id} isArchived={item?.isArchived === 1} isPinned={false} csrfToken={csrfToken} />);
   }
-  return c.redirect(`/pignal/signals/${id}`);
+  return c.redirect(`/pignal/items/${id}`);
 }
 
 export async function visibilityHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
@@ -337,24 +337,24 @@ export async function visibilityHandler(c: Context<{ Bindings: WebEnv; Variables
   await store.vouch(id, { visibility });
 
   if (isHtmxRequest(c)) {
-    const signal = await store.get(id);
+    const item = await store.get(id);
     const sourceUrl = new URL(c.req.url).origin;
     const csrfToken = getCsrfToken(c);
-    const workspace = signal!.workspaceId ? await store.getWorkspace(signal!.workspaceId) : null;
+    const workspace = item!.workspaceId ? await store.getWorkspace(item!.workspaceId) : null;
 
     c.header('HX-Trigger', toastTrigger('Visibility updated'));
     return c.html(
       <VisibilityPanel
         id={id}
-        visibility={signal!.visibility ?? 'private'}
-        shareToken={signal!.shareToken}
-        slug={signal!.slug}
+        visibility={item!.visibility ?? 'private'}
+        shareToken={item!.shareToken}
+        slug={item!.slug}
         sourceUrl={sourceUrl}
         csrfToken={csrfToken}
         workspaceVisibility={workspace?.visibility ?? null}
-        workspaceName={signal!.workspaceName}
+        workspaceName={item!.workspaceName}
       />
     );
   }
-  return c.redirect(`/pignal/signals/${id}`);
+  return c.redirect(`/pignal/items/${id}`);
 }

@@ -1,4 +1,4 @@
-// Signal store schemas (signals, types, workspaces, settings)
+// Item store schemas (items, types, workspaces, settings)
 export * from './schema';
 
 // Types and interfaces

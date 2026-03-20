@@ -1,9 +1,9 @@
-// Signal Store (pure business logic)
-export { SignalStore } from './store/signal-store';
+// Item Store (pure business logic)
+export { ItemStore } from './store/item-store';
 
 // Route factories
 export {
-  createSignalRoutes,
+  createItemRoutes,
   createTypeRoutes,
   createWorkspaceRoutes,
   createStatsRoutes,
@@ -12,32 +12,32 @@ export {
 } from './routes';
 
 // Types
-export type { RouteFactoryConfig, Signal, SignalListResponse, PublicSignalField } from './types';
-export { PUBLIC_SIGNAL_FIELDS } from './types';
+export type { RouteFactoryConfig, Item, ItemListResponse, PublicItemField } from './types';
+export { PUBLIC_ITEM_FIELDS } from './types';
 
 // Validation schemas
 export * from './validation/schemas';
 
 // MCP tools
 export {
-  formatSignal,
+  formatItem,
   toIncludeSet,
   buildMetadataText,
-  saveSignal,
-  listSignals,
-  searchSignals,
-  validateSignal,
+  saveItem,
+  listItems,
+  searchItems,
+  validateItem,
   getMetadata,
   METADATA_FIELDS,
   type MetadataField,
-  saveSignalToolSchema,
-  listSignalsToolSchema,
-  searchSignalsToolSchema,
-  validateSignalToolSchema,
-  type SaveSignalToolInput,
-  type ListSignalsToolInput,
-  type SearchSignalsToolInput,
-  type ValidateSignalToolInput,
+  saveItemToolSchema,
+  listItemsToolSchema,
+  searchItemsToolSchema,
+  validateItemToolSchema,
+  type SaveItemToolInput,
+  type ListItemsToolInput,
+  type SearchItemsToolInput,
+  type ValidateItemToolInput,
 } from './mcp/tools';
 
 // Federation

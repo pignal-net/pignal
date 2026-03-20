@@ -1,13 +1,13 @@
 import type { Context } from 'hono';
-import type { SignalStoreRpc, TypeGuidance, SignalTypeWithActions } from '@pignal/db';
+import type { ItemStoreRpc, TypeGuidance, ItemTypeWithActions } from '@pignal/db';
 import type { WebEnv } from '../types';
 import { AppLayout } from '../components/app-layout';
 import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
 
-type WebVars = { store: SignalStoreRpc };
+type WebVars = { store: ItemStoreRpc };
 
-function TypeCard({ type, csrfToken }: { type: SignalTypeWithActions; csrfToken: string }) {
+function TypeCard({ type, csrfToken }: { type: ItemTypeWithActions; csrfToken: string }) {
   const guidance = type.guidance;
 
   if (type.isSystem) {

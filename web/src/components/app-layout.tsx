@@ -11,7 +11,7 @@ interface AppLayoutProps {
 }
 
 const PRIMARY_NAV = [
-  { href: '/pignal/signals', label: 'Signals' },
+  { href: '/pignal/items', label: 'Items' },
   { href: '/', label: 'Pignal' },
 ];
 

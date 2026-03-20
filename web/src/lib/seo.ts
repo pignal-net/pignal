@@ -1,4 +1,5 @@
-import type { Signal } from '@pignal/core';
+import type { Item } from '@pignal/core';
+import type { TemplateSeoHints } from '@pignal/templates';
 import type { SettingsMap } from '@pignal/db';
 import { stripMarkdown } from './markdown';
 
@@ -56,51 +57,56 @@ export function escapeHtmlAttr(str: string): string {
 }
 
 export function buildSourcePostingJsonLd(
-  signal: Signal,
+  item: Item,
   settings: SettingsMap,
   origin: string,
-  description?: string
+  description?: string,
+  seoHints?: TemplateSeoHints
 ): string {
-  const desc = description ?? stripMarkdown(signal.content).slice(0, 160);
+  const desc = description ?? stripMarkdown(item.content).slice(0, 160);
   const githubUrl = settings.source_social_github || '';
   const domain = new URL(origin).hostname;
   const authorName = settings.owner_name || settings.source_title || domain;
-  const data = {
+  const schemaType = seoHints?.itemSchemaType ?? 'BlogPosting';
+  const isProduct = schemaType === 'Product';
+
+  const data: Record<string, unknown> = {
     '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    headline: signal.keySummary,
+    '@type': schemaType,
+    // Product uses 'name'; BlogPosting uses 'headline'
+    ...(isProduct ? { name: item.keySummary } : { headline: item.keySummary }),
     description: desc,
     author: {
       '@type': 'Person',
       name: authorName,
       ...(githubUrl ? { url: githubUrl, sameAs: githubUrl } : {}),
     },
-    datePublished: signal.vouchedAt || signal.createdAt,
-    dateModified: signal.updatedAt,
+    datePublished: item.vouchedAt || item.createdAt,
+    dateModified: item.updatedAt,
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `${origin}/signal/${signal.slug}`,
+      '@id': `${origin}/item/${item.slug}`,
     },
     publisher: {
       '@type': 'Organization',
       name: 'pignal',
       url: origin,
     },
-    articleSection: signal.typeName,
-    ...(signal.tags && signal.tags.length > 0 ? { keywords: signal.tags.join(', ') } : {}),
+    ...(isProduct ? {} : { articleSection: item.typeName }),
+    ...(item.tags && item.tags.length > 0 ? { keywords: item.tags.join(', ') } : {}),
   };
 
   return escapeJsonLd(JSON.stringify(data));
 }
 
-export function buildSourceJsonLd(settings: SettingsMap, origin: string): string {
+export function buildSourceJsonLd(settings: SettingsMap, origin: string, seoHints?: TemplateSeoHints): string {
   const githubUrl = settings.source_social_github || '';
   const domain = new URL(origin).hostname;
   const data = {
     '@context': 'https://schema.org',
-    '@type': 'Blog',
-    name: settings.source_title || 'My Signals',
-    description: settings.source_description || 'Insights captured from AI conversations',
+    '@type': seoHints?.siteSchemaType ?? 'Blog',
+    name: settings.source_title || 'My Pignal',
+    description: settings.source_description || 'A self-hosted content platform powered by Cloudflare',
     url: origin,
     author: {
       '@type': 'Person',

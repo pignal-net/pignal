@@ -1,4 +1,5 @@
-import type { Signal } from '@pignal/core';
+import type { Item } from '@pignal/core';
+import type { TemplateVocabulary } from '@pignal/templates';
 import type { SettingsMap } from '@pignal/db';
 import { toIso8601 } from './time';
 
@@ -12,26 +13,28 @@ function escapeXml(str: string): string {
 }
 
 /**
- * Generate an Atom XML feed from public signals.
+ * Generate an Atom XML feed from public items.
  * Includes only metadata — no full content. Readers follow links for details.
  */
 export function generateAtomFeed(
   settings: SettingsMap,
-  signals: Signal[],
-  origin: string
+  items: Item[],
+  origin: string,
+  vocabulary?: TemplateVocabulary
 ): string {
+  const v = vocabulary ?? { itemPlural: 'items' };
   const sourceUrl = origin;
-  const title = settings.source_title || 'My Signals';
-  const description = settings.source_description || 'Insights captured from AI conversations';
+  const title = settings.source_title || 'My Pignal';
+  const description = settings.source_description || `A self-hosted platform for publishing ${v.itemPlural}`;
   const author = settings.owner_name || 'Pignal';
   const githubUrl = settings.source_social_github || '';
   const authorUri = githubUrl ? `\n    <uri>${escapeXml(githubUrl)}</uri>` : '';
-  const updated = signals.length > 0
-    ? toIso8601(signals[0].updatedAt)
+  const updated = items.length > 0
+    ? toIso8601(items[0].updatedAt)
     : new Date().toISOString();
 
-  const entries = signals.map((t) => {
-    const signalUrl = `${sourceUrl}/signal/${t.slug ?? ''}`;
+  const entries = items.map((t) => {
+    const itemUrl = `${sourceUrl}/item/${t.slug ?? ''}`;
     const tags = t.tags ?? [];
     const categories = [`    <category term="${escapeXml(t.typeName)}"/>`];
     for (const tag of tags) {
@@ -39,9 +42,9 @@ export function generateAtomFeed(
     }
     return `  <entry>
     <title>${escapeXml(t.keySummary)}</title>
-    <link href="${escapeXml(signalUrl)}" rel="alternate" type="text/html"/>
-    <link href="${escapeXml(signalUrl)}.md" rel="related" type="text/markdown" title="Markdown"/>
-    <id>${escapeXml(signalUrl)}</id>
+    <link href="${escapeXml(itemUrl)}" rel="alternate" type="text/html"/>
+    <link href="${escapeXml(itemUrl)}.md" rel="related" type="text/markdown" title="Markdown"/>
+    <id>${escapeXml(itemUrl)}</id>
     <published>${toIso8601(t.vouchedAt || t.createdAt)}</published>
     <updated>${toIso8601(t.updatedAt)}</updated>
     <author><name>${escapeXml(author)}</name>${authorUri}</author>

@@ -2,18 +2,18 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
-import type { SignalWithMeta } from '@pignal/db';
+import type { ItemWithMeta } from '@pignal/db';
 
-import type { RouteFactoryConfig, Signal, SignalListResponse } from '../types';
+import type { RouteFactoryConfig, Item, ItemListResponse } from '../types';
 import {
-  createSignalSchema,
+  createItemSchema,
   listQuerySchema,
-  updateSignalSchema,
+  updateItemSchema,
   validateSchema,
   vouchSchema,
 } from '../validation/schemas';
 
-function toSignal(row: SignalWithMeta): Signal {
+function toItem(row: ItemWithMeta): Item {
   return {
     id: row.id,
     keySummary: row.keySummary,
@@ -38,9 +38,9 @@ function toSignal(row: SignalWithMeta): Signal {
 }
 
 /**
- * Create signal routes with configurable store resolution and middleware.
+ * Create item routes with configurable store resolution and middleware.
  */
-export function createSignalRoutes(config: RouteFactoryConfig) {
+export function createItemRoutes(config: RouteFactoryConfig) {
   const router = new Hono();
 
   if (config.middleware) {
@@ -49,7 +49,7 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
     }
   }
 
-  // GET /signals
+  // GET /items
   router.get('/', zValidator('query', listQuerySchema), async (c) => {
     const store = config.getStore(c);
     const params = c.req.valid('query');
@@ -64,8 +64,8 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
       q: params.q,
     });
 
-    const response: SignalListResponse = {
-      items: result.items.map(toSignal),
+    const response: ItemListResponse = {
+      items: result.items.map(toItem),
       total: result.total,
       limit: params.limit,
       offset: params.offset,
@@ -74,7 +74,7 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
     return c.json(response);
   });
 
-  // GET /signals/:id
+  // GET /items/:id
   router.get('/:id', async (c) => {
     const store = config.getStore(c);
     const id = c.req.param('id');
@@ -82,14 +82,14 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
     const result = await store.get(id);
 
     if (!result) {
-      throw new HTTPException(404, { message: 'Signal not found' });
+      throw new HTTPException(404, { message: 'Item not found' });
     }
 
-    return c.json(toSignal(result));
+    return c.json(toItem(result));
   });
 
-  // POST /signals
-  router.post('/', zValidator('json', createSignalSchema), async (c) => {
+  // POST /items
+  router.post('/', zValidator('json', createItemSchema), async (c) => {
     const store = config.getStore(c);
     const data = c.req.valid('json');
 
@@ -106,7 +106,7 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
         sourceAi: data.sourceAi,
       });
 
-      return c.json(toSignal(result), 201);
+      return c.json(toItem(result), 201);
     } catch (err) {
       if (err instanceof Error && err.message.includes('must be at')) {
         throw new HTTPException(400, { message: err.message });
@@ -115,8 +115,8 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
     }
   });
 
-  // PATCH /signals/:id
-  router.patch('/:id', zValidator('json', updateSignalSchema), async (c) => {
+  // PATCH /items/:id
+  router.patch('/:id', zValidator('json', updateItemSchema), async (c) => {
     const store = config.getStore(c);
     const id = c.req.param('id');
     const data = c.req.valid('json');
@@ -135,10 +135,10 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
       });
 
       if (!result) {
-        throw new HTTPException(404, { message: 'Signal not found' });
+        throw new HTTPException(404, { message: 'Item not found' });
       }
 
-      return c.json(toSignal(result));
+      return c.json(toItem(result));
     } catch (err) {
       if (err instanceof Error && err.message.includes('must be at')) {
         throw new HTTPException(400, { message: err.message });
@@ -147,7 +147,7 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
     }
   });
 
-  // DELETE /signals/:id
+  // DELETE /items/:id
   router.delete('/:id', async (c) => {
     const store = config.getStore(c);
     const id = c.req.param('id');
@@ -155,13 +155,13 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
     const deleted = await store.delete(id);
 
     if (!deleted) {
-      throw new HTTPException(404, { message: 'Signal not found' });
+      throw new HTTPException(404, { message: 'Item not found' });
     }
 
     return c.json({ success: true });
   });
 
-  // POST /signals/:id/validate
+  // POST /items/:id/validate
   router.post('/:id/validate', zValidator('json', validateSchema), async (c) => {
     const store = config.getStore(c);
     const id = c.req.param('id');
@@ -170,9 +170,9 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
     try {
       const result = await store.validate(id, actionId);
       if (!result) {
-        throw new HTTPException(404, { message: 'Signal not found' });
+        throw new HTTPException(404, { message: 'Item not found' });
       }
-      return c.json(toSignal(result));
+      return c.json(toItem(result));
     } catch (err) {
       if (err instanceof Error && err.message.includes('Action')) {
         throw new HTTPException(400, { message: err.message });
@@ -181,7 +181,7 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
     }
   });
 
-  // POST /signals/:id/archive
+  // POST /items/:id/archive
   router.post('/:id/archive', async (c) => {
     const store = config.getStore(c);
     const id = c.req.param('id');
@@ -189,13 +189,13 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
     const result = await store.archive(id);
 
     if (!result) {
-      throw new HTTPException(404, { message: 'Signal not found' });
+      throw new HTTPException(404, { message: 'Item not found' });
     }
 
-    return c.json(toSignal(result));
+    return c.json(toItem(result));
   });
 
-  // POST /signals/:id/unarchive
+  // POST /items/:id/unarchive
   router.post('/:id/unarchive', async (c) => {
     const store = config.getStore(c);
     const id = c.req.param('id');
@@ -203,13 +203,13 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
     const result = await store.unarchive(id);
 
     if (!result) {
-      throw new HTTPException(404, { message: 'Signal not found' });
+      throw new HTTPException(404, { message: 'Item not found' });
     }
 
-    return c.json(toSignal(result));
+    return c.json(toItem(result));
   });
 
-  // POST /signals/:id/vouch
+  // POST /items/:id/vouch
   router.post('/:id/vouch', zValidator('json', vouchSchema), async (c) => {
     const store = config.getStore(c);
     const id = c.req.param('id');
@@ -218,10 +218,10 @@ export function createSignalRoutes(config: RouteFactoryConfig) {
     const result = await store.vouch(id, data);
 
     if (!result) {
-      throw new HTTPException(404, { message: 'Signal not found' });
+      throw new HTTPException(404, { message: 'Item not found' });
     }
 
-    return c.json(toSignal(result));
+    return c.json(toItem(result));
   });
 
   return router;

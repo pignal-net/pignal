@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import type { SignalStoreRpc } from '@pignal/db';
+import type { ItemStoreRpc } from '@pignal/db';
 import type { WebEnv } from '../types';
 import { PublicLayout } from '../components/public-layout';
 import { TypeBadge } from '../components/type-badge';
@@ -18,7 +18,7 @@ function formatAiSource(sourceAi: string): string | null {
   return parts.length === 2 ? parts[1] : sourceAi;
 }
 
-type WebVars = { store: SignalStoreRpc };
+type WebVars = { store: ItemStoreRpc };
 
 export async function sharedPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const token = c.req.param('token')!;
@@ -34,7 +34,7 @@ export async function sharedPage(c: Context<{ Bindings: WebEnv; Variables: WebVa
     return c.html(<p class="empty-state">This shared link is invalid or has expired.</p>);
   }
   const sourceUrl = new URL(c.req.url).origin;
-  const sourceTitle = settings.source_title || 'My Signals';
+  const sourceTitle = settings.source_title || 'My Pignal';
   const domain = new URL(sourceUrl).hostname;
   const sourceAuthor = settings.owner_name || settings.source_title || domain;
   const githubUrl = settings.source_social_github || '';

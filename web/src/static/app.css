@@ -357,14 +357,14 @@ section h2 {
   font-style: italic;
 }
 
-.signal-tags {
+.item-tags {
   display: flex;
   align-items: center;
   gap: 0.4em;
   flex-wrap: wrap;
   margin-top: 0.5em;
 }
-.signal-tag {
+.item-tag {
   display: inline-block;
   padding: 0.15em 0.5em;
   border-radius: 4px;
@@ -376,11 +376,11 @@ section h2 {
   white-space: nowrap;
   line-height: 1.6;
 }
-.signal-tag:hover {
+.item-tag:hover {
   color: var(--pico-primary);
   background: var(--pico-primary-focus);
 }
-.signal-tags-footer {
+.item-tags-footer {
   margin-top: calc(var(--pico-spacing) * 1.5);
   padding-top: calc(var(--pico-spacing) * 0.75);
   border-top: 1px solid var(--pico-muted-border-color);
@@ -458,9 +458,9 @@ section h2 {
 }
 
 /* ============================================================
-   Signal cards (list items)
+   Item cards (list items)
    ============================================================ */
-.signal-card {
+.item-card {
   padding: calc(var(--pico-spacing) * 1.25) 0;
   margin-bottom: 0;
   border-bottom: 1px solid var(--pico-muted-border-color);
@@ -469,23 +469,23 @@ section h2 {
   box-shadow: none;
   border-radius: 0;
 }
-.signal-card:last-of-type {
+.item-card:last-of-type {
   border-bottom: none;
 }
-.signal-card h3 {
+.item-card h3 {
   margin: 0 0 calc(var(--pico-spacing) * 0.4) 0;
   font-size: 1.05rem;
   line-height: 1.4;
 }
-.signal-card h3 a {
+.item-card h3 a {
   text-decoration: none;
   color: var(--pico-color);
   transition: color 0.15s;
 }
-.signal-card h3 a:hover {
+.item-card h3 a:hover {
   color: var(--pico-primary);
 }
-.signal-card .card-meta {
+.item-card .card-meta {
   font-size: 0.8rem;
   color: var(--pico-muted-color);
   display: flex;
@@ -494,7 +494,7 @@ section h2 {
   align-items: center;
   margin-bottom: calc(var(--pico-spacing) * 0.6);
 }
-.signal-card .card-preview {
+.item-card .card-preview {
   font-size: 0.88rem;
   color: var(--pico-muted-color);
   line-height: 1.5;
@@ -706,7 +706,7 @@ article > figure {
   display: flex;
 }
 
-.search-loading.htmx-request + #signal-list {
+.search-loading.htmx-request + #item-list {
   display: none;
 }
 
@@ -831,7 +831,7 @@ article header {
 }
 
 /* ============================================================
-   Filter bar (signals list)
+   Filter bar (items list)
    ============================================================ */
 .filter-bar {
   display: grid;
@@ -1289,42 +1289,9 @@ article header {
 .filter-bar-chips {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: calc(var(--pico-spacing) * 0.5);
   padding: calc(var(--pico-spacing) * 0.4) 0;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.filter-bar-chips::-webkit-scrollbar {
-  display: none;
-}
-.filter-bar-modes {
-  display: flex;
-  gap: 0;
-  border: 1px solid var(--pico-muted-border-color);
-  border-radius: var(--pico-border-radius);
-  flex-shrink: 0;
-}
-.filter-mode-btn {
-  padding: calc(var(--pico-spacing) * 0.3) calc(var(--pico-spacing) * 0.8);
-  font-size: 0.78rem;
-  font-weight: 500;
-  text-decoration: none;
-  color: var(--pico-muted-color);
-  transition: background 0.15s, color 0.15s;
-  border-right: 1px solid var(--pico-muted-border-color);
-}
-.filter-mode-btn:last-child {
-  border-right: none;
-}
-.filter-mode-btn:hover {
-  background: color-mix(in srgb, var(--pico-primary) 6%, transparent);
-  color: var(--pico-color);
-}
-.filter-mode-btn.active {
-  background: color-mix(in srgb, var(--pico-primary) 12%, transparent);
-  color: color-mix(in srgb, var(--pico-primary) 70%, black);
-  font-weight: 600;
 }
 .filter-bar-items {
   display: flex;
@@ -1711,6 +1678,63 @@ article header {
 }
 
 /* ============================================================
+   Workspace dropdown navigation
+   ============================================================ */
+.ws-dropdown {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.ws-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 50;
+  flex-direction: column;
+  min-width: 180px;
+  max-width: 260px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-top: 4px;
+  padding: calc(var(--pico-spacing) * 0.3) 0;
+  background: var(--pico-card-background-color);
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  scrollbar-width: thin;
+}
+.ws-dropdown:hover .ws-dropdown-menu,
+.ws-dropdown:focus-within .ws-dropdown-menu {
+  display: flex;
+}
+.ws-dropdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: calc(var(--pico-spacing) * 0.5);
+  padding: calc(var(--pico-spacing) * 0.35) calc(var(--pico-spacing) * 0.75);
+  font-size: 0.8rem;
+  text-decoration: none;
+  color: var(--pico-color);
+  transition: background 0.12s;
+  white-space: nowrap;
+}
+.ws-dropdown-item:hover {
+  background: color-mix(in srgb, var(--pico-primary) 8%, transparent);
+  color: var(--pico-primary);
+}
+.ws-dropdown-item.active {
+  color: var(--pico-primary);
+  font-weight: 600;
+}
+.ws-dropdown-count {
+  font-size: 0.72rem;
+  color: var(--pico-muted-color);
+  font-weight: 400;
+}
+
+/* ============================================================
    Responsive breakpoints — Source layouts
    ============================================================ */
 
@@ -1747,12 +1771,8 @@ article header {
   }
 
   /* Filter bar mobile */
-  .filter-bar-chips {
-    flex-wrap: wrap;
-  }
-  .filter-mode-btn {
-    font-size: 0.75rem;
-    padding: calc(var(--pico-spacing) * 0.25) calc(var(--pico-spacing) * 0.6);
+  .ws-dropdown-menu {
+    max-height: 50vh;
   }
   .filter-chip {
     font-size: 0.75rem;
@@ -1768,7 +1788,7 @@ article header {
   }
 
   /* Touch targets mobile */
-  .signal-tag {
+  .item-tag {
     padding: 0.4em 0.6em;
     min-height: 2.75rem;
     display: inline-flex;

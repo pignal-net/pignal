@@ -1,13 +1,13 @@
 import type {
-  SignalSelect,
-  SignalTypeSelect,
+  ItemSelect,
+  ItemTypeSelect,
   TypeActionSelect,
   WorkspaceSelect,
   SettingSelect,
   ApiKeySelect,
 } from './schema';
 
-export type { SignalSelect, SignalTypeSelect, TypeActionSelect, WorkspaceSelect, SettingSelect, ApiKeySelect };
+export type { ItemSelect, ItemTypeSelect, TypeActionSelect, WorkspaceSelect, SettingSelect, ApiKeySelect };
 
 export interface ApiKeyInfo {
   id: string;
@@ -19,7 +19,7 @@ export interface ApiKeyInfo {
   expiresAt: string | null;
 }
 
-export interface SignalWithMeta {
+export interface ItemWithMeta {
   id: string;
   keySummary: string;
   content: string;
@@ -53,7 +53,7 @@ export interface TypeActionDef {
   sortOrder?: number;
 }
 
-export interface SignalTypeWithActions {
+export interface ItemTypeWithActions {
   id: string;
   name: string;
   description: string | null;
@@ -151,26 +151,26 @@ export interface StatsResult {
 export type SettingsMap = Record<string, string>;
 
 export interface MetadataResult {
-  types: SignalTypeWithActions[];
+  types: ItemTypeWithActions[];
   workspaces: WorkspaceSelect[];
   settings: SettingsMap;
 }
 
-export interface SignalStoreRpc {
-  list(params?: ListParams): Promise<{ items: SignalWithMeta[]; total: number }>;
-  get(id: string): Promise<SignalWithMeta | null>;
-  create(params: CreateParams): Promise<SignalWithMeta>;
-  update(id: string, params: UpdateParams): Promise<SignalWithMeta | null>;
+export interface ItemStoreRpc {
+  list(params?: ListParams): Promise<{ items: ItemWithMeta[]; total: number }>;
+  get(id: string): Promise<ItemWithMeta | null>;
+  create(params: CreateParams): Promise<ItemWithMeta>;
+  update(id: string, params: UpdateParams): Promise<ItemWithMeta | null>;
   delete(id: string): Promise<boolean>;
-  validate(id: string, actionId: string | null): Promise<SignalWithMeta | null>;
-  archive(id: string): Promise<SignalWithMeta | null>;
-  unarchive(id: string): Promise<SignalWithMeta | null>;
+  validate(id: string, actionId: string | null): Promise<ItemWithMeta | null>;
+  archive(id: string): Promise<ItemWithMeta | null>;
+  unarchive(id: string): Promise<ItemWithMeta | null>;
   stats(): Promise<StatsResult>;
 
-  listTypes(): Promise<SignalTypeWithActions[]>;
-  getType(id: string): Promise<SignalTypeWithActions | null>;
-  createType(params: CreateTypeParams): Promise<SignalTypeWithActions>;
-  updateType(id: string, params: UpdateTypeParams): Promise<SignalTypeWithActions | null>;
+  listTypes(): Promise<ItemTypeWithActions[]>;
+  getType(id: string): Promise<ItemTypeWithActions | null>;
+  createType(params: CreateTypeParams): Promise<ItemTypeWithActions>;
+  updateType(id: string, params: UpdateTypeParams): Promise<ItemTypeWithActions | null>;
   deleteType(id: string): Promise<boolean>;
   addTypeAction(typeId: string, action: TypeActionDef): Promise<TypeActionSelect>;
   removeTypeAction(actionId: string): Promise<boolean>;
@@ -187,13 +187,13 @@ export interface SignalStoreRpc {
 
   getMetadata(): Promise<MetadataResult>;
 
-  pin(id: string): Promise<SignalWithMeta | null>;
-  unpin(id: string): Promise<SignalWithMeta | null>;
+  pin(id: string): Promise<ItemWithMeta | null>;
+  unpin(id: string): Promise<ItemWithMeta | null>;
 
-  vouch(id: string, params: VouchParams): Promise<SignalWithMeta | null>;
-  getByShareToken(token: string): Promise<SignalWithMeta | null>;
-  getBySlug(slug: string): Promise<SignalWithMeta | null>;
-  listPublic(params?: ListParams): Promise<{ items: SignalWithMeta[]; total: number }>;
-  listPublicCounts(params?: { tag?: string; q?: string }): Promise<{ total: number; byType: Record<string, number>; byWorkspace: Record<string, number> }>;
-  listCounts(params?: { tag?: string; q?: string; isArchived?: boolean }): Promise<{ total: number; byType: Record<string, number>; byWorkspace: Record<string, number> }>;
+  vouch(id: string, params: VouchParams): Promise<ItemWithMeta | null>;
+  getByShareToken(token: string): Promise<ItemWithMeta | null>;
+  getBySlug(slug: string): Promise<ItemWithMeta | null>;
+  listPublic(params?: ListParams): Promise<{ items: ItemWithMeta[]; total: number }>;
+  listPublicCounts(params?: { tag?: string; q?: string }): Promise<{ total: number; byType: Record<string, number>; byWorkspace: Record<string, number>; byWorkspaceType: Record<string, Record<string, number>> }>;
+  listCounts(params?: { tag?: string; q?: string; isArchived?: boolean }): Promise<{ total: number; byType: Record<string, number>; byWorkspace: Record<string, number>; byWorkspaceType: Record<string, Record<string, number>> }>;
 }

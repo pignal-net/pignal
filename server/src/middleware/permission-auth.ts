@@ -60,19 +60,19 @@ export function requireByMethod(readPerm: string, writePerm: string) {
 }
 
 /**
- * Signal route permission resolver middleware.
+ * Item route permission resolver middleware.
  *
  * Resolves the required permission from method + path:
- * - GET → list_signals
- * - POST (no sub-path) → save_signal
- * - PATCH → edit_signal
- * - DELETE → delete_signal
- * - POST .../validate → validate_signal
- * - POST .../archive|unarchive|vouch → edit_signal
+ * - GET → list_items
+ * - POST (no sub-path) → save_item
+ * - PATCH → edit_item
+ * - DELETE → delete_item
+ * - POST .../validate → validate_item
+ * - POST .../archive|unarchive|vouch → edit_item
  *
  * Must be applied AFTER tokenAuth (which sets authPermissions on context).
  */
-export async function resolveSignalPermission(c: HonoContext, next: Next) {
+export async function resolveItemPermission(c: HonoContext, next: Next) {
   const perms = c.get('authPermissions');
 
   if (!perms) {
@@ -83,26 +83,26 @@ export async function resolveSignalPermission(c: HonoContext, next: Next) {
   let required: string;
 
   if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
-    required = 'list_signals';
+    required = 'list_items';
   } else if (method === 'DELETE') {
-    required = 'delete_signal';
+    required = 'delete_item';
   } else if (method === 'PATCH') {
-    required = 'edit_signal';
+    required = 'edit_item';
   } else if (method === 'POST') {
     const path = c.req.path;
     if (path.endsWith('/validate')) {
-      required = 'validate_signal';
+      required = 'validate_item';
     } else if (
       path.endsWith('/archive') ||
       path.endsWith('/unarchive') ||
       path.endsWith('/vouch')
     ) {
-      required = 'edit_signal';
+      required = 'edit_item';
     } else {
-      required = 'save_signal';
+      required = 'save_item';
     }
   } else {
-    required = 'edit_signal';
+    required = 'edit_item';
   }
 
   if (!hasPermission(perms, required)) {
@@ -119,16 +119,16 @@ export async function resolveSignalPermission(c: HonoContext, next: Next) {
  * Each tool maps 1:1 to a named permission.
  */
 const MCP_TOOL_PERMISSIONS: Record<string, string> = {
-  save_signal: 'save_signal',
-  list_signals: 'list_signals',
-  search_signals: 'list_signals',
-  validate_signal: 'validate_signal',
+  save_item: 'save_item',
+  list_items: 'list_items',
+  search_items: 'list_items',
+  validate_item: 'validate_item',
   get_metadata: 'get_metadata',
-  update_signal: 'edit_signal',
+  update_item: 'edit_item',
   create_workspace: 'manage_workspaces',
   create_type: 'manage_types',
-  vouch_signal: 'edit_signal',
-  batch_vouch_signals: 'edit_signal',
+  vouch_item: 'edit_item',
+  batch_vouch_items: 'edit_item',
 };
 
 /**
@@ -189,11 +189,11 @@ export async function mcpPermissionCheck(c: HonoContext, next: Next) {
 }
 
 /**
- * Workspace restriction middleware for signal routes.
+ * Workspace restriction middleware for item routes.
  *
  * When an API key has workspace restrictions (authWorkspaceIds is non-null):
- * - POST /signals: validates body.workspaceId is in allowed list
- * - PATCH /signals/:id: validates body.workspaceId if present
+ * - POST /items: validates body.workspaceId is in allowed list
+ * - PATCH /items/:id: validates body.workspaceId if present
  * - GET requests: allowed through (filtering done at query level)
  *
  * Uses `c.req.raw.clone().json()` to read the body non-destructively,

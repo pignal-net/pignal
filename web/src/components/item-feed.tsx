@@ -1,4 +1,4 @@
-import type { Signal } from '@pignal/core';
+import type { Item } from '@pignal/core';
 import { TypeBadge } from './type-badge';
 import { VisibilityBadge } from './visibility-badge';
 import { Pagination } from './pagination';
@@ -6,15 +6,15 @@ import { formatDate, relativeTime, readingTime } from '../lib/time';
 import { stripMarkdown } from '../lib/markdown';
 
 /* ============================================================
-   Shared signal card + feed results
-   Used by both public source page (/) and admin signals page (/pignal/signals)
+   Shared item card + feed results
+   Used by both public source page (/) and admin items page (/pignal/items)
    ============================================================ */
 
-interface SignalCardProps {
-  item: Signal;
-  /** URL prefix for signal detail links. Public: '/signal' (uses slug), Admin: '/pignal/signals' (uses id) */
+interface ItemCardProps {
+  item: Item;
+  /** URL prefix for item detail links. Public: '/item' (uses slug), Admin: '/pignal/items' (uses id) */
   basePath: string;
-  /** URL prefix for tag filter links. Public: '/', Admin: '/pignal/signals' */
+  /** URL prefix for tag filter links. Public: '/', Admin: '/pignal/items' */
   tagBasePath: string;
   /** Tag query param name. Public: 'tag', Admin: 'tag' */
   tagParam?: string;
@@ -25,7 +25,7 @@ interface SignalCardProps {
   isPinned?: boolean;
 }
 
-export function SignalCard({
+export function ItemCard({
   item,
   basePath,
   tagBasePath,
@@ -34,7 +34,7 @@ export function SignalCard({
   showReadingTime = false,
   showVisibility = false,
   isPinned = false,
-}: SignalCardProps) {
+}: ItemCardProps) {
   const detailUrl = useSlug ? `${basePath}/${item.slug}` : `${basePath}/${item.id}`;
   const dateStr = useSlug
     ? formatDate(item.vouchedAt || item.createdAt)
@@ -59,9 +59,9 @@ export function SignalCard({
         {stripMarkdown(item.content).slice(0, 200)}{item.content.length > 200 ? '...' : ''}
       </p>
       {item.tags && item.tags.length > 0 && (
-        <div class="signal-tags">
+        <div class="item-tags">
           {item.tags.map((t) => (
-            <a href={`${tagBasePath}?${tagParam}=${encodeURIComponent(t)}`} class="signal-tag">#{t}</a>
+            <a href={`${tagBasePath}?${tagParam}=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
           ))}
         </div>
       )}
@@ -79,10 +79,10 @@ export function SignalCard({
 
 interface TimelineGroup {
   label: string;
-  items: Signal[];
+  items: Item[];
 }
 
-function groupByTimeline(items: Signal[], sort: 'newest' | 'oldest'): TimelineGroup[] {
+function groupByTimeline(items: Item[], sort: 'newest' | 'oldest'): TimelineGroup[] {
   if (items.length === 0) return [];
 
   const now = new Date();
@@ -92,7 +92,7 @@ function groupByTimeline(items: Signal[], sort: 'newest' | 'oldest'): TimelineGr
   weekStart.setDate(today.getDate() - dayOfWeek);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const groups = new Map<string, Signal[]>();
+  const groups = new Map<string, Item[]>();
 
   for (const item of items) {
     const d = new Date(item.vouchedAt || item.createdAt);
@@ -146,15 +146,15 @@ function groupByTimeline(items: Signal[], sort: 'newest' | 'oldest'): TimelineGr
    ============================================================ */
 
 interface FeedResultsProps {
-  items: Signal[];
+  items: Item[];
   total: number;
   limit: number;
   offset: number;
   paginationBase: string;
   sort: 'newest' | 'oldest';
-  /** Signal detail link prefix. Public: '/signal', Admin: '/pignal/signals' */
+  /** Item detail link prefix. Public: '/item', Admin: '/pignal/items' */
   basePath: string;
-  /** Tag filter link prefix. Public: '/', Admin: '/pignal/signals' */
+  /** Tag filter link prefix. Public: '/', Admin: '/pignal/items' */
   tagBasePath: string;
   tagParam?: string;
   useSlug?: boolean;
@@ -178,7 +178,7 @@ export function FeedResults({
   useSlug = true,
   showReadingTime = false,
   showVisibility = false,
-  emptyMessage = 'No signals matching this filter.',
+  emptyMessage = 'No items matching this filter.',
   htmxTarget,
 }: FeedResultsProps) {
   if (items.length === 0) {
@@ -194,7 +194,7 @@ export function FeedResults({
       {pinned.length > 0 && (
         <div class="timeline-group timeline-group--pinned">
           {pinned.map((item) => (
-            <SignalCard
+            <ItemCard
               item={item} basePath={basePath} tagBasePath={tagBasePath}
               tagParam={tagParam} useSlug={useSlug}
               showReadingTime={showReadingTime} showVisibility={showVisibility}
@@ -207,7 +207,7 @@ export function FeedResults({
         <div class="timeline-group">
           <h3 class="timeline-heading">{group.label}</h3>
           {group.items.map((item) => (
-            <SignalCard
+            <ItemCard
               item={item} basePath={basePath} tagBasePath={tagBasePath}
               tagParam={tagParam} useSlug={useSlug}
               showReadingTime={showReadingTime} showVisibility={showVisibility}

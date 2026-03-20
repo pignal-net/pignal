@@ -8,22 +8,22 @@ export interface WellKnownOwner {
 }
 
 export interface WellKnownCapabilities {
-  signals: boolean;
+  items: boolean;
   mcp: boolean;
   web_ui: boolean;
   federation: boolean;
 }
 
 export interface WellKnownStats {
-  public_signal_count: number;
-  signal_type_count: number;
-  last_signal_at: string | null;
+  public_item_count: number;
+  item_type_count: number;
+  last_item_at: string | null;
 }
 
 export interface WellKnownEndpoints {
   api: string;
   mcp: string;
-  public_signals: string;
+  public_items: string;
 }
 
 export interface WellKnownResponse {
@@ -36,7 +36,7 @@ export interface WellKnownResponse {
   tools?: ToolDefinition[];
 }
 
-export type FederationScope = 'signals:read' | 'signals:write' | 'profile:read' | 'admin';
+export type FederationScope = 'items:read' | 'items:write' | 'profile:read' | 'admin';
 
 export interface FederationTokenPayload {
   sub: string; // source ID
@@ -50,7 +50,7 @@ export interface FederationTokenPayload {
 
 export interface ToolEndpointMapping {
   method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
-  path: string; // e.g., "/api/signals", "/api/signals/{signalId}/validate"
+  path: string; // e.g., "/api/items", "/api/items/{itemId}/validate"
   pathParams?: string[]; // input params that map to {path} segments
   queryParams?: string[]; // input params mapped to query string (for GET)
   bodyParams?: string[]; // explicit body params (if omitted on POST/PATCH, all non-path/query params go to body)
@@ -69,6 +69,6 @@ export interface ToolDefinition {
   inputSchema?: Record<string, unknown>; // JSON Schema object
   annotations?: ToolAnnotations;
   endpoint: ToolEndpointMapping;
-  requiredScopes?: string[]; // Federation scopes needed (e.g., ["signals:write"])
-  responseFormat?: 'signal' | 'signal_list' | 'metadata' | 'raw';
+  requiredScopes?: string[]; // Federation scopes needed (e.g., ["items:write"])
+  responseFormat?: 'item' | 'item_list' | 'metadata' | 'raw';
 }

@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 
-import type { SignalStoreRpc } from '@pignal/db';
+import type { ItemStoreRpc } from '@pignal/db';
 import type { ApiKeyStore } from '@pignal/core/store/api-keys';
 
 export type WebEnv = {
@@ -8,6 +8,7 @@ export type WebEnv = {
 };
 
 export interface WebRouteConfig {
-  getStore: (c: Context) => SignalStoreRpc;
+  getStore: (c: Context) => ItemStoreRpc;
   getApiKeyStore?: (c: Context) => ApiKeyStore;
+  getTemplateName: (c: Context) => string;
 }

@@ -5,8 +5,8 @@ interface SourceActionBarProps {
 }
 
 export function SourceActionBar({ slug, sourceUrl, showRawLink = true }: SourceActionBarProps) {
-  const rawMdUrl = slug ? `/signal/${slug}.md` : undefined;
-  const fullMdUrl = slug ? `${sourceUrl}/signal/${slug}.md` : undefined;
+  const rawMdUrl = slug ? `/item/${slug}.md` : undefined;
+  const fullMdUrl = slug ? `${sourceUrl}/item/${slug}.md` : undefined;
 
   return (
     <div class="source-actions">

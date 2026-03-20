@@ -1,30 +1,30 @@
 import type {
-  SignalWithMeta,
-  SignalStoreRpc,
+  ItemWithMeta,
+  ItemStoreRpc,
   MetadataResult,
-  SignalTypeWithActions,
+  ItemTypeWithActions,
   WorkspaceSelect,
 } from '@pignal/db';
 
 import {
-  saveSignalToolSchema,
-  listSignalsToolSchema,
-  searchSignalsToolSchema,
-  validateSignalToolSchema,
-  updateSignalToolSchema,
+  saveItemToolSchema,
+  listItemsToolSchema,
+  searchItemsToolSchema,
+  validateItemToolSchema,
+  updateItemToolSchema,
   createWorkspaceToolSchema,
   createTypeToolSchema,
-  vouchSignalToolSchema,
-  batchVouchSignalsToolSchema,
-  type SaveSignalToolInput,
-  type ListSignalsToolInput,
-  type SearchSignalsToolInput,
-  type ValidateSignalToolInput,
-  type UpdateSignalToolInput,
+  vouchItemToolSchema,
+  batchVouchItemsToolSchema,
+  type SaveItemToolInput,
+  type ListItemsToolInput,
+  type SearchItemsToolInput,
+  type ValidateItemToolInput,
+  type UpdateItemToolInput,
   type CreateWorkspaceToolInput,
   type CreateTypeToolInput,
-  type VouchSignalToolInput,
-  type BatchVouchSignalsToolInput,
+  type VouchItemToolInput,
+  type BatchVouchItemsToolInput,
 } from '../validation/schemas';
 
 // --- Metadata fields for formatting ---
@@ -42,7 +42,7 @@ export type MetadataField = (typeof METADATA_FIELDS)[number];
 
 // --- Formatting utilities ---
 
-export function formatSignal(s: SignalWithMeta, include?: Set<MetadataField>): string {
+export function formatItem(s: ItemWithMeta, include?: Set<MetadataField>): string {
   const meta = [s.typeName, s.workspaceName ?? 'No workspace'];
   if (s.validationActionLabel) meta.push(s.validationActionLabel);
   if (s.isArchived === 1) meta.push('Archived');
@@ -78,7 +78,7 @@ export function formatWorkspace(w: WorkspaceSelect): string {
   return lines.join('\n');
 }
 
-export function formatType(t: SignalTypeWithActions): string {
+export function formatType(t: ItemTypeWithActions): string {
   const lines = [`ID: ${t.id}`, `**${t.icon ?? '•'} ${t.name}**`];
   if (t.description) lines.push(t.description);
   if (t.color) lines.push(`Color: ${t.color}`);
@@ -118,7 +118,20 @@ function parseJsonSetting<T>(value: string | undefined, fallback: T): T {
   }
 }
 
-export function buildMetadataText(metadata: MetadataResult): string {
+/** Vocabulary for domain-specific terminology in metadata text. Structurally compatible with TemplateVocabulary from @pignal/templates. */
+interface Vocabulary {
+  item: string;
+  itemPlural: string;
+  type: string;
+  typePlural: string;
+  workspace: string;
+  workspacePlural: string;
+  vouch: string;
+  vouched: string;
+}
+
+export function buildMetadataText(metadata: MetadataResult, vocabulary?: Vocabulary): string {
+  const v = vocabulary ?? { item: 'item', itemPlural: 'items', type: 'type', typePlural: 'types', workspace: 'workspace', workspacePlural: 'workspaces', vouch: 'vouch', vouched: 'vouched' };
   const guidelines = parseJsonSetting<QualityGuidelines>(
     metadata.settings.quality_guidelines,
     {}
@@ -163,8 +176,8 @@ export function buildMetadataText(metadata: MetadataResult): string {
 
   qualityLines.push(
     'General:',
-    '- Always choose the most specific type that fits.',
-    '- Assign a workspace if the signal clearly belongs to one context.'
+    `- Always choose the most specific ${v.type} that fits.`,
+    `- Assign a ${v.workspace} if the ${v.item} clearly belongs to one context.`
   );
 
   const typesText = metadata.types
@@ -189,21 +202,21 @@ export function buildMetadataText(metadata: MetadataResult): string {
   return [
     qualityLines.join('\n'),
     '',
-    '== TYPES ==',
+    `== ${v.typePlural.toUpperCase()} ==`,
     typesText,
     '',
-    '== WORKSPACES ==',
+    `== ${v.workspacePlural.toUpperCase()} ==`,
     workspacesText,
   ].join('\n');
 }
 
 // --- Tool operation functions ---
 
-export async function saveSignal(
-  store: SignalStoreRpc,
-  input: SaveSignalToolInput,
+export async function saveItem(
+  store: ItemStoreRpc,
+  input: SaveItemToolInput,
   sourceAi: string
-): Promise<SignalWithMeta> {
+): Promise<ItemWithMeta> {
   return store.create({
     id: crypto.randomUUID(),
     keySummary: input.keySummary,
@@ -215,10 +228,10 @@ export async function saveSignal(
   });
 }
 
-export async function listSignals(
-  store: SignalStoreRpc,
-  input: ListSignalsToolInput
-): Promise<{ items: SignalWithMeta[]; total: number }> {
+export async function listItems(
+  store: ItemStoreRpc,
+  input: ListItemsToolInput
+): Promise<{ items: ItemWithMeta[]; total: number }> {
   return store.list({
     typeId: input.typeId,
     workspaceId: input.workspaceId,
@@ -228,10 +241,10 @@ export async function listSignals(
   });
 }
 
-export async function searchSignals(
-  store: SignalStoreRpc,
-  input: SearchSignalsToolInput
-): Promise<{ items: SignalWithMeta[]; total: number }> {
+export async function searchItems(
+  store: ItemStoreRpc,
+  input: SearchItemsToolInput
+): Promise<{ items: ItemWithMeta[]; total: number }> {
   return store.list({
     q: input.query,
     typeId: input.typeId,
@@ -240,27 +253,27 @@ export async function searchSignals(
   });
 }
 
-export async function validateSignal(
-  store: SignalStoreRpc,
-  input: ValidateSignalToolInput
-): Promise<SignalWithMeta | null> {
-  return store.validate(input.signalId, input.actionId);
+export async function validateItem(
+  store: ItemStoreRpc,
+  input: ValidateItemToolInput
+): Promise<ItemWithMeta | null> {
+  return store.validate(input.itemId, input.actionId);
 }
 
-export async function getMetadata(store: SignalStoreRpc): Promise<MetadataResult> {
+export async function getMetadata(store: ItemStoreRpc): Promise<MetadataResult> {
   return store.getMetadata();
 }
 
-export async function updateSignal(
-  store: SignalStoreRpc,
-  input: UpdateSignalToolInput
-): Promise<SignalWithMeta | null> {
-  const { signalId, ...updateFields } = input;
-  return store.update(signalId, updateFields);
+export async function updateItem(
+  store: ItemStoreRpc,
+  input: UpdateItemToolInput
+): Promise<ItemWithMeta | null> {
+  const { itemId, ...updateFields } = input;
+  return store.update(itemId, updateFields);
 }
 
 export async function createWorkspace(
-  store: SignalStoreRpc,
+  store: ItemStoreRpc,
   input: CreateWorkspaceToolInput
 ): Promise<WorkspaceSelect> {
   return store.createWorkspace({
@@ -272,9 +285,9 @@ export async function createWorkspace(
 }
 
 export async function createType(
-  store: SignalStoreRpc,
+  store: ItemStoreRpc,
   input: CreateTypeToolInput
-): Promise<SignalTypeWithActions> {
+): Promise<ItemTypeWithActions> {
   return store.createType({
     id: crypto.randomUUID(),
     name: input.name,
@@ -286,26 +299,26 @@ export async function createType(
   });
 }
 
-export async function vouchSignal(
-  store: SignalStoreRpc,
-  input: VouchSignalToolInput
-): Promise<SignalWithMeta | null> {
-  return store.vouch(input.signalId, {
+export async function vouchItem(
+  store: ItemStoreRpc,
+  input: VouchItemToolInput
+): Promise<ItemWithMeta | null> {
+  return store.vouch(input.itemId, {
     visibility: input.visibility,
     slug: input.slug,
   });
 }
 
-export async function batchVouchSignals(
-  store: SignalStoreRpc,
-  input: BatchVouchSignalsToolInput
+export async function batchVouchItems(
+  store: ItemStoreRpc,
+  input: BatchVouchItemsToolInput
 ): Promise<{ succeeded: { id: string; slug: string | null; visibility: string }[]; failed: { id: string; error: string }[] }> {
   const succeeded: { id: string; slug: string | null; visibility: string }[] = [];
   const failed: { id: string; error: string }[] = [];
 
-  for (const item of input.signals) {
+  for (const item of input.items) {
     try {
-      const result = await store.vouch(item.signalId, {
+      const result = await store.vouch(item.itemId, {
         visibility: item.visibility,
         slug: item.slug,
       });
@@ -316,11 +329,11 @@ export async function batchVouchSignals(
           visibility: result.visibility ?? item.visibility,
         });
       } else {
-        failed.push({ id: item.signalId, error: 'Signal not found' });
+        failed.push({ id: item.itemId, error: 'Item not found' });
       }
     } catch (err) {
       failed.push({
-        id: item.signalId,
+        id: item.itemId,
         error: err instanceof Error ? err.message : 'Unknown error',
       });
     }
@@ -332,22 +345,22 @@ export async function batchVouchSignals(
 // --- Re-export schemas for tool registration ---
 
 export {
-  saveSignalToolSchema,
-  listSignalsToolSchema,
-  searchSignalsToolSchema,
-  validateSignalToolSchema,
-  updateSignalToolSchema,
+  saveItemToolSchema,
+  listItemsToolSchema,
+  searchItemsToolSchema,
+  validateItemToolSchema,
+  updateItemToolSchema,
   createWorkspaceToolSchema,
   createTypeToolSchema,
-  vouchSignalToolSchema,
-  batchVouchSignalsToolSchema,
-  type SaveSignalToolInput,
-  type ListSignalsToolInput,
-  type SearchSignalsToolInput,
-  type ValidateSignalToolInput,
-  type UpdateSignalToolInput,
+  vouchItemToolSchema,
+  batchVouchItemsToolSchema,
+  type SaveItemToolInput,
+  type ListItemsToolInput,
+  type SearchItemsToolInput,
+  type ValidateItemToolInput,
+  type UpdateItemToolInput,
   type CreateWorkspaceToolInput,
   type CreateTypeToolInput,
-  type VouchSignalToolInput,
-  type BatchVouchSignalsToolInput,
+  type VouchItemToolInput,
+  type BatchVouchItemsToolInput,
 };

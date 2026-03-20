@@ -1,32 +1,32 @@
 import type { Context, MiddlewareHandler } from 'hono';
 
-import type { SignalStoreRpc } from '@pignal/db';
+import type { ItemStoreRpc } from '@pignal/db';
 
 /**
  * Configuration for route factories.
- * - `getStore`: How to obtain a SignalStoreRpc for the current request
+ * - `getStore`: How to obtain an ItemStoreRpc for the current request
  *   (any Drizzle SQLite database instance)
  * - `middleware`: Optional middleware to apply to all routes (auth, etc.)
  */
 export interface RouteFactoryConfig {
-  getStore: (c: Context) => SignalStoreRpc;
+  getStore: (c: Context) => ItemStoreRpc;
   middleware?: MiddlewareHandler[];
 }
 
 /** Fields safe to expose on public API endpoints. */
-export const PUBLIC_SIGNAL_FIELDS = [
+export const PUBLIC_ITEM_FIELDS = [
   'id', 'keySummary', 'content', 'typeId', 'typeName',
   'workspaceId', 'workspaceName',
   'sourceAi', 'validationActionLabel', 'tags',
   'slug', 'vouchedAt', 'createdAt', 'updatedAt',
 ] as const;
 
-export type PublicSignalField = (typeof PUBLIC_SIGNAL_FIELDS)[number];
+export type PublicItemField = (typeof PUBLIC_ITEM_FIELDS)[number];
 
 /**
- * Signal response type with boolean isArchived (converted from integer).
+ * Item response type with boolean isArchived (converted from integer).
  */
-export type Signal = {
+export type Item = {
   id: string;
   keySummary: string;
   content: string;
@@ -48,8 +48,8 @@ export type Signal = {
   updatedAt: string;
 };
 
-export type SignalListResponse = {
-  items: Signal[];
+export type ItemListResponse = {
+  items: Item[];
   total: number;
   limit: number;
   offset: number;

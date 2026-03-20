@@ -2,13 +2,13 @@ import { and, asc, count, desc, eq, gt, inArray, isNotNull, isNull, like, or, sq
 import type { BaseSQLiteDatabase } from 'drizzle-orm/sqlite-core';
 
 import {
-  signals,
-  signalTypes,
+  items,
+  itemTypes,
   typeActions,
   workspaces,
   settings,
-  type SignalInsert,
-  type SignalTypeSelect,
+  type ItemInsert,
+  type ItemTypeSelect,
   type TypeActionSelect,
   type WorkspaceSelect,
 } from '@pignal/db/schema';
@@ -20,9 +20,9 @@ import type {
   VouchParams,
   StatsResult,
   ValidationStats,
-  SignalStoreRpc,
-  SignalWithMeta,
-  SignalTypeWithActions,
+  ItemStoreRpc,
+  ItemWithMeta,
+  ItemTypeWithActions,
   CreateTypeParams,
   UpdateTypeParams,
   TypeActionDef,
@@ -34,11 +34,11 @@ import type {
 } from '@pignal/db';
 
 /**
- * Pure business logic for signal storage.
+ * Pure business logic for item storage.
  * Accepts any Drizzle SQLite database instance (DO SQLite or D1).
  * Zero Cloudflare-specific code — can run in any environment with a compatible DB.
  */
-export class SignalStore implements SignalStoreRpc {
+export class ItemStore implements ItemStoreRpc {
   private settingsCache: { value: SettingsMap; expiresAt: number } | null = null;
   private static readonly SETTINGS_TTL_MS = 60_000; // 1 minute
 
@@ -47,28 +47,28 @@ export class SignalStore implements SignalStoreRpc {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(private db: BaseSQLiteDatabase<any, any>) {}
 
-  // --- Signal methods ---
+  // --- Item methods ---
 
-  private readonly signalWithMetaSelect = {
-    id: signals.id,
-    keySummary: signals.keySummary,
-    content: signals.content,
-    typeId: signals.typeId,
-    typeName: signalTypes.name,
-    workspaceId: signals.workspaceId,
+  private readonly itemWithMetaSelect = {
+    id: items.id,
+    keySummary: items.keySummary,
+    content: items.content,
+    typeId: items.typeId,
+    typeName: itemTypes.name,
+    workspaceId: items.workspaceId,
     workspaceName: workspaces.name,
-    sourceAi: signals.sourceAi,
-    validationActionId: signals.validationActionId,
+    sourceAi: items.sourceAi,
+    validationActionId: items.validationActionId,
     validationActionLabel: typeActions.label,
-    tags: signals.tags,
-    pinnedAt: signals.pinnedAt,
-    isArchived: signals.isArchived,
-    visibility: signals.visibility,
-    slug: signals.slug,
-    shareToken: signals.shareToken,
-    vouchedAt: signals.vouchedAt,
-    createdAt: signals.createdAt,
-    updatedAt: signals.updatedAt,
+    tags: items.tags,
+    pinnedAt: items.pinnedAt,
+    isArchived: items.isArchived,
+    visibility: items.visibility,
+    slug: items.slug,
+    shareToken: items.shareToken,
+    vouchedAt: items.vouchedAt,
+    createdAt: items.createdAt,
+    updatedAt: items.updatedAt,
   };
 
   /** Parse tags JSON string into string array. */
@@ -90,79 +90,79 @@ export class SignalStore implements SignalStoreRpc {
     return normalized.length > 0 ? normalized : null;
   }
 
-  /** Convert raw DB row to SignalWithMeta with parsed tags. */
+  /** Convert raw DB row to ItemWithMeta with parsed tags. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private withParsedTags(row: any): SignalWithMeta {
+  private withParsedTags(row: any): ItemWithMeta {
     return { ...row, tags: this.parseTags(row.tags) };
   }
 
-  private async getWithMeta(id: string): Promise<SignalWithMeta | null> {
+  private async getWithMeta(id: string): Promise<ItemWithMeta | null> {
     const result = await this.db
-      .select(this.signalWithMetaSelect)
-      .from(signals)
-      .innerJoin(signalTypes, eq(signals.typeId, signalTypes.id))
-      .leftJoin(workspaces, eq(signals.workspaceId, workspaces.id))
-      .leftJoin(typeActions, eq(signals.validationActionId, typeActions.id))
-      .where(eq(signals.id, id))
+      .select(this.itemWithMetaSelect)
+      .from(items)
+      .innerJoin(itemTypes, eq(items.typeId, itemTypes.id))
+      .leftJoin(workspaces, eq(items.workspaceId, workspaces.id))
+      .leftJoin(typeActions, eq(items.validationActionId, typeActions.id))
+      .where(eq(items.id, id))
       .limit(1);
 
     return result[0] ? this.withParsedTags(result[0]) : null;
   }
 
-  async list(params: ListParams = {}): Promise<{ items: SignalWithMeta[]; total: number }> {
+  async list(params: ListParams = {}): Promise<{ items: ItemWithMeta[]; total: number }> {
     const { typeId, workspaceId, isArchived = false, visibility, limit = 50, offset = 0, q, tag, sort = 'newest' } = params;
 
-    const conditions = [eq(signals.isArchived, isArchived ? 1 : 0)];
+    const conditions = [eq(items.isArchived, isArchived ? 1 : 0)];
 
     if (typeId) {
-      conditions.push(eq(signals.typeId, typeId));
+      conditions.push(eq(items.typeId, typeId));
     }
     if (workspaceId) {
-      conditions.push(eq(signals.workspaceId, workspaceId));
+      conditions.push(eq(items.workspaceId, workspaceId));
     }
     if (visibility) {
-      conditions.push(eq(signals.visibility, visibility));
+      conditions.push(eq(items.visibility, visibility));
     }
     if (q) {
       const escaped = q.replace(/[%_]/g, '\\$&');
       conditions.push(
         or(
-          like(signals.keySummary, `%${escaped}%`),
-          like(signals.content, `%${escaped}%`)
+          like(items.keySummary, `%${escaped}%`),
+          like(items.content, `%${escaped}%`)
         )!
       );
     }
     if (tag) {
       // Match tag within JSON array: '["tag1","tag2"]' contains '"tagname"'
       const escaped = tag.toLowerCase().replace(/[%_"]/g, '\\$&');
-      conditions.push(like(signals.tags, `%"${escaped}"%`));
+      conditions.push(like(items.tags, `%"${escaped}"%`));
     }
 
     const whereClause = and(...conditions);
 
     // Pinned first, then by date
     const orderClauses = sort === 'oldest'
-      ? [sql`${signals.pinnedAt} IS NULL ASC`, desc(signals.pinnedAt), asc(signals.createdAt)]
-      : [sql`${signals.pinnedAt} IS NULL ASC`, desc(signals.pinnedAt), desc(signals.createdAt)];
+      ? [sql`${items.pinnedAt} IS NULL ASC`, desc(items.pinnedAt), asc(items.createdAt)]
+      : [sql`${items.pinnedAt} IS NULL ASC`, desc(items.pinnedAt), desc(items.createdAt)];
 
-    const [items, totalResult] = await Promise.all([
+    const [listItems, totalResult] = await Promise.all([
       this.db
-        .select(this.signalWithMetaSelect)
-        .from(signals)
-        .innerJoin(signalTypes, eq(signals.typeId, signalTypes.id))
-        .leftJoin(workspaces, eq(signals.workspaceId, workspaces.id))
-        .leftJoin(typeActions, eq(signals.validationActionId, typeActions.id))
+        .select(this.itemWithMetaSelect)
+        .from(items)
+        .innerJoin(itemTypes, eq(items.typeId, itemTypes.id))
+        .leftJoin(workspaces, eq(items.workspaceId, workspaces.id))
+        .leftJoin(typeActions, eq(items.validationActionId, typeActions.id))
         .where(whereClause)
         .orderBy(...orderClauses)
         .limit(limit)
         .offset(offset),
-      this.db.select({ count: count() }).from(signals).where(whereClause),
+      this.db.select({ count: count() }).from(items).where(whereClause),
     ]);
 
-    return { items: items.map((r) => this.withParsedTags(r)), total: totalResult[0]?.count ?? 0 };
+    return { items: listItems.map((r) => this.withParsedTags(r)), total: totalResult[0]?.count ?? 0 };
   }
 
-  async get(id: string): Promise<SignalWithMeta | null> {
+  async get(id: string): Promise<ItemWithMeta | null> {
     return this.getWithMeta(id);
   }
 
@@ -193,7 +193,7 @@ export class SignalStore implements SignalStoreRpc {
     }
   }
 
-  async create(params: CreateParams): Promise<SignalWithMeta> {
+  async create(params: CreateParams): Promise<ItemWithMeta> {
     const limits = await this.getValidationLimits();
     this.enforceSoftLimits(limits, {
       keySummary: params.keySummary,
@@ -205,7 +205,7 @@ export class SignalStore implements SignalStoreRpc {
 
     const normalizedTags = this.normalizeTags(params.tags);
 
-    const data: SignalInsert = {
+    const data: ItemInsert = {
       id: params.id,
       keySummary: params.keySummary,
       content: params.content,
@@ -217,20 +217,20 @@ export class SignalStore implements SignalStoreRpc {
       updatedAt: now,
     };
 
-    await this.db.insert(signals).values(data);
+    await this.db.insert(items).values(data);
 
     const created = await this.getWithMeta(params.id);
     if (!created) {
-      throw new Error('Failed to create signal');
+      throw new Error('Failed to create item');
     }
     return created;
   }
 
-  async update(id: string, params: UpdateParams): Promise<SignalWithMeta | null> {
+  async update(id: string, params: UpdateParams): Promise<ItemWithMeta | null> {
     const existing = await this.db
-      .select({ id: signals.id })
-      .from(signals)
-      .where(eq(signals.id, id))
+      .select({ id: items.id })
+      .from(items)
+      .where(eq(items.id, id))
       .limit(1);
     if (!existing[0]) return null;
 
@@ -240,7 +240,7 @@ export class SignalStore implements SignalStoreRpc {
       content: params.content,
     });
 
-    const updates: Partial<SignalInsert> = {
+    const updates: Partial<ItemInsert> = {
       updatedAt: new Date().toISOString(),
     };
 
@@ -261,28 +261,28 @@ export class SignalStore implements SignalStoreRpc {
       (updates as Record<string, unknown>).tags = normalizedTags ? JSON.stringify(normalizedTags) : null;
     }
 
-    await this.db.update(signals).set(updates).where(eq(signals.id, id));
+    await this.db.update(items).set(updates).where(eq(items.id, id));
 
     return this.getWithMeta(id);
   }
 
   async delete(id: string): Promise<boolean> {
     const existing = await this.db
-      .select({ id: signals.id })
-      .from(signals)
-      .where(eq(signals.id, id))
+      .select({ id: items.id })
+      .from(items)
+      .where(eq(items.id, id))
       .limit(1);
     if (!existing[0]) return false;
 
-    await this.db.delete(signals).where(eq(signals.id, id));
+    await this.db.delete(items).where(eq(items.id, id));
     return true;
   }
 
-  async validate(id: string, actionId: string | null): Promise<SignalWithMeta | null> {
+  async validate(id: string, actionId: string | null): Promise<ItemWithMeta | null> {
     const existing = await this.db
-      .select({ id: signals.id, typeId: signals.typeId })
-      .from(signals)
-      .where(eq(signals.id, id))
+      .select({ id: items.id, typeId: items.typeId })
+      .from(items)
+      .where(eq(items.id, id))
       .limit(1);
     if (!existing[0]) return null;
 
@@ -297,88 +297,88 @@ export class SignalStore implements SignalStoreRpc {
         throw new Error('Action not found');
       }
       if (action[0].typeId !== existing[0].typeId) {
-        throw new Error('Action does not belong to this signal type');
+        throw new Error('Action does not belong to this item type');
       }
     }
 
     await this.db
-      .update(signals)
+      .update(items)
       .set({
         validationActionId: actionId,
         updatedAt: new Date().toISOString(),
       })
-      .where(eq(signals.id, id));
+      .where(eq(items.id, id));
 
     return this.getWithMeta(id);
   }
 
-  async archive(id: string): Promise<SignalWithMeta | null> {
+  async archive(id: string): Promise<ItemWithMeta | null> {
     const existing = await this.db
-      .select({ id: signals.id })
-      .from(signals)
-      .where(eq(signals.id, id))
+      .select({ id: items.id })
+      .from(items)
+      .where(eq(items.id, id))
       .limit(1);
     if (!existing[0]) return null;
 
     await this.db
-      .update(signals)
+      .update(items)
       .set({ isArchived: 1, updatedAt: new Date().toISOString() })
-      .where(eq(signals.id, id));
+      .where(eq(items.id, id));
 
     return this.getWithMeta(id);
   }
 
-  async unarchive(id: string): Promise<SignalWithMeta | null> {
+  async unarchive(id: string): Promise<ItemWithMeta | null> {
     const existing = await this.db
-      .select({ id: signals.id })
-      .from(signals)
-      .where(eq(signals.id, id))
+      .select({ id: items.id })
+      .from(items)
+      .where(eq(items.id, id))
       .limit(1);
     if (!existing[0]) return null;
 
     await this.db
-      .update(signals)
+      .update(items)
       .set({ isArchived: 0, updatedAt: new Date().toISOString() })
-      .where(eq(signals.id, id));
+      .where(eq(items.id, id));
 
     return this.getWithMeta(id);
   }
 
-  async pin(id: string): Promise<SignalWithMeta | null> {
+  async pin(id: string): Promise<ItemWithMeta | null> {
     const existing = await this.db
-      .select({ id: signals.id })
-      .from(signals)
-      .where(eq(signals.id, id))
+      .select({ id: items.id })
+      .from(items)
+      .where(eq(items.id, id))
       .limit(1);
     if (!existing[0]) return null;
 
     await this.db
-      .update(signals)
+      .update(items)
       .set({ pinnedAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
-      .where(eq(signals.id, id));
+      .where(eq(items.id, id));
 
     return this.getWithMeta(id);
   }
 
-  async unpin(id: string): Promise<SignalWithMeta | null> {
+  async unpin(id: string): Promise<ItemWithMeta | null> {
     const existing = await this.db
-      .select({ id: signals.id })
-      .from(signals)
-      .where(eq(signals.id, id))
+      .select({ id: items.id })
+      .from(items)
+      .where(eq(items.id, id))
       .limit(1);
     if (!existing[0]) return null;
 
     await this.db
-      .update(signals)
+      .update(items)
       .set({ pinnedAt: null, updatedAt: new Date().toISOString() })
-      .where(eq(signals.id, id));
+      .where(eq(items.id, id));
 
     return this.getWithMeta(id);
   }
 
   async stats(): Promise<StatsResult> {
-    const notArchivedCondition = eq(signals.isArchived, 0);
-    const archivedCondition = eq(signals.isArchived, 1);
+    const notArchivedCondition = eq(items.isArchived, 0);
+    const archivedCondition = eq(items.isArchived, 1);
 
     // Run all stats queries in parallel
     const [
@@ -390,33 +390,33 @@ export class SignalStore implements SignalStoreRpc {
       unvalidatedResult,
       byActionResult,
     ] = await Promise.all([
-      this.db.select({ count: count() }).from(signals).where(notArchivedCondition),
-      this.db.select({ count: count() }).from(signals).where(archivedCondition),
+      this.db.select({ count: count() }).from(items).where(notArchivedCondition),
+      this.db.select({ count: count() }).from(items).where(archivedCondition),
       this.db
-        .select({ name: signalTypes.name, count: count() })
-        .from(signals)
-        .innerJoin(signalTypes, eq(signals.typeId, signalTypes.id))
+        .select({ name: itemTypes.name, count: count() })
+        .from(items)
+        .innerJoin(itemTypes, eq(items.typeId, itemTypes.id))
         .where(notArchivedCondition)
-        .groupBy(signalTypes.name),
+        .groupBy(itemTypes.name),
       this.db
         .select({ name: workspaces.name, count: count() })
-        .from(signals)
-        .innerJoin(workspaces, eq(signals.workspaceId, workspaces.id))
-        .where(and(notArchivedCondition, isNotNull(signals.workspaceId)))
+        .from(items)
+        .innerJoin(workspaces, eq(items.workspaceId, workspaces.id))
+        .where(and(notArchivedCondition, isNotNull(items.workspaceId)))
         .groupBy(workspaces.name),
       this.db
         .select({ count: count() })
-        .from(signals)
-        .where(and(notArchivedCondition, isNotNull(signals.validationActionId))),
+        .from(items)
+        .where(and(notArchivedCondition, isNotNull(items.validationActionId))),
       this.db
         .select({ count: count() })
-        .from(signals)
-        .where(and(notArchivedCondition, sql`${signals.validationActionId} IS NULL`)),
+        .from(items)
+        .where(and(notArchivedCondition, sql`${items.validationActionId} IS NULL`)),
       this.db
         .select({ label: typeActions.label, count: count() })
-        .from(signals)
-        .innerJoin(typeActions, eq(signals.validationActionId, typeActions.id))
-        .where(and(notArchivedCondition, isNotNull(signals.validationActionId)))
+        .from(items)
+        .innerJoin(typeActions, eq(items.validationActionId, typeActions.id))
+        .where(and(notArchivedCondition, isNotNull(items.validationActionId)))
         .groupBy(typeActions.label),
     ]);
 
@@ -466,9 +466,9 @@ export class SignalStore implements SignalStoreRpc {
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const existing = await this.db
-        .select({ id: signals.id })
-        .from(signals)
-        .where(eq(signals.slug, slug))
+        .select({ id: items.id })
+        .from(items)
+        .where(eq(items.slug, slug))
         .limit(1);
       if (!existing[0] || existing[0].id === excludeId) break;
       slug = `${base}-${suffix}`;
@@ -477,23 +477,23 @@ export class SignalStore implements SignalStoreRpc {
     return slug;
   }
 
-  async vouch(id: string, params: VouchParams): Promise<SignalWithMeta | null> {
+  async vouch(id: string, params: VouchParams): Promise<ItemWithMeta | null> {
     const existing = await this.db
-      .select({ id: signals.id, vouchedAt: signals.vouchedAt })
-      .from(signals)
-      .where(eq(signals.id, id))
+      .select({ id: items.id, vouchedAt: items.vouchedAt })
+      .from(items)
+      .where(eq(items.id, id))
       .limit(1);
     if (!existing[0]) return null;
 
     const now = new Date().toISOString();
-    const updates: Partial<SignalInsert> = {
+    const updates: Partial<ItemInsert> = {
       visibility: params.visibility,
       updatedAt: now,
     };
 
     if (params.visibility === 'vouched') {
       const baseSlug = params.slug || this.generateSlug(
-        (await this.db.select({ keySummary: signals.keySummary }).from(signals).where(eq(signals.id, id)).limit(1))[0]?.keySummary ?? id
+        (await this.db.select({ keySummary: items.keySummary }).from(items).where(eq(items.id, id)).limit(1))[0]?.keySummary ?? id
       );
       updates.slug = await this.dedupeSlug(baseSlug, id);
       updates.shareToken = null;
@@ -512,79 +512,79 @@ export class SignalStore implements SignalStoreRpc {
       updates.vouchedAt = null;
     }
 
-    await this.db.update(signals).set(updates).where(eq(signals.id, id));
+    await this.db.update(items).set(updates).where(eq(items.id, id));
     return this.getWithMeta(id);
   }
 
-  async getByShareToken(token: string): Promise<SignalWithMeta | null> {
+  async getByShareToken(token: string): Promise<ItemWithMeta | null> {
     const result = await this.db
-      .select(this.signalWithMetaSelect)
-      .from(signals)
-      .innerJoin(signalTypes, eq(signals.typeId, signalTypes.id))
-      .leftJoin(workspaces, eq(signals.workspaceId, workspaces.id))
-      .leftJoin(typeActions, eq(signals.validationActionId, typeActions.id))
+      .select(this.itemWithMetaSelect)
+      .from(items)
+      .innerJoin(itemTypes, eq(items.typeId, itemTypes.id))
+      .leftJoin(workspaces, eq(items.workspaceId, workspaces.id))
+      .leftJoin(typeActions, eq(items.validationActionId, typeActions.id))
       .where(and(
-        eq(signals.shareToken, token),
-        eq(signals.visibility, 'unlisted'),
-        // Workspace visibility overrides: exclude signals in private workspaces
-        or(isNull(signals.workspaceId), eq(workspaces.visibility, 'public'))
+        eq(items.shareToken, token),
+        eq(items.visibility, 'unlisted'),
+        // Workspace visibility overrides: exclude items in private workspaces
+        or(isNull(items.workspaceId), eq(workspaces.visibility, 'public'))
       ))
       .limit(1);
     return result[0] ? this.withParsedTags(result[0]) : null;
   }
 
-  async getBySlug(slug: string): Promise<SignalWithMeta | null> {
+  async getBySlug(slug: string): Promise<ItemWithMeta | null> {
     const result = await this.db
-      .select(this.signalWithMetaSelect)
-      .from(signals)
-      .innerJoin(signalTypes, eq(signals.typeId, signalTypes.id))
-      .leftJoin(workspaces, eq(signals.workspaceId, workspaces.id))
-      .leftJoin(typeActions, eq(signals.validationActionId, typeActions.id))
+      .select(this.itemWithMetaSelect)
+      .from(items)
+      .innerJoin(itemTypes, eq(items.typeId, itemTypes.id))
+      .leftJoin(workspaces, eq(items.workspaceId, workspaces.id))
+      .leftJoin(typeActions, eq(items.validationActionId, typeActions.id))
       .where(and(
-        eq(signals.slug, slug),
-        eq(signals.visibility, 'vouched'),
-        // Workspace visibility overrides: exclude signals in private workspaces
-        or(isNull(signals.workspaceId), eq(workspaces.visibility, 'public'))
+        eq(items.slug, slug),
+        eq(items.visibility, 'vouched'),
+        // Workspace visibility overrides: exclude items in private workspaces
+        or(isNull(items.workspaceId), eq(workspaces.visibility, 'public'))
       ))
       .limit(1);
     return result[0] ? this.withParsedTags(result[0]) : null;
   }
 
-  async listPublic(params: ListParams = {}): Promise<{ items: SignalWithMeta[]; total: number }> {
+  async listPublic(params: ListParams = {}): Promise<{ items: ItemWithMeta[]; total: number }> {
     const { typeId, workspaceId, limit = 50, offset = 0, q, tag, updatedAfter, sort } = params;
 
     // Subquery: IDs of public workspaces. Used in both items and count queries.
     const publicWsIds = this.db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.visibility, 'public'));
 
     const conditions = [
-      eq(signals.visibility, 'vouched'),
-      eq(signals.isArchived, 0),
-      // Workspace visibility overrides signal visibility: exclude signals in private workspaces
-      or(isNull(signals.workspaceId), inArray(signals.workspaceId, publicWsIds))!,
+      eq(items.visibility, 'vouched'),
+      eq(items.isArchived, 0),
+      // Workspace visibility overrides item visibility: exclude items in private workspaces
+      or(isNull(items.workspaceId), inArray(items.workspaceId, publicWsIds))!,
     ];
 
     if (typeId) {
-      conditions.push(eq(signals.typeId, typeId));
+      conditions.push(eq(items.typeId, typeId));
     }
     if (workspaceId) {
       // Only allow filtering by public workspaces
-      conditions.push(eq(signals.workspaceId, workspaceId));
+      conditions.push(eq(items.workspaceId, workspaceId));
     }
     if (tag) {
       const escaped = tag.toLowerCase().replace(/[%_"]/g, '\\$&');
-      conditions.push(like(signals.tags, `%"${escaped}"%`));
+      conditions.push(like(items.tags, `%"${escaped}"%`));
     }
     if (q) {
       const escaped = q.replace(/[%_]/g, '\\$&');
       conditions.push(
         or(
-          like(signals.keySummary, `%${escaped}%`),
-          like(signals.content, `%${escaped}%`)
+          like(items.keySummary, `%${escaped}%`),
+          like(items.content, `%${escaped}%`)
         )!
       );
     }
     if (updatedAfter) {
-      conditions.push(gt(signals.updatedAt, updatedAfter));
+      conditions.push(gt(items.updatedAt, updatedAfter));
     }
 
     const whereClause = and(...conditions);
@@ -592,67 +592,72 @@ export class SignalStore implements SignalStoreRpc {
     // When syncing incrementally, order oldest-first so consumer processes in order
     // Otherwise: pinned first (by pinnedAt DESC), then chronological
     const orderClauses = updatedAfter
-      ? [asc(signals.updatedAt)]
+      ? [asc(items.updatedAt)]
       : sort === 'oldest'
-        ? [sql`${signals.pinnedAt} IS NULL ASC`, desc(signals.pinnedAt), asc(signals.vouchedAt)]
-        : [sql`${signals.pinnedAt} IS NULL ASC`, desc(signals.pinnedAt), desc(signals.vouchedAt)];
+        ? [sql`${items.pinnedAt} IS NULL ASC`, desc(items.pinnedAt), asc(items.vouchedAt)]
+        : [sql`${items.pinnedAt} IS NULL ASC`, desc(items.pinnedAt), desc(items.vouchedAt)];
 
-    const [items, totalResult] = await Promise.all([
+    const [listItems, totalResult] = await Promise.all([
       this.db
-        .select(this.signalWithMetaSelect)
-        .from(signals)
-        .innerJoin(signalTypes, eq(signals.typeId, signalTypes.id))
-        .leftJoin(workspaces, eq(signals.workspaceId, workspaces.id))
-        .leftJoin(typeActions, eq(signals.validationActionId, typeActions.id))
+        .select(this.itemWithMetaSelect)
+        .from(items)
+        .innerJoin(itemTypes, eq(items.typeId, itemTypes.id))
+        .leftJoin(workspaces, eq(items.workspaceId, workspaces.id))
+        .leftJoin(typeActions, eq(items.validationActionId, typeActions.id))
         .where(whereClause)
         .orderBy(...orderClauses)
         .limit(limit)
         .offset(offset),
-      this.db.select({ count: count() }).from(signals).where(whereClause),
+      this.db.select({ count: count() }).from(items).where(whereClause),
     ]);
 
-    return { items: items.map((r) => this.withParsedTags(r)), total: totalResult[0]?.count ?? 0 };
+    return { items: listItems.map((r) => this.withParsedTags(r)), total: totalResult[0]?.count ?? 0 };
   }
 
-  async listPublicCounts(params: { tag?: string; q?: string } = {}): Promise<{ total: number; byType: Record<string, number>; byWorkspace: Record<string, number> }> {
+  async listPublicCounts(params: { tag?: string; q?: string } = {}): Promise<{ total: number; byType: Record<string, number>; byWorkspace: Record<string, number>; byWorkspaceType: Record<string, Record<string, number>> }> {
     const { tag, q } = params;
 
     const publicWsIds = this.db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.visibility, 'public'));
 
     const conditions = [
-      eq(signals.visibility, 'vouched'),
-      eq(signals.isArchived, 0),
-      or(isNull(signals.workspaceId), inArray(signals.workspaceId, publicWsIds))!,
+      eq(items.visibility, 'vouched'),
+      eq(items.isArchived, 0),
+      or(isNull(items.workspaceId), inArray(items.workspaceId, publicWsIds))!,
     ];
 
     if (tag) {
       const escaped = tag.toLowerCase().replace(/[%_"]/g, '\\$&');
-      conditions.push(like(signals.tags, `%"${escaped}"%`));
+      conditions.push(like(items.tags, `%"${escaped}"%`));
     }
     if (q) {
       const escaped = q.replace(/[%_]/g, '\\$&');
       conditions.push(
         or(
-          like(signals.keySummary, `%${escaped}%`),
-          like(signals.content, `%${escaped}%`)
+          like(items.keySummary, `%${escaped}%`),
+          like(items.content, `%${escaped}%`)
         )!
       );
     }
 
     const whereClause = and(...conditions);
 
-    const [totalResult, byTypeResult, byWorkspaceResult] = await Promise.all([
-      this.db.select({ count: count() }).from(signals).where(whereClause),
+    const [totalResult, byTypeResult, byWorkspaceResult, byWsTypeResult] = await Promise.all([
+      this.db.select({ count: count() }).from(items).where(whereClause),
       this.db
-        .select({ typeId: signals.typeId, count: count() })
-        .from(signals)
+        .select({ typeId: items.typeId, count: count() })
+        .from(items)
         .where(whereClause)
-        .groupBy(signals.typeId),
+        .groupBy(items.typeId),
       this.db
-        .select({ workspaceId: signals.workspaceId, count: count() })
-        .from(signals)
-        .where(and(whereClause, isNotNull(signals.workspaceId)))
-        .groupBy(signals.workspaceId),
+        .select({ workspaceId: items.workspaceId, count: count() })
+        .from(items)
+        .where(and(whereClause, isNotNull(items.workspaceId)))
+        .groupBy(items.workspaceId),
+      this.db
+        .select({ workspaceId: items.workspaceId, typeId: items.typeId, count: count() })
+        .from(items)
+        .where(and(whereClause, isNotNull(items.workspaceId)))
+        .groupBy(items.workspaceId, items.typeId),
     ]);
 
     const byType: Record<string, number> = {};
@@ -664,6 +669,16 @@ export class SignalStore implements SignalStoreRpc {
     for (const row of byWorkspaceResult) {
       if (row.workspaceId) {
         byWorkspace[row.workspaceId] = row.count;
+      }
+    }
+
+    const byWorkspaceType: Record<string, Record<string, number>> = {};
+    for (const row of byWsTypeResult) {
+      if (row.workspaceId) {
+        if (!byWorkspaceType[row.workspaceId]) {
+          byWorkspaceType[row.workspaceId] = {};
+        }
+        byWorkspaceType[row.workspaceId][row.typeId] = row.count;
       }
     }
 
@@ -671,42 +686,48 @@ export class SignalStore implements SignalStoreRpc {
       total: totalResult[0]?.count ?? 0,
       byType,
       byWorkspace,
+      byWorkspaceType,
     };
   }
 
-  async listCounts(params: { tag?: string; q?: string; isArchived?: boolean } = {}): Promise<{ total: number; byType: Record<string, number>; byWorkspace: Record<string, number> }> {
+  async listCounts(params: { tag?: string; q?: string; isArchived?: boolean } = {}): Promise<{ total: number; byType: Record<string, number>; byWorkspace: Record<string, number>; byWorkspaceType: Record<string, Record<string, number>> }> {
     const { tag, q, isArchived = false } = params;
 
-    const conditions = [eq(signals.isArchived, isArchived ? 1 : 0)];
+    const conditions = [eq(items.isArchived, isArchived ? 1 : 0)];
 
     if (tag) {
       const escaped = tag.toLowerCase().replace(/[%_"]/g, '\\$&');
-      conditions.push(like(signals.tags, `%"${escaped}"%`));
+      conditions.push(like(items.tags, `%"${escaped}"%`));
     }
     if (q) {
       const escaped = q.replace(/[%_]/g, '\\$&');
       conditions.push(
         or(
-          like(signals.keySummary, `%${escaped}%`),
-          like(signals.content, `%${escaped}%`)
+          like(items.keySummary, `%${escaped}%`),
+          like(items.content, `%${escaped}%`)
         )!
       );
     }
 
     const whereClause = and(...conditions);
 
-    const [totalResult, byTypeResult, byWorkspaceResult] = await Promise.all([
-      this.db.select({ count: count() }).from(signals).where(whereClause),
+    const [totalResult, byTypeResult, byWorkspaceResult, byWsTypeResult] = await Promise.all([
+      this.db.select({ count: count() }).from(items).where(whereClause),
       this.db
-        .select({ typeId: signals.typeId, count: count() })
-        .from(signals)
+        .select({ typeId: items.typeId, count: count() })
+        .from(items)
         .where(whereClause)
-        .groupBy(signals.typeId),
+        .groupBy(items.typeId),
       this.db
-        .select({ workspaceId: signals.workspaceId, count: count() })
-        .from(signals)
-        .where(and(whereClause, isNotNull(signals.workspaceId)))
-        .groupBy(signals.workspaceId),
+        .select({ workspaceId: items.workspaceId, count: count() })
+        .from(items)
+        .where(and(whereClause, isNotNull(items.workspaceId)))
+        .groupBy(items.workspaceId),
+      this.db
+        .select({ workspaceId: items.workspaceId, typeId: items.typeId, count: count() })
+        .from(items)
+        .where(and(whereClause, isNotNull(items.workspaceId)))
+        .groupBy(items.workspaceId, items.typeId),
     ]);
 
     const byType: Record<string, number> = {};
@@ -721,7 +742,17 @@ export class SignalStore implements SignalStoreRpc {
       }
     }
 
-    return { total: totalResult[0]?.count ?? 0, byType, byWorkspace };
+    const byWorkspaceType: Record<string, Record<string, number>> = {};
+    for (const row of byWsTypeResult) {
+      if (row.workspaceId) {
+        if (!byWorkspaceType[row.workspaceId]) {
+          byWorkspaceType[row.workspaceId] = {};
+        }
+        byWorkspaceType[row.workspaceId][row.typeId] = row.count;
+      }
+    }
+
+    return { total: totalResult[0]?.count ?? 0, byType, byWorkspace, byWorkspaceType };
   }
 
   // --- Type methods ---
@@ -735,7 +766,7 @@ export class SignalStore implements SignalStoreRpc {
     }
   }
 
-  private async buildTypeWithActions(type: SignalTypeSelect): Promise<SignalTypeWithActions> {
+  private async buildTypeWithActions(type: ItemTypeSelect): Promise<ItemTypeWithActions> {
     const actions = await this.db
       .select()
       .from(typeActions)
@@ -757,8 +788,8 @@ export class SignalStore implements SignalStoreRpc {
     };
   }
 
-  async listTypes(): Promise<SignalTypeWithActions[]> {
-    const types = await this.db.select().from(signalTypes).orderBy(signalTypes.sortOrder);
+  async listTypes(): Promise<ItemTypeWithActions[]> {
+    const types = await this.db.select().from(itemTypes).orderBy(itemTypes.sortOrder);
     if (types.length === 0) return [];
 
     const allActions = await this.db
@@ -789,21 +820,21 @@ export class SignalStore implements SignalStoreRpc {
     }));
   }
 
-  async getType(id: string): Promise<SignalTypeWithActions | null> {
+  async getType(id: string): Promise<ItemTypeWithActions | null> {
     const result = await this.db
       .select()
-      .from(signalTypes)
-      .where(eq(signalTypes.id, id))
+      .from(itemTypes)
+      .where(eq(itemTypes.id, id))
       .limit(1);
 
     if (!result[0]) return null;
     return this.buildTypeWithActions(result[0]);
   }
 
-  async createType(params: CreateTypeParams): Promise<SignalTypeWithActions> {
+  async createType(params: CreateTypeParams): Promise<ItemTypeWithActions> {
     const now = new Date().toISOString();
 
-    await this.db.insert(signalTypes).values({
+    await this.db.insert(itemTypes).values({
       id: params.id,
       name: params.name,
       description: params.description ?? null,
@@ -835,11 +866,11 @@ export class SignalStore implements SignalStoreRpc {
     return created;
   }
 
-  async updateType(id: string, params: UpdateTypeParams): Promise<SignalTypeWithActions | null> {
+  async updateType(id: string, params: UpdateTypeParams): Promise<ItemTypeWithActions | null> {
     const existing = await this.db
       .select()
-      .from(signalTypes)
-      .where(eq(signalTypes.id, id))
+      .from(itemTypes)
+      .where(eq(itemTypes.id, id))
       .limit(1);
 
     if (!existing[0]) return null;
@@ -871,7 +902,7 @@ export class SignalStore implements SignalStoreRpc {
       updates.guidance = params.guidance ? JSON.stringify(params.guidance) : null;
     }
 
-    await this.db.update(signalTypes).set(updates).where(eq(signalTypes.id, id));
+    await this.db.update(itemTypes).set(updates).where(eq(itemTypes.id, id));
 
     return this.getType(id);
   }
@@ -879,30 +910,30 @@ export class SignalStore implements SignalStoreRpc {
   async deleteType(id: string): Promise<boolean> {
     const existing = await this.db
       .select()
-      .from(signalTypes)
-      .where(eq(signalTypes.id, id))
+      .from(itemTypes)
+      .where(eq(itemTypes.id, id))
       .limit(1);
 
     if (!existing[0]) return false;
 
     const refs = await this.db
       .select({ count: count() })
-      .from(signals)
-      .where(eq(signals.typeId, id));
+      .from(items)
+      .where(eq(items.typeId, id));
 
     if ((refs[0]?.count ?? 0) > 0) {
-      throw new Error('Cannot delete type with existing signals');
+      throw new Error('Cannot delete type with existing items');
     }
 
-    await this.db.delete(signalTypes).where(eq(signalTypes.id, id));
+    await this.db.delete(itemTypes).where(eq(itemTypes.id, id));
     return true;
   }
 
   async addTypeAction(typeId: string, action: TypeActionDef): Promise<TypeActionSelect> {
     const type = await this.db
       .select()
-      .from(signalTypes)
-      .where(eq(signalTypes.id, typeId))
+      .from(itemTypes)
+      .where(eq(itemTypes.id, typeId))
       .limit(1);
 
     if (!type[0]) {
@@ -999,13 +1030,13 @@ export class SignalStore implements SignalStoreRpc {
 
     await this.db.update(workspaces).set(updates).where(eq(workspaces.id, id));
 
-    // Cascade: when workspace goes public → private, revoke all signals in it.
+    // Cascade: when workspace goes public → private, revoke all items in it.
     // Sets visibility to private, clears slug/shareToken/vouchedAt, bumps updatedAt
     // so federated instances detect the change.
     if (params.visibility === 'private' && existing.visibility === 'public') {
       const now = new Date().toISOString();
       await this.db
-        .update(signals)
+        .update(items)
         .set({
           visibility: 'private',
           slug: null,
@@ -1013,7 +1044,7 @@ export class SignalStore implements SignalStoreRpc {
           vouchedAt: null,
           updatedAt: now,
         })
-        .where(eq(signals.workspaceId, id));
+        .where(eq(items.workspaceId, id));
     }
 
     return this.getWorkspace(id);
@@ -1039,7 +1070,7 @@ export class SignalStore implements SignalStoreRpc {
     for (const row of rows) {
       result[row.key] = row.value;
     }
-    this.settingsCache = { value: result, expiresAt: now + SignalStore.SETTINGS_TTL_MS };
+    this.settingsCache = { value: result, expiresAt: now + ItemStore.SETTINGS_TTL_MS };
     return result;
   }
 

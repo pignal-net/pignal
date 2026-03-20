@@ -1,11 +1,11 @@
 import type { Context } from 'hono';
-import type { SignalStoreRpc } from '@pignal/db';
+import type { ItemStoreRpc } from '@pignal/db';
 import type { WebEnv } from '../types';
 import { AppLayout } from '../components/app-layout';
 import { StatCard } from '../components/stat-card';
 import { getCsrfToken } from '../middleware/csrf';
 
-type WebVars = { store: SignalStoreRpc };
+type WebVars = { store: ItemStoreRpc };
 
 export async function dashboardPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const store = c.get('store');
@@ -77,13 +77,13 @@ export async function dashboardPage(c: Context<{ Bindings: WebEnv; Variables: We
           <h3>How It Works</h3>
           <ol>
             <li>
-              <strong>Capture</strong> &mdash; Save signals from AI conversations via MCP or the API
+              <strong>Capture</strong> &mdash; Create items via MCP, the API, or the dashboard
             </li>
             <li>
-              <strong>Vouch</strong> &mdash; Review and validate signals you stand behind
+              <strong>Vouch</strong> &mdash; Review and validate items you stand behind
             </li>
             <li>
-              <strong>Publish</strong> &mdash; Vouched signals appear on your public source page
+              <strong>Publish</strong> &mdash; Vouched items appear on your public source page
             </li>
             <li>
               <strong>Federate</strong> &mdash; Register on pignal.net to join the global network

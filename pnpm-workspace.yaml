@@ -1,5 +1,6 @@
 packages:
   - 'db'
   - 'core'
+  - 'templates'
   - 'web'
   - 'server'

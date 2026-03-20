@@ -9,11 +9,11 @@
  */
 
 export const VALID_PERMISSIONS = [
-  'save_signal',
-  'list_signals',
-  'edit_signal',
-  'delete_signal',
-  'validate_signal',
+  'save_item',
+  'list_items',
+  'edit_item',
+  'delete_item',
+  'validate_item',
   'get_metadata',
   'manage_types',
   'manage_workspaces',

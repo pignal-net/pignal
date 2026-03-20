@@ -30,7 +30,7 @@ const PUBLIC_CSP = [
 /** Public route prefixes that get the permissive CSP. */
 function isPublicRoute(path: string): boolean {
   return path === '/' ||
-    path.startsWith('/signal/') ||
+    path.startsWith('/item/') ||
     path.startsWith('/s/') ||
     path.startsWith('/static/') ||
     path === '/feed.xml' ||

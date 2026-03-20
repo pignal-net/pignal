@@ -1,25 +1,32 @@
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 import {
-  saveSignalToolSchema,
-  listSignalsToolSchema,
-  searchSignalsToolSchema,
-  validateSignalToolSchema,
-  updateSignalToolSchema,
+  saveItemToolSchema,
+  listItemsToolSchema,
+  searchItemsToolSchema,
+  validateItemToolSchema,
+  updateItemToolSchema,
   createWorkspaceToolSchema,
   createTypeToolSchema,
-  vouchSignalToolSchema,
-  batchVouchSignalsToolSchema,
+  vouchItemToolSchema,
+  batchVouchItemsToolSchema,
 } from '../validation/schemas';
 import type { ToolDefinition } from '../federation/types';
 
-export function getDefaultToolManifest(): ToolDefinition[] {
+/** MCP config for template-specific tool descriptions. Structurally compatible with TemplateMcpConfig from @pignal/templates. */
+interface McpConfig {
+  toolDescriptions: Record<string, string>;
+}
+
+export function getDefaultToolManifest(mcpConfig?: McpConfig): ToolDefinition[] {
+  const td = mcpConfig?.toolDescriptions;
   return [
     {
-      name: 'save_signal',
+      name: 'save_item',
       description:
-        'Save a structured signal from this conversation for long-term retention. ALWAYS call get_metadata first — it provides required IDs, current limits, and quality guidelines for writing effective signals.',
-      inputSchema: zodToJsonSchema(saveSignalToolSchema, {
+        td?.save_item ??
+        'Save a structured item from this conversation for long-term retention. ALWAYS call get_metadata first — it provides required IDs, current limits, and quality guidelines for writing effective items.',
+      inputSchema: zodToJsonSchema(saveItemToolSchema, {
         target: 'openApi3',
       }) as Record<string, unknown>,
       annotations: {
@@ -27,21 +34,22 @@ export function getDefaultToolManifest(): ToolDefinition[] {
         destructiveHint: false,
         idempotentHint: false,
       },
-      endpoint: { method: 'POST', path: '/api/signals' },
-      requiredScopes: ['signals:write'],
-      responseFormat: 'signal',
+      endpoint: { method: 'POST', path: '/api/items' },
+      requiredScopes: ['items:write'],
+      responseFormat: 'item',
     },
     {
-      name: 'list_signals',
+      name: 'list_items',
       description:
-        "Browse the user's signals with optional filters. Use to review existing signals or check for duplicates before saving.",
-      inputSchema: zodToJsonSchema(listSignalsToolSchema, {
+        td?.list_items ??
+        "Browse the user's items with optional filters. Use to review existing items or check for duplicates before saving.",
+      inputSchema: zodToJsonSchema(listItemsToolSchema, {
         target: 'openApi3',
       }) as Record<string, unknown>,
       annotations: { readOnlyHint: true, idempotentHint: true },
       endpoint: {
         method: 'GET',
-        path: '/api/signals',
+        path: '/api/items',
         queryParams: [
           'typeId',
           'workspaceId',
@@ -50,56 +58,60 @@ export function getDefaultToolManifest(): ToolDefinition[] {
           'offset',
         ],
       },
-      requiredScopes: ['signals:read'],
-      responseFormat: 'signal_list',
+      requiredScopes: ['items:read'],
+      responseFormat: 'item_list',
     },
     {
-      name: 'search_signals',
+      name: 'search_items',
       description:
-        'Search signals by keyword across summaries and content. Use to find related knowledge before saving or to locate signals for validation.',
-      inputSchema: zodToJsonSchema(searchSignalsToolSchema, {
+        td?.search_items ??
+        'Search items by keyword across summaries and content. Use to find related knowledge before saving or to locate items for validation.',
+      inputSchema: zodToJsonSchema(searchItemsToolSchema, {
         target: 'openApi3',
       }) as Record<string, unknown>,
       annotations: { readOnlyHint: true, idempotentHint: true },
       endpoint: {
         method: 'GET',
-        path: '/api/signals',
+        path: '/api/items',
         queryParams: ['q', 'typeId', 'workspaceId', 'limit'],
       },
-      requiredScopes: ['signals:read'],
-      responseFormat: 'signal_list',
+      requiredScopes: ['items:read'],
+      responseFormat: 'item_list',
     },
     {
       name: 'get_metadata',
       description:
-        'Get signal types, workspaces, and quality guidelines. ALWAYS call this first before save_signal or validate_signal.',
+        td?.get_metadata ??
+        'Get item types, workspaces, and quality guidelines. ALWAYS call this first before save_item or validate_item.',
       annotations: { readOnlyHint: true, idempotentHint: true },
       endpoint: { method: 'GET', path: '/api/metadata' },
       requiredScopes: ['profile:read'],
       responseFormat: 'metadata',
     },
     {
-      name: 'validate_signal',
+      name: 'validate_item',
       description:
-        'Apply a validation action to a signal. Call get_metadata first for valid action IDs.',
-      inputSchema: zodToJsonSchema(validateSignalToolSchema, {
+        td?.validate_item ??
+        'Apply a validation action to an item. Call get_metadata first for valid action IDs.',
+      inputSchema: zodToJsonSchema(validateItemToolSchema, {
         target: 'openApi3',
       }) as Record<string, unknown>,
       annotations: { readOnlyHint: false, idempotentHint: true },
       endpoint: {
         method: 'POST',
-        path: '/api/signals/{signalId}/validate',
-        pathParams: ['signalId'],
+        path: '/api/items/{itemId}/validate',
+        pathParams: ['itemId'],
         bodyParams: ['actionId'],
       },
-      requiredScopes: ['signals:write'],
-      responseFormat: 'signal',
+      requiredScopes: ['items:write'],
+      responseFormat: 'item',
     },
     {
-      name: 'update_signal',
+      name: 'update_item',
       description:
-        'Update an existing signal. Use to correct, expand, or reclassify a previously saved signal.',
-      inputSchema: zodToJsonSchema(updateSignalToolSchema, {
+        td?.update_item ??
+        'Update an existing item. Use to correct, expand, or reclassify a previously saved item.',
+      inputSchema: zodToJsonSchema(updateItemToolSchema, {
         target: 'openApi3',
       }) as Record<string, unknown>,
       annotations: {
@@ -109,16 +121,17 @@ export function getDefaultToolManifest(): ToolDefinition[] {
       },
       endpoint: {
         method: 'PATCH',
-        path: '/api/signals/{signalId}',
-        pathParams: ['signalId'],
+        path: '/api/items/{itemId}',
+        pathParams: ['itemId'],
       },
-      requiredScopes: ['signals:write'],
-      responseFormat: 'signal',
+      requiredScopes: ['items:write'],
+      responseFormat: 'item',
     },
     {
       name: 'create_workspace',
       description:
-        'Create a new workspace for organizing signals by project or context. Call get_metadata first to see existing workspaces.',
+        td?.create_workspace ??
+        'Create a new workspace for organizing items by project or context. Call get_metadata first to see existing workspaces.',
       inputSchema: zodToJsonSchema(createWorkspaceToolSchema, {
         target: 'openApi3',
       }) as Record<string, unknown>,
@@ -128,13 +141,14 @@ export function getDefaultToolManifest(): ToolDefinition[] {
         idempotentHint: false,
       },
       endpoint: { method: 'POST', path: '/api/workspaces' },
-      requiredScopes: ['signals:write'],
+      requiredScopes: ['items:write'],
       responseFormat: 'raw',
     },
     {
       name: 'create_type',
       description:
-        'Create a new signal type with validation actions. Call get_metadata first to see existing types and avoid duplicates.',
+        td?.create_type ??
+        'Create a new item type with validation actions. Call get_metadata first to see existing types and avoid duplicates.',
       inputSchema: zodToJsonSchema(createTypeToolSchema, {
         target: 'openApi3',
       }) as Record<string, unknown>,
@@ -144,14 +158,15 @@ export function getDefaultToolManifest(): ToolDefinition[] {
         idempotentHint: false,
       },
       endpoint: { method: 'POST', path: '/api/types' },
-      requiredScopes: ['signals:write'],
+      requiredScopes: ['items:write'],
       responseFormat: 'raw',
     },
     {
-      name: 'vouch_signal',
+      name: 'vouch_item',
       description:
-        'Change a signal\'s visibility: "vouched" makes it public with a URL slug, "unlisted" creates a share link, "private" hides it. Use to publish signals to the source page.',
-      inputSchema: zodToJsonSchema(vouchSignalToolSchema, {
+        td?.vouch_item ??
+        'Change an item\'s visibility: "vouched" makes it public with a URL slug, "unlisted" creates a share link, "private" hides it. Use to publish items to the source page.',
+      inputSchema: zodToJsonSchema(vouchItemToolSchema, {
         target: 'openApi3',
       }) as Record<string, unknown>,
       annotations: {
@@ -161,18 +176,19 @@ export function getDefaultToolManifest(): ToolDefinition[] {
       },
       endpoint: {
         method: 'POST',
-        path: '/api/signals/{signalId}/vouch',
-        pathParams: ['signalId'],
+        path: '/api/items/{itemId}/vouch',
+        pathParams: ['itemId'],
         bodyParams: ['visibility', 'slug'],
       },
-      requiredScopes: ['signals:write'],
-      responseFormat: 'signal',
+      requiredScopes: ['items:write'],
+      responseFormat: 'item',
     },
     {
-      name: 'batch_vouch_signals',
+      name: 'batch_vouch_items',
       description:
-        'Change visibility for multiple signals at once (max 50). Each signal can have its own visibility and optional slug. Use to publish a batch of signals to the source page.',
-      inputSchema: zodToJsonSchema(batchVouchSignalsToolSchema, {
+        td?.batch_vouch_items ??
+        'Change visibility for multiple items at once (max 50). Each item can have its own visibility and optional slug. Use to publish a batch of items to the source page.',
+      inputSchema: zodToJsonSchema(batchVouchItemsToolSchema, {
         target: 'openApi3',
       }) as Record<string, unknown>,
       annotations: {
@@ -182,9 +198,9 @@ export function getDefaultToolManifest(): ToolDefinition[] {
       },
       endpoint: {
         method: 'POST',
-        path: '/api/signals/batch-vouch',
+        path: '/api/items/batch-vouch',
       },
-      requiredScopes: ['signals:write'],
+      requiredScopes: ['items:write'],
       responseFormat: 'raw',
     },
   ];

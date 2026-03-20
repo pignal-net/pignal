@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-// --- Signal schemas ---
+// --- Item schemas ---
 
-// Hard limits (technical ceiling). Soft limits are configured via settings and enforced by SignalStore.
-export const createSignalSchema = z.object({
+// Hard limits (technical ceiling). Soft limits are configured via settings and enforced by ItemStore.
+export const createItemSchema = z.object({
   keySummary: z.string().min(1).max(500),
   content: z.string().min(1).max(50000),
   typeId: z.string().uuid(),
@@ -12,7 +12,7 @@ export const createSignalSchema = z.object({
   tags: z.array(z.string().min(1).max(50)).max(20).optional(),
 });
 
-export const updateSignalSchema = z.object({
+export const updateItemSchema = z.object({
   keySummary: z.string().min(1).max(500).optional(),
   content: z.string().min(1).max(50000).optional(),
   typeId: z.string().uuid().optional(),
@@ -107,24 +107,24 @@ export const updateSettingSchema = z.object({
 
 // --- MCP tool schemas ---
 
-export const saveSignalToolSchema = z.object({
+export const saveItemToolSchema = z.object({
   keySummary: z
     .string()
     .min(1)
     .max(500)
     .describe(
-      'Concise first-person summary. Check get_metadata for current length limits and type-specific patterns.'
+      'Concise title or summary. Check get_metadata for current length limits and type-specific patterns.'
     ),
   content: z
     .string()
     .min(1)
     .max(50000)
     .describe(
-      'Full explanation in markdown for future review. Include context, reasoning, and examples. Check get_metadata for current limits.'
+      'Full content in markdown. Check get_metadata for current limits and formatting guidelines.'
     ),
   typeId: z
     .string()
-    .describe('Signal type ID (from get_metadata). Choose the most specific type that fits.'),
+    .describe('Type ID (from get_metadata). Choose the most specific type that fits.'),
   workspaceId: z
     .string()
     .optional()
@@ -133,17 +133,17 @@ export const saveSignalToolSchema = z.object({
     .array(z.string().min(1).max(50))
     .max(20)
     .optional()
-    .describe('Optional tags for categorization. Use lowercase, relevant keywords (e.g. ["react", "performance", "hooks"]).'),
+    .describe('Optional tags for categorization. Use lowercase, relevant keywords.'),
 });
 
-export const listSignalsToolSchema = z.object({
-  typeId: z.string().optional().describe('Filter by signal type ID (from get_metadata).'),
+export const listItemsToolSchema = z.object({
+  typeId: z.string().optional().describe('Filter by type ID (from get_metadata).'),
   workspaceId: z.string().optional().describe('Filter by workspace ID (from get_metadata).'),
   isArchived: z
     .boolean()
     .optional()
     .default(false)
-    .describe('Include archived signals. Defaults to false (active only).'),
+    .describe('Include archived items. Defaults to false (active only).'),
   limit: z.number().min(1).max(50).optional().default(20).describe('Number of results'),
   offset: z.number().min(0).optional().default(0).describe('Pagination offset'),
   include_metadata: z
@@ -163,13 +163,13 @@ export const listSignalsToolSchema = z.object({
     ),
 });
 
-export const searchSignalsToolSchema = z.object({
+export const searchItemsToolSchema = z.object({
   query: z
     .string()
     .min(1)
     .max(200)
-    .describe('Search keyword. Matches against both keySummary summaries and full content.'),
-  typeId: z.string().optional().describe('Filter by signal type ID (from get_metadata).'),
+    .describe('Search keyword. Matches against titles and content.'),
+  typeId: z.string().optional().describe('Filter by type ID (from get_metadata).'),
   workspaceId: z.string().optional().describe('Filter by workspace ID (from get_metadata).'),
   limit: z.number().min(1).max(50).optional().default(20).describe('Number of results'),
   include_metadata: z
@@ -189,36 +189,36 @@ export const searchSignalsToolSchema = z.object({
     ),
 });
 
-export const validateSignalToolSchema = z.object({
-  signalId: z.string().describe('ID of the signal to validate (from list or search results).'),
+export const validateItemToolSchema = z.object({
+  itemId: z.string().describe('ID of the item to validate (from list or search results).'),
   actionId: z
     .string()
     .nullable()
     .describe(
-      'Validation action ID (from get_metadata), or null to clear. Each type has specific actions like Confirmed, Worked, Good call.'
+      'Validation action ID (from get_metadata), or null to clear.'
     ),
 });
 
-export const updateSignalToolSchema = z.object({
-  signalId: z.string().describe('ID of the signal to update (from list or search results).'),
+export const updateItemToolSchema = z.object({
+  itemId: z.string().describe('ID of the item to update (from list or search results).'),
   keySummary: z
     .string()
     .min(1)
     .max(500)
     .optional()
-    .describe('Updated summary. Check get_metadata for current length limits and type-specific patterns.'),
+    .describe('Updated title or summary. Check get_metadata for current length limits.'),
   content: z
     .string()
     .min(1)
     .max(50000)
     .optional()
-    .describe('Updated full content in markdown. Check get_metadata for current limits.'),
-  typeId: z.string().optional().describe('New signal type ID (from get_metadata).'),
+    .describe('Updated content in markdown. Check get_metadata for current limits.'),
+  typeId: z.string().optional().describe('New type ID (from get_metadata).'),
   workspaceId: z
     .string()
     .nullable()
     .optional()
-    .describe('New workspace ID (from get_metadata), or null to remove from workspace.'),
+    .describe('New workspace ID (from get_metadata), or null to remove.'),
   tags: z
     .array(z.string().min(1).max(50))
     .max(20)
@@ -232,12 +232,12 @@ export const createWorkspaceToolSchema = z.object({
     .string()
     .min(1)
     .max(100)
-    .describe('Workspace name. Use a clear, descriptive name for the project or context.'),
+    .describe('Name. Use a clear, descriptive name.'),
   description: z
     .string()
     .max(500)
     .optional()
-    .describe('Optional description of what this workspace is for.'),
+    .describe('Optional description.'),
   visibility: z
     .enum(['public', 'private'])
     .optional()
@@ -249,7 +249,7 @@ export const createTypeToolSchema = z.object({
     .string()
     .min(1)
     .max(50)
-    .describe('Type name (e.g., "Bug Fix", "Architecture Decision").'),
+    .describe('Type name.'),
   description: z
     .string()
     .max(500)
@@ -274,21 +274,21 @@ export const createTypeToolSchema = z.object({
       contentHints: z.string().max(500).optional().describe('Tips for writing the content field.'),
     })
     .optional()
-    .describe('AI guidance for writing signals of this type.'),
+    .describe('Guidance for writing content of this type.'),
   actions: z
     .array(
       z.object({
-        label: z.string().min(1).max(50).describe('Action label (e.g., "Confirmed", "Worked", "Needs revision").'),
+        label: z.string().min(1).max(50).describe('Action label.'),
         sortOrder: z.number().int().optional().describe('Display order (lower = first).'),
       })
     )
     .min(1)
     .max(10)
-    .describe('Validation actions for this type (at least 1). Used to evaluate signal accuracy.'),
+    .describe('Validation actions for this type (at least 1).'),
 });
 
-export const vouchSignalToolSchema = z.object({
-  signalId: z.string().describe('ID of the signal to vouch (from list or search results).'),
+export const vouchItemToolSchema = z.object({
+  itemId: z.string().describe('ID of the item to vouch (from list or search results).'),
   visibility: z
     .enum(['private', 'unlisted', 'vouched'])
     .describe(
@@ -301,15 +301,15 @@ export const vouchSignalToolSchema = z.object({
     .regex(/^[a-z0-9-]+$/)
     .optional()
     .describe(
-      'Optional custom URL slug for vouched signals (lowercase alphanumeric + hyphens). Auto-generated from keySummary if omitted.'
+      'Optional custom URL slug for vouched items (lowercase alphanumeric + hyphens). Auto-generated from keySummary if omitted.'
     ),
 });
 
-export const batchVouchSignalsToolSchema = z.object({
-  signals: z
+export const batchVouchItemsToolSchema = z.object({
+  items: z
     .array(
       z.object({
-        signalId: z.string().describe('Signal ID'),
+        itemId: z.string().describe('Item ID'),
         visibility: z
           .enum(['private', 'unlisted', 'vouched'])
           .describe('Target visibility'),
@@ -319,20 +319,20 @@ export const batchVouchSignalsToolSchema = z.object({
           .max(200)
           .regex(/^[a-z0-9-]+$/)
           .optional()
-          .describe('Optional custom slug for vouched signals'),
+          .describe('Optional custom slug for vouched items'),
       })
     )
     .min(1)
     .max(50)
-    .describe('Array of signals to vouch (max 50 per batch).'),
+    .describe('Array of items to vouch (max 50 per batch).'),
 });
 
-export type SaveSignalToolInput = z.infer<typeof saveSignalToolSchema>;
-export type ListSignalsToolInput = z.infer<typeof listSignalsToolSchema>;
-export type SearchSignalsToolInput = z.infer<typeof searchSignalsToolSchema>;
-export type ValidateSignalToolInput = z.infer<typeof validateSignalToolSchema>;
-export type UpdateSignalToolInput = z.infer<typeof updateSignalToolSchema>;
+export type SaveItemToolInput = z.infer<typeof saveItemToolSchema>;
+export type ListItemsToolInput = z.infer<typeof listItemsToolSchema>;
+export type SearchItemsToolInput = z.infer<typeof searchItemsToolSchema>;
+export type ValidateItemToolInput = z.infer<typeof validateItemToolSchema>;
+export type UpdateItemToolInput = z.infer<typeof updateItemToolSchema>;
 export type CreateWorkspaceToolInput = z.infer<typeof createWorkspaceToolSchema>;
 export type CreateTypeToolInput = z.infer<typeof createTypeToolSchema>;
-export type VouchSignalToolInput = z.infer<typeof vouchSignalToolSchema>;
-export type BatchVouchSignalsToolInput = z.infer<typeof batchVouchSignalsToolSchema>;
+export type VouchItemToolInput = z.infer<typeof vouchItemToolSchema>;
+export type BatchVouchItemsToolInput = z.infer<typeof batchVouchItemsToolSchema>;

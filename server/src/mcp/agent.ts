@@ -1,89 +1,113 @@
 import { McpAgent } from 'agents/mcp';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { drizzle } from 'drizzle-orm/d1';
+import type { ZodTypeAny } from 'zod';
 
-import { SignalStore } from '@pignal/core/store';
+import { ItemStore } from '@pignal/core/store';
 import {
-  formatSignal,
+  formatItem,
   formatWorkspace,
   formatType,
   toIncludeSet,
   buildMetadataText,
-  saveSignal,
-  listSignals,
-  searchSignals,
-  validateSignal,
+  saveItem,
+  listItems,
+  searchItems,
+  validateItem,
   getMetadata,
-  updateSignal,
+  updateItem,
   createWorkspace,
   createType,
-  vouchSignal,
-  batchVouchSignals,
-  saveSignalToolSchema,
-  listSignalsToolSchema,
-  searchSignalsToolSchema,
-  validateSignalToolSchema,
-  updateSignalToolSchema,
+  vouchItem,
+  batchVouchItems,
+  saveItemToolSchema,
+  listItemsToolSchema,
+  searchItemsToolSchema,
+  validateItemToolSchema,
+  updateItemToolSchema,
   createWorkspaceToolSchema,
   createTypeToolSchema,
-  vouchSignalToolSchema,
-  batchVouchSignalsToolSchema,
-  type SaveSignalToolInput,
-  type ListSignalsToolInput,
-  type SearchSignalsToolInput,
-  type ValidateSignalToolInput,
-  type UpdateSignalToolInput,
+  vouchItemToolSchema,
+  batchVouchItemsToolSchema,
+  type SaveItemToolInput,
+  type ListItemsToolInput,
+  type SearchItemsToolInput,
+  type ValidateItemToolInput,
+  type UpdateItemToolInput,
   type CreateWorkspaceToolInput,
   type CreateTypeToolInput,
-  type VouchSignalToolInput,
-  type BatchVouchSignalsToolInput,
+  type VouchItemToolInput,
+  type BatchVouchItemsToolInput,
   type MetadataField,
 } from '@pignal/core/mcp';
+import {
+  getTemplateConfig,
+  formatResponseLabel,
+  DEFAULT_TEMPLATE_CONFIG,
+} from '@pignal/templates';
 
 import type { Env } from '../types';
 
 /**
+ * Clone a Zod schema shape and override field descriptions with template-specific text.
+ * Keys in overrides are formatted as "toolName.fieldName" (e.g. "save_item.keySummary").
+ */
+function withDescriptions<T extends Record<string, ZodTypeAny>>(
+  shape: T,
+  overrides: Record<string, string>,
+  toolName: string
+): T {
+  const result = { ...shape };
+  for (const [key, desc] of Object.entries(overrides)) {
+    const [tool, fieldName] = key.split('.');
+    if (tool === toolName && fieldName && fieldName in result) {
+      (result as Record<string, ZodTypeAny>)[fieldName] = result[fieldName].describe(desc);
+    }
+  }
+  return result;
+}
+
+/**
  * Self-hosted MCP agent. Single-user, no OAuth — uses D1 directly.
+ *
+ * Template-driven: instructions, tool descriptions, response labels,
+ * and schema field descriptions are resolved from the active template
+ * config (blog, shop, etc.).
  *
  * Scope enforcement is handled at the middleware level (in index.ts)
  * BEFORE requests reach this agent. The middleware parses JSON-RPC
  * messages and blocks tool calls that exceed the token's scopes.
  */
 export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, unknown>> {
-  server = new McpServer(
-    { name: 'pignal', version: '1.0.0' },
-    {
-      instructions:
-        'Pignal is your personal signal store for capturing and organizing knowledge from AI conversations. ' +
-        'Signals are structured notes with a type (insight, solution, pattern, etc.), key summary, content, and optional tags.\n\n' +
-        'Available tools:\n' +
-        '- save_signal: Capture a new signal from this conversation\n' +
-        '- list_signals / search_signals: Browse and search your existing signals\n' +
-        '- update_signal: Edit an existing signal\n' +
-        '- validate_signal: Apply a validation action (vouch, archive, etc.)\n' +
-        '- vouch_signal: Change signal visibility (private/unlisted/vouched)\n' +
-        '- batch_vouch_signals: Change visibility for multiple signals at once\n' +
-        '- get_metadata: Get available types, workspaces, and quality guidelines\n' +
-        '- create_workspace / create_type: Organize your signals\n\n' +
-        'Always call get_metadata first to learn the available signal types and quality guidelines before saving.',
-    }
-  );
+  server = this.createServer();
+
+  private async createServer(): Promise<McpServer> {
+    const config = getTemplateConfig(this.env.TEMPLATE || 'blog');
+    return new McpServer(
+      { name: 'pignal', version: '1.0.0' },
+      { instructions: config.mcp.instructions }
+    );
+  }
 
   private getStore() {
     const db = drizzle(this.env.DB);
-    return new SignalStore(db);
+    return new ItemStore(db);
   }
 
   async init() {
     const store = this.getStore();
+    const config = getTemplateConfig(this.env.TEMPLATE || 'blog');
+    const td = config.mcp.toolDescriptions;
+    const rl = config.mcp.responseLabels;
+    const sd = config.mcp.schemaDescriptions;
+    const server = await this.server;
 
-    // Save signal tool
-    this.server.registerTool(
-      'save_signal',
+    // Save item tool
+    server.registerTool(
+      'save_item',
       {
-        description:
-          'Save a structured signal from this conversation for long-term retention. ALWAYS call get_metadata first — it provides required IDs, current limits, and quality guidelines for writing effective signals.',
-        inputSchema: saveSignalToolSchema.shape,
+        description: td.save_item ?? DEFAULT_TEMPLATE_CONFIG.mcp.toolDescriptions.save_item,
+        inputSchema: withDescriptions(saveItemToolSchema.shape, sd, 'save_item'),
         annotations: {
           readOnlyHint: false,
           destructiveHint: false,
@@ -91,26 +115,25 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
           openWorldHint: false,
         },
       },
-      async (input: SaveSignalToolInput) => {
-        const result = await saveSignal(store, input, 'mcp-self-hosted');
+      async (input: SaveItemToolInput) => {
+        const result = await saveItem(store, input, 'mcp-self-hosted');
         return {
           content: [
             {
               type: 'text' as const,
-              text: `Signal saved!\n\n${formatSignal(result)}`,
+              text: `${rl.saved}\n\n${formatItem(result)}`,
             },
           ],
         };
       }
     );
 
-    // List signals tool
-    this.server.registerTool(
-      'list_signals',
+    // List items tool
+    server.registerTool(
+      'list_items',
       {
-        description:
-          "Browse the user's signals with optional filters. Use to review existing signals or check for duplicates before saving.",
-        inputSchema: listSignalsToolSchema.shape,
+        description: td.list_items ?? DEFAULT_TEMPLATE_CONFIG.mcp.toolDescriptions.list_items,
+        inputSchema: listItemsToolSchema.shape,
         annotations: {
           readOnlyHint: true,
           destructiveHint: false,
@@ -118,31 +141,35 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
           openWorldHint: false,
         },
       },
-      async (input: ListSignalsToolInput) => {
-        const result = await listSignals(store, input);
+      async (input: ListItemsToolInput) => {
+        const result = await listItems(store, input);
         const include = toIncludeSet(input.include_metadata as MetadataField[] | undefined);
         const list = result.items
-          .map((s, i) => `${i + 1}. ${formatSignal(s, include)}`)
+          .map((s, i) => `${i + 1}. ${formatItem(s, include)}`)
           .join('\n\n');
+
+        const foundText = formatResponseLabel(rl.found, {
+          total: result.total,
+          count: result.items.length,
+        });
 
         return {
           content: [
             {
               type: 'text' as const,
-              text: `Found ${result.total} signals (showing ${result.items.length}):\n\n${list || 'No signals found.'}`,
+              text: `${foundText}:\n\n${list || `${rl.notFound}`}`,
             },
           ],
         };
       }
     );
 
-    // Search signals tool
-    this.server.registerTool(
-      'search_signals',
+    // Search items tool
+    server.registerTool(
+      'search_items',
       {
-        description:
-          'Search signals by keyword across summaries and content. Use to find related knowledge before saving or to locate signals for validation.',
-        inputSchema: searchSignalsToolSchema.shape,
+        description: td.search_items ?? DEFAULT_TEMPLATE_CONFIG.mcp.toolDescriptions.search_items,
+        inputSchema: searchItemsToolSchema.shape,
         annotations: {
           readOnlyHint: true,
           destructiveHint: false,
@@ -150,18 +177,18 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
           openWorldHint: false,
         },
       },
-      async (input: SearchSignalsToolInput) => {
-        const result = await searchSignals(store, input);
+      async (input: SearchItemsToolInput) => {
+        const result = await searchItems(store, input);
         const include = toIncludeSet(input.include_metadata as MetadataField[] | undefined);
         const list = result.items
-          .map((s, i) => `${i + 1}. ${formatSignal(s, include)}`)
+          .map((s, i) => `${i + 1}. ${formatItem(s, include)}`)
           .join('\n\n');
 
         return {
           content: [
             {
               type: 'text' as const,
-              text: `Search results for "${input.query}" (${result.total} matches):\n\n${list || 'No matching signals found.'}`,
+              text: `Search results for "${input.query}" (${result.total} matches):\n\n${list || `${rl.notFound}`}`,
             },
           ],
         };
@@ -169,11 +196,10 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
     );
 
     // Get metadata tool (types + workspaces + settings — all from DB)
-    this.server.registerTool(
+    server.registerTool(
       'get_metadata',
       {
-        description:
-          'Get signal types, workspaces, and quality guidelines. ALWAYS call this first before save_signal or validate_signal — the response contains required IDs, configurable limits, and detailed instructions for writing high-quality signals.',
+        description: td.get_metadata ?? DEFAULT_TEMPLATE_CONFIG.mcp.toolDescriptions.get_metadata,
         annotations: {
           readOnlyHint: true,
           destructiveHint: false,
@@ -183,7 +209,7 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
       },
       async () => {
         const metadata = await getMetadata(store);
-        const text = buildMetadataText(metadata);
+        const text = buildMetadataText(metadata, config.vocabulary);
 
         return {
           content: [
@@ -196,13 +222,12 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
       }
     );
 
-    // Validate signal tool
-    this.server.registerTool(
-      'validate_signal',
+    // Validate item tool
+    server.registerTool(
+      'validate_item',
       {
-        description:
-          'Apply a validation action to a signal (e.g., Confirmed, Worked, Good call). Validation strengthens retention by forcing accuracy evaluation. Call get_metadata first for valid action IDs.',
-        inputSchema: validateSignalToolSchema.shape,
+        description: td.validate_item ?? DEFAULT_TEMPLATE_CONFIG.mcp.toolDescriptions.validate_item,
+        inputSchema: validateItemToolSchema.shape,
         annotations: {
           readOnlyHint: false,
           destructiveHint: false,
@@ -210,14 +235,14 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
           openWorldHint: false,
         },
       },
-      async (input: ValidateSignalToolInput) => {
-        const result = await validateSignal(store, input);
+      async (input: ValidateItemToolInput) => {
+        const result = await validateItem(store, input);
         if (!result) {
           return {
             content: [
               {
                 type: 'text' as const,
-                text: 'Signal not found.',
+                text: rl.notFound,
               },
             ],
           };
@@ -227,20 +252,19 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
           content: [
             {
               type: 'text' as const,
-              text: `Signal validated!\n\n${formatSignal(result)}`,
+              text: `${rl.validated}\n\n${formatItem(result)}`,
             },
           ],
         };
       }
     );
 
-    // Update signal tool
-    this.server.registerTool(
-      'update_signal',
+    // Update item tool
+    server.registerTool(
+      'update_item',
       {
-        description:
-          'Update an existing signal. Use to correct, expand, or reclassify a previously saved signal.',
-        inputSchema: updateSignalToolSchema.shape,
+        description: td.update_item ?? DEFAULT_TEMPLATE_CONFIG.mcp.toolDescriptions.update_item,
+        inputSchema: withDescriptions(updateItemToolSchema.shape, sd, 'update_item'),
         annotations: {
           readOnlyHint: false,
           destructiveHint: false,
@@ -248,14 +272,14 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
           openWorldHint: false,
         },
       },
-      async (input: UpdateSignalToolInput) => {
-        const result = await updateSignal(store, input);
+      async (input: UpdateItemToolInput) => {
+        const result = await updateItem(store, input);
         if (!result) {
           return {
             content: [
               {
                 type: 'text' as const,
-                text: 'Signal not found.',
+                text: rl.notFound,
               },
             ],
           };
@@ -265,7 +289,7 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
           content: [
             {
               type: 'text' as const,
-              text: `Signal updated!\n\n${formatSignal(result)}`,
+              text: `${rl.updated}\n\n${formatItem(result)}`,
             },
           ],
         };
@@ -273,12 +297,11 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
     );
 
     // Create workspace tool
-    this.server.registerTool(
+    server.registerTool(
       'create_workspace',
       {
-        description:
-          'Create a new workspace for organizing signals by project or context. Call get_metadata first to see existing workspaces.',
-        inputSchema: createWorkspaceToolSchema.shape,
+        description: td.create_workspace ?? DEFAULT_TEMPLATE_CONFIG.mcp.toolDescriptions.create_workspace,
+        inputSchema: withDescriptions(createWorkspaceToolSchema.shape, sd, 'create_workspace'),
         annotations: {
           readOnlyHint: false,
           destructiveHint: false,
@@ -292,7 +315,7 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
           content: [
             {
               type: 'text' as const,
-              text: `Workspace created!\n\n${formatWorkspace(result)}`,
+              text: `${rl.workspaceCreated}\n\n${formatWorkspace(result)}`,
             },
           ],
         };
@@ -300,12 +323,11 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
     );
 
     // Create type tool
-    this.server.registerTool(
+    server.registerTool(
       'create_type',
       {
-        description:
-          'Create a new signal type with validation actions. Call get_metadata first to see existing types and avoid duplicates.',
-        inputSchema: createTypeToolSchema.shape,
+        description: td.create_type ?? DEFAULT_TEMPLATE_CONFIG.mcp.toolDescriptions.create_type,
+        inputSchema: withDescriptions(createTypeToolSchema.shape, sd, 'create_type'),
         annotations: {
           readOnlyHint: false,
           destructiveHint: false,
@@ -319,20 +341,19 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
           content: [
             {
               type: 'text' as const,
-              text: `Type created!\n\n${formatType(result)}`,
+              text: `${rl.typeCreated}\n\n${formatType(result)}`,
             },
           ],
         };
       }
     );
 
-    // Vouch signal tool (change visibility)
-    this.server.registerTool(
-      'vouch_signal',
+    // Vouch item tool (change visibility)
+    server.registerTool(
+      'vouch_item',
       {
-        description:
-          'Change a signal\'s visibility: "vouched" makes it public with a URL slug, "unlisted" creates a share link, "private" hides it. Use to publish signals to the source page.',
-        inputSchema: vouchSignalToolSchema.shape,
+        description: td.vouch_item ?? DEFAULT_TEMPLATE_CONFIG.mcp.toolDescriptions.vouch_item,
+        inputSchema: vouchItemToolSchema.shape,
         annotations: {
           readOnlyHint: false,
           destructiveHint: false,
@@ -340,14 +361,14 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
           openWorldHint: false,
         },
       },
-      async (input: VouchSignalToolInput) => {
-        const result = await vouchSignal(store, input);
+      async (input: VouchItemToolInput) => {
+        const result = await vouchItem(store, input);
         if (!result) {
           return {
             content: [
               {
                 type: 'text' as const,
-                text: 'Signal not found.',
+                text: rl.notFound,
               },
             ],
           };
@@ -364,20 +385,19 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
           content: [
             {
               type: 'text' as const,
-              text: `Signal visibility updated!\n\n${visibilityInfo}\n\n${formatSignal(result)}`,
+              text: `${rl.visibilityUpdated}\n\n${visibilityInfo}\n\n${formatItem(result)}`,
             },
           ],
         };
       }
     );
 
-    // Batch vouch signals tool
-    this.server.registerTool(
-      'batch_vouch_signals',
+    // Batch vouch items tool
+    server.registerTool(
+      'batch_vouch_items',
       {
-        description:
-          'Change visibility for multiple signals at once (max 50). Each signal can have its own visibility and optional slug. Use to publish a batch of signals to the source page.',
-        inputSchema: batchVouchSignalsToolSchema.shape,
+        description: td.batch_vouch_items ?? DEFAULT_TEMPLATE_CONFIG.mcp.toolDescriptions.batch_vouch_items,
+        inputSchema: batchVouchItemsToolSchema.shape,
         annotations: {
           readOnlyHint: false,
           destructiveHint: false,
@@ -385,16 +405,16 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
           openWorldHint: false,
         },
       },
-      async (input: BatchVouchSignalsToolInput) => {
-        const result = await batchVouchSignals(store, input);
+      async (input: BatchVouchItemsToolInput) => {
+        const result = await batchVouchItems(store, input);
 
         const lines: string[] = [];
-        lines.push(`Batch vouch complete: ${result.succeeded.length} succeeded, ${result.failed.length} failed.`);
+        lines.push(`${rl.batchComplete} ${result.succeeded.length} succeeded, ${result.failed.length} failed.`);
 
         if (result.succeeded.length) {
           lines.push('', 'Succeeded:');
           for (const s of result.succeeded) {
-            const slug = s.slug ? ` → /signal/${s.slug}` : '';
+            const slug = s.slug ? ` → /item/${s.slug}` : '';
             lines.push(`- ${s.id} (${s.visibility}${slug})`);
           }
         }

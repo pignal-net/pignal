@@ -6,6 +6,11 @@
     "deploy:server": "pnpm --filter @pignal/server deploy",
     "db:migrate": "pnpm --filter @pignal/server db:migrate",
     "db:migrate:prod": "pnpm --filter @pignal/server db:migrate:prod",
+    "db:seed": "pnpm --filter @pignal/server db:seed",
+    "db:seed:prod": "pnpm --filter @pignal/server db:seed:prod",
+    "db:seed:blog": "pnpm --filter @pignal/server db:seed:blog",
+    "db:seed:shop": "pnpm --filter @pignal/server db:seed:shop",
+    "template:create": "pnpm --filter @pignal/templates template:create",
     "type-check": "pnpm -r type-check",
     "lint": "pnpm -r lint",
     "check-all": "pnpm -r check-all"

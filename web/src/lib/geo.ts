@@ -1,6 +1,11 @@
-import type { Signal } from '@pignal/core';
-import type { MetadataResult, SettingsMap, SignalTypeWithActions } from '@pignal/db';
+import type { Item } from '@pignal/core';
+import type { TemplateVocabulary } from '@pignal/templates';
+import type { MetadataResult, SettingsMap, ItemTypeWithActions } from '@pignal/db';
 import { toIso8601 } from './time';
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 /** Maximum URLs per sitemap file (spec allows 50,000; we use 2,500 for fast responses). */
 export const SITEMAP_PAGE_SIZE = 2500;
@@ -31,13 +36,13 @@ Sitemap: ${sourceUrl}/sitemap.xml`;
 
 /**
  * Generate a sitemap index referencing paginated sub-sitemaps.
- * Used when total signal count exceeds SITEMAP_PAGE_SIZE.
+ * Used when total item count exceeds SITEMAP_PAGE_SIZE.
  */
 export function generateSitemapIndex(
   sourceUrl: string,
-  totalSignals: number
+  totalItems: number
 ): string {
-  const pages = Math.ceil(totalSignals / SITEMAP_PAGE_SIZE);
+  const pages = Math.ceil(totalItems / SITEMAP_PAGE_SIZE);
   const sitemaps = Array.from({ length: pages }, (_, i) => {
     return `  <sitemap>
     <loc>${escapeXml(sourceUrl)}/sitemap-${i + 1}.xml</loc>
@@ -51,13 +56,13 @@ ${sitemaps.join('\n')}
 }
 
 /**
- * Generate a single sitemap page with signal URLs.
+ * Generate a single sitemap page with item URLs.
  * When isFirstPage is true, includes the homepage URL.
- * Filters out signals without slugs defensively.
+ * Filters out items without slugs defensively.
  */
 export function generateSitemap(
   sourceUrl: string,
-  signals: Signal[],
+  items: Item[],
   isFirstPage = true
 ): string {
   const urls: string[] = [];
@@ -70,10 +75,10 @@ export function generateSitemap(
   </url>`);
   }
 
-  for (const s of signals) {
+  for (const s of items) {
     if (!s.slug) continue;
     urls.push(`  <url>
-    <loc>${escapeXml(sourceUrl)}/signal/${escapeXml(s.slug)}</loc>
+    <loc>${escapeXml(sourceUrl)}/item/${escapeXml(s.slug)}</loc>
     <lastmod>${toIso8601(s.updatedAt)}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -92,31 +97,33 @@ ${urls.join('\n')}
  */
 export function generateLlmsTxt(
   settings: SettingsMap,
-  types: SignalTypeWithActions[],
-  totalSignals: number,
-  origin: string
+  types: ItemTypeWithActions[],
+  totalItems: number,
+  origin: string,
+  vocabulary?: TemplateVocabulary
 ): string {
-  const title = settings.source_title || 'My Signals';
-  const description = settings.source_description || 'Insights captured from AI conversations';
+  const v = vocabulary ?? { item: 'item', itemPlural: 'items', type: 'type', typePlural: 'types', workspace: 'workspace', workspacePlural: 'workspaces', vouch: 'vouch', vouched: 'vouched' };
+  const title = settings.source_title || 'My Pignal';
+  const description = settings.source_description || 'A self-hosted content platform powered by Cloudflare';
   const ownerName = settings.owner_name || 'Pignal';
 
   const typeLines = types.length > 0
     ? types.map((t) => `- **${t.name}**: ${t.description || 'No description'}`).join('\n')
-    : '- No signal types configured yet';
+    : `- No ${v.typePlural} configured yet`;
 
   return `# ${title}
 
 > ${description}
 
-This is a [pignal](https://github.com/pignal-net/pignal) signal source — a self-hosted knowledge base of structured insights captured from AI conversations, organized by type and workspace.
+This is a [pignal](https://github.com/pignal-net/pignal) source — a self-hosted content platform with structured ${v.itemPlural} organized by ${v.type} and ${v.workspace}.
 
 ## About This Source
 
 - **Owner:** ${ownerName}
-- **Published signals:** ${totalSignals}
-- **Signal types:** ${types.length}
+- **Published ${v.itemPlural}:** ${totalItems}
+- **${capitalize(v.typePlural)}:** ${types.length}
 
-## Signal Types
+## ${capitalize(v.typePlural)}
 
 ${typeLines}
 
@@ -124,13 +131,13 @@ ${typeLines}
 
 | Method | URL | Description |
 |--------|-----|-------------|
-| Browse | ${origin}/ | HTML source page with all published signals |
-| Detailed guide | ${origin}/llms-full.txt | Comprehensive guide with types, actions, workspaces |
-| Atom feed | ${origin}/feed.xml | Subscribe to new signals |
+| Browse | ${origin}/ | HTML source page with all published ${v.itemPlural} |
+| Detailed guide | ${origin}/llms-full.txt | Comprehensive guide with ${v.typePlural}, actions, ${v.workspacePlural} |
+| Atom feed | ${origin}/feed.xml | Subscribe to new ${v.itemPlural} |
 | REST API | ${origin}/api/public/source | JSON API for programmatic access |
 | MCP | ${origin}/mcp | Model Context Protocol endpoint |
-| Single signal | ${origin}/signal/{slug} | Individual signal page (HTML) |
-| Raw markdown | ${origin}/signal/{slug}.md | Individual signal as markdown |`;
+| Single ${v.item} | ${origin}/item/{slug} | Individual ${v.item} page (HTML) |
+| Raw markdown | ${origin}/item/{slug}.md | Individual ${v.item} as markdown |`;
 }
 
 interface QualityGuidelines {
@@ -156,17 +163,19 @@ function parseJsonSetting<T>(value: string | undefined, fallback: T): T {
 
 /**
  * Generate llms-full.txt — comprehensive guide about this pignal source.
- * Covers what pignal is, how to use the source effectively, detailed signal types
+ * Covers what pignal is, how to use the source effectively, detailed item types
  * with guidance and validation actions, workspaces, quality guidelines, and all access methods.
  */
 export function generateLlmsFullTxt(
   metadata: MetadataResult,
-  totalSignals: number,
-  origin: string
+  totalItems: number,
+  origin: string,
+  vocabulary?: TemplateVocabulary
 ): string {
+  const v = vocabulary ?? { item: 'item', itemPlural: 'items', type: 'type', typePlural: 'types', workspace: 'workspace', workspacePlural: 'workspaces', vouch: 'vouch', vouched: 'vouched' };
   const { types, workspaces, settings } = metadata;
-  const title = settings.source_title || 'My Signals';
-  const description = settings.source_description || 'Insights captured from AI conversations';
+  const title = settings.source_title || 'My Pignal';
+  const description = settings.source_description || 'A self-hosted content platform powered by Cloudflare';
   const ownerName = settings.owner_name || 'Pignal';
 
   const guidelines = parseJsonSetting<QualityGuidelines>(settings.quality_guidelines, {});
@@ -183,16 +192,16 @@ export function generateLlmsFullTxt(
   // What is pignal
   sections.push('## What is pignal?');
   sections.push('');
-  sections.push('pignal is an open-source, self-hosted knowledge base for capturing structured insights (called "signals") from AI conversations. Each signal has a type, optional workspace, and goes through a visibility lifecycle: private → unlisted → vouched (public).');
+  sections.push(`pignal is an open-source, self-hosted content platform powered by Cloudflare. Content is organized as structured ${v.itemPlural}, each with a ${v.type}, optional ${v.workspace}, and a visibility lifecycle: private → unlisted → ${v.vouched} (public).`);
   sections.push('');
-  sections.push(`This source is owned by **${ownerName}** and currently has **${totalSignals}** published signals across **${types.length}** types.`);
+  sections.push(`This source is owned by **${ownerName}** and currently has **${totalItems}** published ${v.itemPlural} across **${types.length}** ${v.typePlural}.`);
   sections.push('');
 
-  // Signal types with full detail
-  sections.push('## Signal Types');
+  // Item types with full detail
+  sections.push(`## ${capitalize(v.typePlural)}`);
   sections.push('');
   if (types.length === 0) {
-    sections.push('No signal types configured yet.');
+    sections.push(`No ${v.typePlural} configured yet.`);
   } else {
     for (const t of types) {
       sections.push(`### ${t.icon ?? '•'} ${t.name}`);
@@ -218,9 +227,9 @@ export function generateLlmsFullTxt(
 
   // Workspaces
   if (workspaces.length > 0) {
-    sections.push('## Workspaces');
+    sections.push(`## ${capitalize(v.workspacePlural)}`);
     sections.push('');
-    sections.push('Workspaces organize signals by project or context:');
+    sections.push(`${capitalize(v.workspacePlural)} organize ${v.itemPlural} by project or context:`);
     sections.push('');
     for (const w of workspaces) {
       sections.push(`- **${w.name}**${w.description ? `: ${w.description}` : ''}`);
@@ -235,10 +244,10 @@ export function generateLlmsFullTxt(
 
   sections.push('## Quality Guidelines');
   sections.push('');
-  sections.push(`**Key summary** (${ktMin}–${ktMax} characters): A concise, descriptive title for the signal.`);
+  sections.push(`**Key summary** (${ktMin}–${ktMax} characters): A concise, descriptive title for the ${v.item}.`);
   if (guidelines.keySummary?.tips) sections.push(`- ${guidelines.keySummary.tips}`);
   sections.push('');
-  sections.push(`**Content** (up to ${cMax.toLocaleString()} characters): The full body of the signal in markdown.`);
+  sections.push(`**Content** (up to ${cMax.toLocaleString()} characters): The full body of the ${v.item} in markdown.`);
   if (guidelines.content?.tips) sections.push(`- ${guidelines.content.tips}`);
   sections.push('');
 
@@ -252,8 +261,8 @@ export function generateLlmsFullTxt(
 
   if (guidelines.avoid?.length) {
     sections.push('**Avoid:**');
-    for (const item of guidelines.avoid) {
-      sections.push(`- ${item}`);
+    for (const avoidItem of guidelines.avoid) {
+      sections.push(`- ${avoidItem}`);
     }
     sections.push('');
   }
@@ -263,12 +272,12 @@ export function generateLlmsFullTxt(
   sections.push('');
   sections.push(`| Method | URL | Description |`);
   sections.push(`|--------|-----|-------------|`);
-  sections.push(`| Browse | ${origin}/ | HTML source page with all published signals |`);
-  sections.push(`| Atom feed | ${origin}/feed.xml | Subscribe to new signals |`);
+  sections.push(`| Browse | ${origin}/ | HTML source page with all published ${v.itemPlural} |`);
+  sections.push(`| Atom feed | ${origin}/feed.xml | Subscribe to new ${v.itemPlural} |`);
   sections.push(`| REST API | ${origin}/api/public/source | JSON API for programmatic access |`);
   sections.push(`| MCP | ${origin}/mcp | Model Context Protocol endpoint for AI tools |`);
-  sections.push(`| Single signal | ${origin}/signal/{slug} | Individual signal page (HTML) |`);
-  sections.push(`| Raw markdown | ${origin}/signal/{slug}.md | Individual signal as markdown |`);
+  sections.push(`| Single ${v.item} | ${origin}/item/{slug} | Individual ${v.item} page (HTML) |`);
+  sections.push(`| Raw markdown | ${origin}/item/{slug}.md | Individual ${v.item} as markdown |`);
   sections.push(`| Summary | ${origin}/llms.txt | Concise source summary for LLMs |`);
   sections.push('');
 
@@ -277,11 +286,11 @@ export function generateLlmsFullTxt(
   sections.push('');
   sections.push('Connect to this source via MCP at `' + origin + '/mcp` to use these tools:');
   sections.push('');
-  sections.push('- **save_signal** — Create a new signal with type, workspace, key summary, and content');
-  sections.push('- **list_signals** — Browse and filter signals by type, workspace, or search query');
-  sections.push('- **search_signals** — Full-text search across all signals');
-  sections.push('- **validate_signal** — Apply or clear a validation action on a signal');
-  sections.push('- **get_metadata** — Retrieve types, workspaces, and quality guidelines');
+  sections.push(`- **save_item** — Create a new ${v.item} with ${v.type}, ${v.workspace}, key summary, and content`);
+  sections.push(`- **list_items** — Browse and filter ${v.itemPlural} by ${v.type}, ${v.workspace}, or search query`);
+  sections.push(`- **search_items** — Full-text search across all ${v.itemPlural}`);
+  sections.push(`- **validate_item** — Apply or clear a validation action on a ${v.item}`);
+  sections.push(`- **get_metadata** — Retrieve ${v.typePlural}, ${v.workspacePlural}, and quality guidelines`);
 
   return sections.join('\n');
 }

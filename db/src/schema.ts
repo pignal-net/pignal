@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
-export const signalTypes = sqliteTable('signal_types', {
+export const itemTypes = sqliteTable('item_types', {
   id: text('id').primaryKey(),
   name: text('name').notNull().unique(),
   description: text('description'),
@@ -14,8 +14,8 @@ export const signalTypes = sqliteTable('signal_types', {
   updatedAt: text('updated_at').notNull(),
 });
 
-export type SignalTypeSelect = typeof signalTypes.$inferSelect;
-export type SignalTypeInsert = typeof signalTypes.$inferInsert;
+export type ItemTypeSelect = typeof itemTypes.$inferSelect;
+export type ItemTypeInsert = typeof itemTypes.$inferInsert;
 
 export const typeActions = sqliteTable(
   'type_actions',
@@ -23,7 +23,7 @@ export const typeActions = sqliteTable(
     id: text('id').primaryKey(),
     typeId: text('type_id')
       .notNull()
-      .references(() => signalTypes.id, { onDelete: 'cascade' }),
+      .references(() => itemTypes.id, { onDelete: 'cascade' }),
     label: text('label').notNull(),
     sortOrder: integer('sort_order').default(0),
     createdAt: text('created_at').notNull(),
@@ -47,15 +47,15 @@ export const workspaces = sqliteTable('workspaces', {
 export type WorkspaceSelect = typeof workspaces.$inferSelect;
 export type WorkspaceInsert = typeof workspaces.$inferInsert;
 
-export const signals = sqliteTable(
-  'signals',
+export const items = sqliteTable(
+  'items',
   {
     id: text('id').primaryKey(),
     keySummary: text('key_summary').notNull(),
     content: text('content').notNull(),
     typeId: text('type_id')
       .notNull()
-      .references(() => signalTypes.id),
+      .references(() => itemTypes.id),
     workspaceId: text('workspace_id').references(() => workspaces.id, { onDelete: 'set null' }),
     sourceAi: text('source_ai').notNull(),
     validationActionId: text('validation_action_id').references(() => typeActions.id, {
@@ -72,18 +72,18 @@ export const signals = sqliteTable(
     updatedAt: text('updated_at').notNull(),
   },
   (table) => [
-    index('idx_signals_type_id').on(table.typeId),
-    index('idx_signals_workspace_id').on(table.workspaceId),
-    index('idx_signals_archived').on(table.isArchived),
-    index('idx_signals_created').on(table.createdAt),
-    index('idx_signals_visibility').on(table.visibility),
-    uniqueIndex('idx_signals_slug').on(table.slug),
-    uniqueIndex('idx_signals_share_token').on(table.shareToken),
+    index('idx_items_type_id').on(table.typeId),
+    index('idx_items_workspace_id').on(table.workspaceId),
+    index('idx_items_archived').on(table.isArchived),
+    index('idx_items_created').on(table.createdAt),
+    index('idx_items_visibility').on(table.visibility),
+    uniqueIndex('idx_items_slug').on(table.slug),
+    uniqueIndex('idx_items_share_token').on(table.shareToken),
   ]
 );
 
-export type SignalSelect = typeof signals.$inferSelect;
-export type SignalInsert = typeof signals.$inferInsert;
+export type ItemSelect = typeof items.$inferSelect;
+export type ItemInsert = typeof items.$inferInsert;
 
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
@@ -100,7 +100,7 @@ export const apiKeys = sqliteTable(
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     keyHash: text('key_hash').notNull(),
-    scopes: text('scopes').notNull().default('list_signals,get_metadata'),
+    scopes: text('scopes').notNull().default('list_items,get_metadata'),
     workspaceIds: text('workspace_ids'), // Nullable: null = all workspaces, comma-separated UUIDs = restricted
     createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
     lastUsedAt: text('last_used_at'),

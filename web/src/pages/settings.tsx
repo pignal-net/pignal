@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import type { Child } from 'hono/jsx';
-import type { SignalStoreRpc } from '@pignal/db';
+import type { ItemStoreRpc } from '@pignal/db';
 import type { WebEnv } from '../types';
 import { AppLayout } from '../components/app-layout';
 import { getCsrfToken } from '../middleware/csrf';
@@ -8,14 +8,12 @@ import { isHtmxRequest, toastTrigger } from '../lib/htmx';
 import { THEME_TOKENS, THEME_SETTING_KEYS, isValidHexColor } from '../lib/theme';
 import { raw } from 'hono/html';
 
-type WebVars = { store: SignalStoreRpc };
+type WebVars = { store: ItemStoreRpc };
 
 /* --- Default values (from seed migration) --- */
 
 const DEFAULTS: Record<string, string> = {
   owner_name: 'Pignal',
-  source_title: 'My Signals',
-  source_description: 'Insights captured from AI conversations',
   source_posts_per_page: '20',
   source_show_toc: 'true',
   source_show_reading_time: 'true',
@@ -32,8 +30,6 @@ const DEFAULTS: Record<string, string> = {
   source_color_background: '',
   source_color_text: '',
   source_color_muted: '',
-  quality_guidelines: '{"keySummary":{"tips":"Use first-person I/My framing for better recall. Follow the type-specific pattern from guidance."},"content":{"tips":"Write for your future self reviewing this days later. ALWAYS restructure raw data into proper markdown."},"formatting":["Tables: structured/comparative data","Bullet lists: grouped items, options, non-sequential points","Numbered lists: sequential steps, ranked items, procedures","Headings: separate distinct sections within longer content","Code blocks: commands, snippets, config, error messages","Paragraphs: reasoning, context, narrative explanation"],"avoid":["Bold-only pseudo-structure","Flat text walls without hierarchy","Raw copy-paste without restructuring","Repeating the keySummary in the content"]}',
-  validation_limits: '{"keySummary":{"min":20,"max":140},"content":{"min":1,"max":10000},"sourceAi":{"min":1,"max":100}}',
   max_actions_per_type: '3',
 };
 
@@ -114,14 +110,14 @@ const FIELDS: Record<string, FieldConfig> = {
     label: 'Source Title',
     description: 'Shown in the nav bar, page titles, and meta tags.',
     type: 'text',
-    placeholder: 'My Signals',
+    placeholder: 'My Pignal',
     maxLength: 200,
   },
   source_description: {
     label: 'Source Description',
     description: 'Subtitle shown on the source feed and used in meta description.',
     type: 'text',
-    placeholder: 'Insights captured from AI conversations',
+    placeholder: 'A self-hosted content platform powered by Cloudflare',
     maxLength: 500,
   },
   source_logo_text: {

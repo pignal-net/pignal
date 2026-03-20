@@ -50,7 +50,7 @@ export class ApiKeyStore {
    */
   async create(
     name: string,
-    scopes = 'list_signals,get_metadata',
+    scopes = 'list_items,get_metadata',
     expiresAt?: string,
     workspaceIds?: string[] | null
   ): Promise<{ id: string; rawKey: string }> {

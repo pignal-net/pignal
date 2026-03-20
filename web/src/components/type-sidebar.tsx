@@ -1,24 +1,24 @@
-import type { SignalTypeWithActions, WorkspaceSelect } from '@pignal/db';
+import type { ItemTypeWithActions, WorkspaceSelect } from '@pignal/db';
 
-interface PublicCounts {
+interface FilterCounts {
   total: number;
   byType: Record<string, number>;
   byWorkspace: Record<string, number>;
+  byWorkspaceType: Record<string, Record<string, number>>;
 }
 
 interface FilterBarProps {
-  types: SignalTypeWithActions[];
+  types: ItemTypeWithActions[];
   activeTypeId?: string;
   workspaces?: WorkspaceSelect[];
   activeWorkspaceId?: string;
   activeTag?: string;
-  mode?: 'categories' | 'workspaces';
   sort?: 'newest' | 'oldest';
-  counts?: PublicCounts;
+  counts?: FilterCounts;
   query?: string;
-  /** Base path for URLs. Public: '/', Admin: '/pignal/signals' */
+  /** Base path for URLs. Public: '/', Admin: '/pignal/items' */
   basePath?: string;
-  /** HTMX swap target. Public: '#source-results', Admin: '#signal-list' */
+  /** HTMX swap target. Public: '#source-results', Admin: '#item-list' */
   htmxTarget?: string;
   /** HTMX loading indicator. Public: '#source-loading', Admin: '#search-loading' */
   htmxIndicator?: string;
@@ -39,7 +39,7 @@ function buildUrl(basePath: string, params: Record<string, string | undefined>):
 
 export function FilterBar({
   types, activeTypeId, workspaces, activeWorkspaceId, activeTag,
-  mode = 'workspaces', sort = 'newest', counts, query,
+  sort = 'newest', counts, query,
   basePath = '/',
   htmxTarget = '#source-results',
   htmxIndicator = '#source-loading',
@@ -60,7 +60,6 @@ export function FilterBar({
   if (activeTypeId) hxValsObj[typeParam] = activeTypeId;
   if (activeWorkspaceId) hxValsObj[wsParam] = activeWorkspaceId;
   if (activeTag) hxValsObj.tag = activeTag;
-  if (mode === 'categories' && !activeTypeId) hxValsObj.mode = 'categories';
   if (isArchived) hxValsObj.isArchived = 'true';
   const hxVals = JSON.stringify(hxValsObj);
 
@@ -70,7 +69,6 @@ export function FilterBar({
   if (activeWorkspaceId) sortBase[wsParam] = activeWorkspaceId;
   if (activeTag) sortBase.tag = activeTag;
   if (query) sortBase.q = query;
-  if (mode === 'categories' && !activeTypeId) sortBase.mode = 'categories';
   if (isArchived) sortBase.isArchived = 'true';
 
   const newestUrl = buildUrl(basePath, { ...sortBase });
@@ -90,13 +88,13 @@ export function FilterBar({
         </div>
       )}
 
-      {/* Row 1: Search + Sort (matches hub FeedBar) */}
+      {/* Row 1: Search + Sort */}
       <div class="feed-bar">
         <input
           type="text"
           name="q"
           class="feed-search"
-          placeholder="Search signals..."
+          placeholder="Search items..."
           value={query || ''}
           hx-get={searchUrl}
           hx-target={htmxTarget}
@@ -118,31 +116,9 @@ export function FilterBar({
         </span>
       </div>
 
-      {/* Row 2: Mode toggle + Filter chips */}
+      {/* Row 2: Workspace chips with type dropdowns */}
+      {hasWorkspaces && (
       <div class="filter-bar-chips">
-        {hasWorkspaces && (
-          <div class="filter-bar-modes">
-            <a
-              href={buildUrl(basePath, { sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined })}
-              data-mode="workspaces"
-              class={`filter-mode-btn ${mode === 'workspaces' ? 'active' : ''}`}
-              hx-get={buildUrl(basePath, { sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined })}
-              hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}
-            >
-              Workspaces
-            </a>
-            <a
-              href={buildUrl(basePath, { mode: 'categories', sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined })}
-              data-mode="categories"
-              class={`filter-mode-btn ${mode === 'categories' ? 'active' : ''}`}
-              hx-get={buildUrl(basePath, { mode: 'categories', sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined })}
-              hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}
-            >
-              Categories
-            </a>
-          </div>
-        )}
-
         {/* Archived toggle (admin only) */}
         {isArchived !== undefined && (
           <label class="filter-archived-toggle">
@@ -155,45 +131,49 @@ export function FilterBar({
           </label>
         )}
 
-        {/* Workspaces chips */}
-        {hasWorkspaces && (
-          <div class="filter-bar-items" data-chips="workspaces" hidden={mode !== 'workspaces'}>
-            <a href={buildUrl(basePath, { sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined })} class={`filter-chip ${!activeWorkspaceId ? 'active' : ''}`}
-              hx-get={buildUrl(basePath, { sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined })} hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}>
-              All{counts ? <span class="filter-chip-count"> ({counts.total})</span> : ''}
-            </a>
-            {workspaces!.map((ws) => {
-              const wsCount = counts?.byWorkspace[ws.id];
-              return (
-                <a href={buildUrl(basePath, { [wsParam]: ws.id, sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined })} class={`filter-chip ${activeWorkspaceId === ws.id ? 'active' : ''}`}
-                  hx-get={buildUrl(basePath, { [wsParam]: ws.id, sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined })} hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}>
-                  {ws.name}{wsCount !== undefined ? <span class="filter-chip-count"> ({wsCount})</span> : ''}
-                </a>
-              );
-            })}
-          </div>
-        )}
+        {/* Workspace chips with hover dropdowns — hide empty workspaces */}
+        {workspaces!.map((ws) => {
+          const wsTypes = counts?.byWorkspaceType[ws.id] ?? {};
+          const typesWithSignals = types.filter((t) => (wsTypes[t.id] ?? 0) > 0);
 
-        {/* Categories chips */}
-        <div class="filter-bar-items" data-chips="categories" hidden={mode !== 'categories'}>
-          <a href={buildUrl(basePath, { mode: 'categories', sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined })} class={`filter-chip ${!activeTypeId && !activeTag ? 'active' : ''}`}
-            hx-get={buildUrl(basePath, { mode: 'categories', sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined })} hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}>
-            All{counts ? <span class="filter-chip-count"> ({counts.total})</span> : ''}
-          </a>
-          {types.map((type) => {
-            const typeCount = counts?.byType[type.id];
-            return (
-              <a href={buildUrl(basePath, { [typeParam]: type.id, mode: 'categories', sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined })} class={`filter-chip ${activeTypeId === type.id ? 'active' : ''}`}
-                hx-get={buildUrl(basePath, { [typeParam]: type.id, mode: 'categories', sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined })} hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}>
-                {type.icon ? `${type.icon} ` : ''}{type.name}{typeCount !== undefined ? <span class="filter-chip-count"> ({typeCount})</span> : ''}
+          // Skip workspaces with no types that have signals
+          if (typesWithSignals.length === 0) return null;
+
+          const wsCount = counts?.byWorkspace[ws.id];
+          const isActiveWs = activeWorkspaceId === ws.id;
+          const wsUrl = buildUrl(basePath, { [wsParam]: ws.id, sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined });
+          const clearUrl = buildUrl(basePath, { sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined });
+          const chipUrl = isActiveWs ? clearUrl : wsUrl;
+
+          return (
+            <div class="ws-dropdown">
+              <a href={chipUrl}
+                class={`filter-chip ${isActiveWs ? 'active' : ''}`}
+                hx-get={chipUrl} hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}>
+                {ws.name}{wsCount !== undefined ? <span class="filter-chip-count"> ({wsCount})</span> : ''}
               </a>
-            );
-          })}
-        </div>
+              <div class="ws-dropdown-menu">
+                {typesWithSignals.map((type) => {
+                  const typeUrl = buildUrl(basePath, { [wsParam]: ws.id, [typeParam]: type.id, sort: sortParam, q: query, isArchived: isArchived ? 'true' : undefined });
+                  const isActiveType = isActiveWs && activeTypeId === type.id;
+                  return (
+                    <a href={typeUrl}
+                      class={`ws-dropdown-item ${isActiveType ? 'active' : ''}`}
+                      hx-get={typeUrl} hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}>
+                      <span>{type.icon ? `${type.icon} ` : ''}{type.name}</span>
+                      <span class="ws-dropdown-count">{wsTypes[type.id]}</span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
+      )}
 
       {totalResults !== undefined && (
-        <p class="result-count">{totalResults} signal{totalResults !== 1 ? 's' : ''} found</p>
+        <p class="result-count">{totalResults} item{totalResults !== 1 ? 's' : ''} found</p>
       )}
     </nav>
   );

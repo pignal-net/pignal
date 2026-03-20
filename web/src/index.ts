@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import type { Signal } from '@pignal/core';
-import type { SignalWithMeta, SignalStoreRpc } from '@pignal/db';
+import type { Item } from '@pignal/core';
+import type { ItemWithMeta, ItemStoreRpc } from '@pignal/db';
 
 import type { WebEnv, WebRouteConfig } from './types';
 import type { ApiKeyStore } from '@pignal/core/store/api-keys';
@@ -22,16 +22,16 @@ import logoPng from './static/logo.png';
 // Pages
 import { loginPage, loginHandler } from './pages/login';
 import { dashboardPage } from './pages/dashboard';
-import { signalsPage, signalListPartial } from './pages/signals';
+import { itemsPage, itemListPartial } from './pages/items';
 import {
-  signalDetailPage,
+  itemDetailPage,
   validateHandler,
   archiveHandler,
   unarchiveHandler,
   pinHandler,
   unpinHandler,
   visibilityHandler,
-} from './pages/signal-detail';
+} from './pages/item-detail';
 import { typesPage, createTypeHandler, updateTypeHandler, deleteTypeHandler } from './pages/types';
 import {
   workspacesPage,
@@ -42,15 +42,16 @@ import {
 import { settingsPage, updateSettingHandler, batchUpdateSettingsHandler } from './pages/settings';
 import { apiKeysPage, createApiKeyHandler, deleteApiKeyHandler } from './pages/api-keys';
 import { sourcePageFeed } from './pages/source-page';
-import { signalPostPage } from './pages/signal-post';
+import { itemPostPage } from './pages/item-post';
 import { sharedPage } from './pages/shared';
 
 // Lib
 import { generateRobotsTxt, generateSitemap, generateSitemapIndex, generateLlmsTxt, generateLlmsFullTxt, SITEMAP_PAGE_SIZE } from './lib/geo';
 import { generateAtomFeed } from './lib/rss';
 import { formatDate, readingTime } from './lib/time';
+import { getTemplateConfig } from '@pignal/templates';
 
-function toSignal(row: SignalWithMeta): Signal {
+function toItem(row: ItemWithMeta): Item {
   return {
     id: row.id,
     keySummary: row.keySummary,
@@ -75,14 +76,15 @@ function toSignal(row: SignalWithMeta): Signal {
 }
 
 export function createWebRoutes(config: WebRouteConfig) {
-  const router = new Hono<{ Bindings: WebEnv; Variables: { store: SignalStoreRpc; apiKeyStore?: ApiKeyStore } }>();
+  const router = new Hono<{ Bindings: WebEnv; Variables: { store: ItemStoreRpc; apiKeyStore?: ApiKeyStore; templateName: string } }>();
 
   // Security headers on ALL responses
   router.use('*', securityHeaders);
 
-  // Inject store into context for all routes
+  // Inject store + template name into context for all routes
   router.use('*', async (c, next) => {
     c.set('store', config.getStore(c));
+    c.set('templateName', config.getTemplateName(c));
     if (config.getApiKeyStore) {
       c.set('apiKeyStore', config.getApiKeyStore(c));
     }
@@ -146,7 +148,7 @@ export function createWebRoutes(config: WebRouteConfig) {
     c.header('Content-Type', 'application/xml');
     c.header('Cache-Control', 'public, max-age=3600');
     if (result.total <= SITEMAP_PAGE_SIZE) {
-      const items = result.items.map(toSignal);
+      const items = result.items.map(toItem);
       return c.body(generateSitemap(sourceUrl, items));
     }
     return c.body(generateSitemapIndex(sourceUrl, result.total));
@@ -163,7 +165,7 @@ export function createWebRoutes(config: WebRouteConfig) {
     }
     const offset = (page - 1) * SITEMAP_PAGE_SIZE;
     const result = await store.listPublic({ limit: SITEMAP_PAGE_SIZE, offset });
-    const items = result.items.map(toSignal);
+    const items = result.items.map(toItem);
     c.header('Content-Type', 'application/xml');
     c.header('Cache-Control', 'public, max-age=3600');
     return c.body(generateSitemap(sourceUrl, items, page === 1));
@@ -177,9 +179,10 @@ export function createWebRoutes(config: WebRouteConfig) {
       store.listTypes(),
       store.listPublic({ limit: 1, offset: 0 }),
     ]);
+    const templateConfig = getTemplateConfig(c.get('templateName'));
     c.header('Content-Type', 'text/plain; charset=utf-8');
     c.header('Cache-Control', 'public, max-age=3600');
-    return c.body(generateLlmsTxt(settings, types, result.total, sourceUrl));
+    return c.body(generateLlmsTxt(settings, types, result.total, sourceUrl, templateConfig.vocabulary));
   });
 
   router.get('/llms-full.txt', async (c) => {
@@ -191,9 +194,10 @@ export function createWebRoutes(config: WebRouteConfig) {
     ]);
     // Only expose public workspaces on public endpoints
     metadata.workspaces = metadata.workspaces.filter((w) => w.visibility === 'public');
+    const templateConfig = getTemplateConfig(c.get('templateName'));
     c.header('Content-Type', 'text/plain; charset=utf-8');
     c.header('Cache-Control', 'public, max-age=3600');
-    return c.body(generateLlmsFullTxt(metadata, result.total, sourceUrl));
+    return c.body(generateLlmsFullTxt(metadata, result.total, sourceUrl, templateConfig.vocabulary));
   });
 
   // Public source page at root (no auth, no CSRF, no HTMX -- pure SSR for crawlability)
@@ -206,16 +210,17 @@ export function createWebRoutes(config: WebRouteConfig) {
       store.getSettings(),
       store.listPublic({ limit: 50 }),
     ]);
-    const items = result.items.map(toSignal);
+    const items = result.items.map(toItem);
+    const templateConfig = getTemplateConfig(c.get('templateName'));
     c.header('Content-Type', 'application/atom+xml; charset=utf-8');
     c.header('Cache-Control', 'public, max-age=3600');
-    return c.body(generateAtomFeed(settings, items, sourceUrl));
+    return c.body(generateAtomFeed(settings, items, sourceUrl, templateConfig.vocabulary));
   });
   // Source post: serves HTML or raw markdown based on .md suffix
-  router.get('/signal/:slug', async (c) => {
+  router.get('/item/:slug', async (c) => {
     const slugParam = c.req.param('slug') ?? '';
 
-    // Raw markdown endpoint: /signal/:slug.md
+    // Raw markdown endpoint: /item/:slug.md
     if (slugParam.endsWith('.md')) {
       const slug = slugParam.slice(0, -3);
       const store = c.get('store');
@@ -228,46 +233,46 @@ export function createWebRoutes(config: WebRouteConfig) {
         return c.text('Not found');
       }
 
-      const signal = toSignal(row);
+      const item = toItem(row);
       const domain = new URL(c.req.url).hostname;
       const sourceAuthor = settings.owner_name || settings.source_title || domain;
       const githubUrl = settings.source_social_github || '';
       const authorMd = githubUrl ? `[${sourceAuthor}](${githubUrl})` : sourceAuthor;
 
       // Build metadata line: "March 10, 2026 · 1 min read"
-      const date = formatDate(signal.vouchedAt || signal.createdAt);
-      const reading = readingTime(signal.content);
+      const date = formatDate(item.vouchedAt || item.createdAt);
+      const reading = readingTime(item.content);
       const metaParts: string[] = [date, reading];
 
       // Validation badge: "Accurate by [author](github)"
-      if (signal.validationActionLabel) {
-        metaParts.push(`${signal.validationActionLabel} by ${authorMd}`);
+      if (item.validationActionLabel) {
+        metaParts.push(`${item.validationActionLabel} by ${authorMd}`);
       }
 
       // AI source: "AI-assisted via Claude"
-      if (signal.sourceAi) {
-        const aiName = signal.sourceAi === 'mcp-self-hosted'
+      if (item.sourceAi) {
+        const aiName = item.sourceAi === 'mcp-self-hosted'
           ? 'MCP'
-          : signal.sourceAi.includes(':')
-            ? signal.sourceAi.split(':')[1]
-            : signal.sourceAi;
+          : item.sourceAi.includes(':')
+            ? item.sourceAi.split(':')[1]
+            : item.sourceAi;
         if (aiName) metaParts.push(`AI-assisted via ${aiName}`);
       }
 
       const metaLine = `*${metaParts.join(' · ')}*`;
 
       // Tags footer
-      const tagsLine = signal.tags && signal.tags.length > 0
-        ? `\n\n---\n\n${signal.tags.map((t) => `#${t}`).join(' ')}`
+      const tagsLine = item.tags && item.tags.length > 0
+        ? `\n\n---\n\n${item.tags.map((t) => `#${t}`).join(' ')}`
         : '';
 
       c.header('Content-Type', 'text/markdown; charset=utf-8');
       c.header('Cache-Control', 'public, max-age=60');
-      return c.body(`# ${signal.keySummary}\n\n${metaLine}\n\n---\n\n${signal.content}${tagsLine}`);
+      return c.body(`# ${item.keySummary}\n\n${metaLine}\n\n---\n\n${item.content}${tagsLine}`);
     }
 
     // HTML source post
-    return signalPostPage(c);
+    return itemPostPage(c);
   });
   router.get('/s/:token', sharedPage);
 
@@ -287,17 +292,17 @@ export function createWebRoutes(config: WebRouteConfig) {
 
   // Admin pages
   router.get('/pignal', dashboardPage);
-  router.get('/pignal/signals', signalsPage);
-  router.get('/pignal/signals/list', signalListPartial);
-  router.get('/pignal/signals/:id', signalDetailPage);
+  router.get('/pignal/items', itemsPage);
+  router.get('/pignal/items/list', itemListPartial);
+  router.get('/pignal/items/:id', itemDetailPage);
 
-  // Signal actions (HTMX partial + form POST fallback)
-  router.post('/pignal/signals/:id/validate', validateHandler);
-  router.post('/pignal/signals/:id/archive', archiveHandler);
-  router.post('/pignal/signals/:id/unarchive', unarchiveHandler);
-  router.post('/pignal/signals/:id/pin', pinHandler);
-  router.post('/pignal/signals/:id/unpin', unpinHandler);
-  router.post('/pignal/signals/:id/visibility', visibilityHandler);
+  // Item actions (HTMX partial + form POST fallback)
+  router.post('/pignal/items/:id/validate', validateHandler);
+  router.post('/pignal/items/:id/archive', archiveHandler);
+  router.post('/pignal/items/:id/unarchive', unarchiveHandler);
+  router.post('/pignal/items/:id/pin', pinHandler);
+  router.post('/pignal/items/:id/unpin', unpinHandler);
+  router.post('/pignal/items/:id/visibility', visibilityHandler);
 
   // Types CRUD
   router.get('/pignal/types', typesPage);

@@ -22,10 +22,10 @@ class_name = "SelfHostedMcpAgent"
 tag = "v1"
 new_sqlite_classes = ["SelfHostedMcpAgent"]
 
-# Treat vendored static assets as text for raw string imports
+# Treat vendored static assets and template CSS as text for raw string imports
 [[rules]]
 type = "Text"
-globs = ["**/static/*.js", "**/static/*.css", "**/static/*.svg"]
+globs = ["**/static/*.js", "**/*.css", "**/static/*.svg"]
 fallthrough = true
 
 # Import PNG files as binary data
@@ -44,6 +44,9 @@ fallthrough = true
 # [[routes]]
 # pattern = "my-pignal.workers.dev"
 # custom_domain = true
+
+[vars]
+TEMPLATE = "blog"  # Content template: "blog" or "shop"
 
 # Secrets (set via `wrangler secret put SERVER_TOKEN`)
 # SERVER_TOKEN - your authentication token

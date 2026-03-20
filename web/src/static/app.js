@@ -734,13 +734,30 @@ document.addEventListener('input', function (e) {
 /* pignal - source page filter bar active state management */
 (function () {
   document.addEventListener('click', function (e) {
-    // Filter chip: toggle active within container
+    // Filter chip: toggle active among siblings in filter-bar-chips
     var chip = e.target && e.target.closest ? e.target.closest('.filter-chip') : null;
     if (chip) {
-      var container = chip.closest('.filter-bar-items');
-      if (container) {
-        container.querySelectorAll('.filter-chip').forEach(function (el) { el.classList.remove('active'); });
+      var bar = chip.closest('.filter-bar-chips');
+      if (bar) {
+        bar.querySelectorAll('.filter-chip').forEach(function (el) { el.classList.remove('active'); });
         chip.classList.add('active');
+      }
+    }
+
+    // Dropdown item: mark active and update parent chip
+    var dropdownItem = e.target && e.target.closest ? e.target.closest('.ws-dropdown-item') : null;
+    if (dropdownItem) {
+      var dropdown = dropdownItem.closest('.ws-dropdown');
+      if (dropdown) {
+        dropdown.querySelectorAll('.ws-dropdown-item').forEach(function (el) { el.classList.remove('active'); });
+        dropdownItem.classList.add('active');
+        // Also mark the parent workspace chip as active
+        var bar2 = dropdown.closest('.filter-bar-chips');
+        if (bar2) {
+          bar2.querySelectorAll('.filter-chip').forEach(function (el) { el.classList.remove('active'); });
+          var parentChip = dropdown.querySelector('.filter-chip');
+          if (parentChip) parentChip.classList.add('active');
+        }
       }
     }
 
@@ -761,28 +778,13 @@ document.addEventListener('input', function (e) {
       }
     }
 
-    // Mode button: toggle active + show/hide chip containers
-    var modeBtn = e.target && e.target.closest ? e.target.closest('.filter-mode-btn') : null;
-    if (modeBtn) {
-      var bar = modeBtn.closest('.source-filter-bar');
-      var modes = modeBtn.closest('.filter-bar-modes');
-      if (bar && modes) {
-        modes.querySelectorAll('.filter-mode-btn').forEach(function (el) { el.classList.remove('active'); });
-        modeBtn.classList.add('active');
-
-        var targetMode = modeBtn.getAttribute('data-mode');
-        bar.querySelectorAll('.filter-bar-items[data-chips]').forEach(function (el) {
-          el.hidden = el.getAttribute('data-chips') !== targetMode;
-        });
-
-        // Reset active chip in newly shown container to "All"
-        var targetChips = bar.querySelector('[data-chips="' + targetMode + '"]');
-        if (targetChips) {
-          targetChips.querySelectorAll('.filter-chip').forEach(function (el) { el.classList.remove('active'); });
-          var first = targetChips.querySelector('.filter-chip');
-          if (first) first.classList.add('active');
+    // Click outside dropdowns: close by blurring (mobile)
+    if (!e.target || !e.target.closest || !e.target.closest('.ws-dropdown')) {
+      document.querySelectorAll('.ws-dropdown').forEach(function (el) {
+        if (el.contains(document.activeElement)) {
+          document.activeElement.blur();
         }
-      }
+      });
     }
   });
 })();
