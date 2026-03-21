@@ -38,6 +38,8 @@ jobs:
         run: |
           mkdir -p dist/migrations
           cp migrations/*.sql dist/migrations/
+          mkdir -p dist/seeds
+          cp ../templates/seeds/*.sql dist/seeds/
           cd dist
           tar -czf ../bundle.tar.gz --exclude='*.map' --exclude='README.md' .
 
