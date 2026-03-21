@@ -26,6 +26,15 @@ export interface WellKnownEndpoints {
   public_items: string;
 }
 
+export interface WellKnownTemplate {
+  id: string;
+  displayName: string;
+  domain: string;
+  contentType: string;
+  layout: string;
+  tagline: string;
+}
+
 export interface WellKnownResponse {
   version: string;
   api_version: string;
@@ -33,6 +42,7 @@ export interface WellKnownResponse {
   capabilities: WellKnownCapabilities;
   stats: WellKnownStats;
   endpoints: WellKnownEndpoints;
+  template?: WellKnownTemplate;
   tools?: ToolDefinition[];
 }
 

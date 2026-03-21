@@ -5,7 +5,7 @@ description: Use when developing on Pignal OSS packages (db, core, web, server) 
 
 # Pignal OSS Development
 
-Four packages with strict layering: `@pignal/db` (schema + types) -> `@pignal/core` (logic + routes) -> `@pignal/server` + `@pignal/web` (deployment + UI). Always modify bottom-up.
+Five packages with strict layering: `@pignal/db` (schema + types) -> `@pignal/core` (logic + routes) -> `@pignal/templates` (profiles + configs + catalog) -> `@pignal/server` + `@pignal/web` (deployment + UI). Always modify bottom-up.
 
 ## Which Package?
 
@@ -19,7 +19,10 @@ Four packages with strict layering: `@pignal/db` (schema + types) -> `@pignal/co
 | Permission | `core` | `core/src/auth/permissions.ts` |
 | Server wiring / auth | `server` | `server/src/index.ts` + `server/src/middleware/` |
 | Web UI page | `web` | `web/src/pages/*.tsx` |
-| Web template | `web` | `web/src/templates/<name>/` (see `TEMPLATE_GUIDE.md`) |
+| Template profile/config | `templates` | `templates/src/config.ts` (profile + vocabulary + SEO + MCP) |
+| Template catalog | `templates` | `templates/src/catalog.ts` (shipped/planned/rejected registry) |
+| Template seed data | `templates` | `templates/seeds/<name>.sql` (generated via `pnpm seed:generate`) |
+| Web template JSX | `web` | `web/src/templates/<name>/` (see `GENERATION_GUIDE.md`) |
 | D1 migration | `server` | `server/migrations/NNNN_description.sql` |
 
 ## Modification Order

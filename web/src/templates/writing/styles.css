@@ -1,0 +1,175 @@
+/* Writing template styles — serif typography, drop caps, pure reading */
+/* All classes are prefixed with "writing-" to avoid collisions. */
+
+.writing-page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+
+/* Source page — clean title list */
+.writing-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.writing-entry {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.writing-entry:first-child {
+  padding-top: 0;
+}
+
+.writing-entry-title {
+  margin: 0 0 0.3rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.3rem;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.writing-entry-title a {
+  text-decoration: none;
+  color: var(--pico-color);
+}
+
+.writing-entry-title a:hover {
+  color: var(--pico-primary);
+}
+
+.writing-entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--pico-muted-color);
+}
+
+.writing-entry-reading {
+  color: var(--pico-muted-color);
+}
+
+/* Item post page */
+.writing-post-page {
+  max-width: 740px;
+  margin: 0 auto;
+}
+
+.writing-post-main {
+  max-width: 100%;
+}
+
+.writing-post-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.writing-post-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.2rem;
+  font-weight: 400;
+  line-height: 1.2;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.01em;
+}
+
+.writing-post-meta {
+  justify-content: center;
+  color: var(--pico-muted-color);
+}
+
+/* Content — serif, generous spacing, drop cap */
+.writing-content {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.1rem;
+  line-height: 1.85;
+  letter-spacing: 0.005em;
+}
+
+.writing-content p:first-of-type::first-letter {
+  float: left;
+  font-size: 3.5em;
+  line-height: 0.8;
+  padding-right: 0.1em;
+  margin-top: 0.05em;
+  font-weight: 700;
+  color: var(--pico-color);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.writing-content p {
+  margin-bottom: 1.25em;
+}
+
+.writing-content h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  font-size: 1.5rem;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.writing-content h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  font-size: 1.25rem;
+  margin-top: 2rem;
+}
+
+/* Pull quote styling: blockquotes rendered as pull quotes */
+.writing-content blockquote {
+  border-left: none;
+  padding: 1.5rem 0;
+  margin: 2rem 0;
+  border-top: 2px solid var(--pico-muted-border-color);
+  border-bottom: 2px solid var(--pico-muted-border-color);
+  font-size: 1.25rem;
+  font-style: italic;
+  text-align: center;
+  color: var(--pico-color);
+}
+
+.writing-content blockquote p {
+  margin: 0;
+}
+
+.writing-article .item-tags-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--pico-muted-border-color);
+}
+
+@media (max-width: 600px) {
+  .writing-post-title {
+    font-size: 1.6rem;
+  }
+
+  .writing-content {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .writing-content p:first-of-type::first-letter {
+    font-size: 3em;
+  }
+
+  .writing-entry-title {
+    font-size: 1.1rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .writing-post-title {
+    font-size: 2.5rem;
+  }
+
+  .writing-content {
+    font-size: 1.15rem;
+    line-height: 1.9;
+  }
+}

@@ -91,11 +91,7 @@ export const ${exportName}: Template = {
   vocabulary: config.vocabulary,
   seo: config.seo,
 
-  meta: {
-    name: '${name}',
-    // TODO: Write a short description for the template picker.
-    description: '${pascal} template',
-  },
+  profile: config.profile,
 
   styles: templateStyles,
 };

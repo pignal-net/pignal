@@ -1,0 +1,347 @@
+/* Magazine template styles */
+/* All classes are prefixed with "magazine-" to avoid collisions. */
+
+/* ===== Hero card ===== */
+.magazine-hero {
+  position: relative;
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: var(--pico-card-background-color);
+  margin-bottom: 2rem;
+  transition: box-shadow 0.2s ease;
+}
+
+.magazine-hero:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.magazine-hero-image {
+  width: 100%;
+  height: 280px;
+  background: linear-gradient(135deg, var(--pico-primary-background), var(--pico-secondary-background));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.magazine-hero-image .magazine-section-badge {
+  font-size: 1rem;
+  padding: 0.5rem 1.25rem;
+}
+
+.magazine-hero-body {
+  padding: 1.5rem 2rem 2rem;
+}
+
+.magazine-hero-body h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.75rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.magazine-hero-body h2 a {
+  text-decoration: none;
+  color: var(--pico-color);
+}
+
+.magazine-hero-body h2 a:hover {
+  color: var(--pico-primary);
+}
+
+.magazine-hero-excerpt {
+  font-size: 1rem;
+  color: var(--pico-muted-color);
+  line-height: 1.6;
+  margin: 0 0 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.magazine-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--pico-muted-color);
+}
+
+/* ===== Section badge (editorial feel) ===== */
+.magazine-section-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background-color: var(--pico-primary);
+  text-decoration: none;
+}
+
+.magazine-section-badge:hover {
+  opacity: 0.9;
+  text-decoration: none;
+  color: #fff;
+}
+
+/* ===== 2-column card grid ===== */
+.magazine-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+/* ===== Individual cards ===== */
+.magazine-card {
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--pico-card-background-color);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.magazine-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Alternating larger first card in each row */
+.magazine-card:nth-child(odd) {
+  grid-column: span 1;
+}
+
+.magazine-card-image {
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(135deg, var(--pico-primary-background), var(--pico-secondary-background));
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 1rem;
+}
+
+.magazine-card-body {
+  padding: 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.magazine-card-body h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.magazine-card-body h3 a {
+  text-decoration: none;
+  color: var(--pico-color);
+}
+
+.magazine-card-body h3 a:hover {
+  color: var(--pico-primary);
+}
+
+.magazine-card-excerpt {
+  font-size: 0.85rem;
+  color: var(--pico-muted-color);
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.magazine-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: var(--pico-muted-color);
+  margin-top: auto;
+}
+
+.magazine-card-meta .magazine-time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Time display ===== */
+.magazine-time {
+  white-space: nowrap;
+}
+
+/* ===== Reading time ===== */
+.magazine-reading-time {
+  white-space: nowrap;
+}
+
+.magazine-meta-sep {
+  color: var(--pico-muted-color);
+  opacity: 0.4;
+}
+
+/* ===== Filter bar area ===== */
+.magazine-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.magazine-result-count {
+  font-size: 0.9rem;
+  color: var(--pico-muted-color);
+}
+
+.magazine-sort {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.magazine-sort-tab {
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+  text-decoration: none;
+  color: var(--pico-muted-color);
+  transition: background-color 0.15s ease;
+}
+
+.magazine-sort-tab:hover {
+  background: var(--pico-muted-border-color);
+  text-decoration: none;
+  color: var(--pico-color);
+}
+
+.magazine-sort-tab.active {
+  background: var(--pico-primary);
+  color: #fff;
+}
+
+/* ===== Tags on cards ===== */
+.magazine-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.magazine-tag {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 1rem;
+  background: var(--pico-muted-border-color);
+  color: var(--pico-muted-color);
+  text-decoration: none;
+}
+
+.magazine-tag:hover {
+  color: var(--pico-primary);
+  text-decoration: none;
+}
+
+/* ===== Active tag filter chip ===== */
+.magazine-active-tag {
+  margin-bottom: 1rem;
+}
+
+.magazine-active-tag a {
+  display: inline-block;
+  padding: 0.3rem 0.75rem;
+  border-radius: 1rem;
+  background: var(--pico-primary);
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.magazine-active-tag a:hover {
+  opacity: 0.85;
+  color: #fff;
+  text-decoration: none;
+}
+
+/* ===== Empty state ===== */
+.magazine-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--pico-muted-color);
+}
+
+/* ===== Item post page (article detail) ===== */
+.magazine-post-header .magazine-section-badge {
+  margin-bottom: 0.75rem;
+}
+
+.magazine-post-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  color: var(--pico-muted-color);
+  margin-top: 0.75rem;
+}
+
+.magazine-post-meta .post-author {
+  color: var(--pico-color);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.magazine-post-meta .post-author:hover {
+  color: var(--pico-primary);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .magazine-hero-body h2 {
+    font-size: 1.4rem;
+  }
+
+  .magazine-hero-image {
+    height: 200px;
+  }
+}
+
+@media (max-width: 600px) {
+  .magazine-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .magazine-hero-body {
+    padding: 1rem 1.25rem 1.5rem;
+  }
+
+  .magazine-hero-body h2 {
+    font-size: 1.2rem;
+  }
+
+  .magazine-hero-image {
+    height: 160px;
+  }
+
+  .magazine-hero-excerpt {
+    font-size: 0.9rem;
+    -webkit-line-clamp: 2;
+  }
+
+  .magazine-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

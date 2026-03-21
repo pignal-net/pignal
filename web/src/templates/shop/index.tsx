@@ -40,11 +40,7 @@ export const shopTemplate: Template = {
 
   vocabulary: config.vocabulary,
   seo: config.seo,
-
-  meta: {
-    name: 'shop',
-    description: 'Grid-based product catalog layout with card-style display',
-  },
+  profile: config.profile,
 
   styles: shopStyles,
 };

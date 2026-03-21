@@ -1,0 +1,171 @@
+/* Reviews template styles */
+/* All classes are prefixed with "reviews-" to avoid collisions. */
+
+.reviews-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem 0;
+}
+
+.reviews-card {
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--pico-card-background-color);
+  transition: box-shadow 0.2s ease;
+}
+
+.reviews-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.reviews-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+  background: var(--pico-card-background-color);
+}
+
+.reviews-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--pico-muted-color);
+}
+
+/* Star ratings */
+.reviews-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  color: var(--pico-primary);
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.reviews-stars--large {
+  font-size: 1.25rem;
+}
+
+.reviews-star-half {
+  opacity: 0.4;
+}
+
+.reviews-score-text {
+  font-size: 0.75rem;
+  color: var(--pico-muted-color);
+  margin-left: 0.35rem;
+  font-family: inherit;
+}
+
+.reviews-stars--large .reviews-score-text {
+  font-size: 0.9rem;
+}
+
+.reviews-rating-block {
+  margin: 0.5rem 0 0.75rem;
+}
+
+.reviews-card-body {
+  padding: 0.75rem 1rem;
+}
+
+.reviews-card-body h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
+.reviews-card-body h3 a {
+  text-decoration: none;
+  color: var(--pico-color);
+}
+
+.reviews-card-body h3 a:hover {
+  color: var(--pico-primary);
+}
+
+.reviews-card-description {
+  font-size: 0.85rem;
+  color: var(--pico-muted-color);
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.reviews-card-tags {
+  padding: 0 1rem 0.5rem;
+}
+
+.reviews-card-tags .item-tag {
+  font-size: 0.75rem;
+}
+
+.reviews-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0.6rem 1rem;
+  border-top: 1px solid var(--pico-muted-border-color);
+  font-size: 0.85rem;
+}
+
+.reviews-card-footer a {
+  color: var(--pico-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.reviews-card-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Pros/cons styling in content */
+.reviews-content h2,
+.reviews-content h3 {
+  font-size: 1.1rem;
+}
+
+.reviews-content ul {
+  padding-left: 1.25rem;
+}
+
+.reviews-article h1 {
+  margin-bottom: 0.25rem;
+}
+
+.reviews-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--pico-muted-color);
+}
+
+@media (max-width: 600px) {
+  .reviews-feed {
+    gap: 1rem;
+  }
+
+  .reviews-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .reviews-stars {
+    font-size: 0.9rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .reviews-card-body h3 {
+    font-size: 1.1rem;
+  }
+}

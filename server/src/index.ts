@@ -63,9 +63,12 @@ app.get('/.well-known/pignal', async (c) => {
     } catch { /* invalid URL, leave empty */ }
   }
 
+  const templateConfig = getTemplateConfig(c.env.TEMPLATE || 'blog');
+  const { profile } = templateConfig;
+
   c.header('Cache-Control', 'public, max-age=300');
   return c.json({
-    version: '1.1.0',
+    version: '1.2.0',
     api_version: 'v1',
     owner: {
       github_login: githubLogin,
@@ -87,7 +90,15 @@ app.get('/.well-known/pignal', async (c) => {
       mcp: '/mcp',
       public_items: '/api/public/items',
     },
-    tools: getDefaultToolManifest(getTemplateConfig(c.env.TEMPLATE || 'blog').mcp),
+    template: {
+      id: profile.id,
+      displayName: profile.displayName,
+      domain: profile.domain,
+      contentType: profile.contentType,
+      layout: profile.layout,
+      tagline: profile.tagline,
+    },
+    tools: getDefaultToolManifest(templateConfig.mcp),
   });
 });
 

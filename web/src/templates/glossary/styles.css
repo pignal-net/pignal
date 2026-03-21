@@ -1,0 +1,340 @@
+/* Glossary template styles */
+/* All classes are prefixed with "glossary-" to avoid collisions. */
+
+/* ---- Page layout ---- */
+.glossary-page {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 1rem 0;
+}
+
+/* ---- Search bar (prominent, centered) ---- */
+.glossary-search {
+  max-width: 600px;
+  margin: 0 auto 1.25rem;
+  text-align: center;
+}
+
+.glossary-search-input {
+  width: 100%;
+  font-size: 1.1rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--pico-muted-border-color);
+  border-radius: 0.5rem;
+  background: var(--pico-card-background-color);
+  color: var(--pico-color);
+  transition: border-color 0.2s ease;
+}
+
+.glossary-search-input:focus {
+  border-color: var(--pico-primary);
+  outline: none;
+}
+
+.glossary-search-input::placeholder {
+  color: var(--pico-muted-color);
+}
+
+/* ---- Alphabet bar ---- */
+.glossary-alphabet {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.15rem;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.glossary-alpha-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--pico-primary);
+  border-radius: 0.25rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.glossary-alpha-link:hover {
+  background-color: var(--pico-primary-focus);
+}
+
+.glossary-alpha-disabled {
+  color: var(--pico-muted-color);
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ---- Domain (type) filter chips ---- */
+.glossary-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.glossary-chip {
+  display: inline-block;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  text-decoration: none;
+  border-radius: 1rem;
+  border: 1px solid var(--pico-muted-border-color);
+  color: var(--pico-muted-color);
+  background: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.glossary-chip:hover {
+  border-color: var(--pico-primary);
+  color: var(--pico-primary);
+}
+
+.glossary-chip.active {
+  background-color: var(--pico-primary);
+  border-color: var(--pico-primary);
+  color: var(--pico-primary-inverse);
+}
+
+/* ---- Glossary (workspace) tabs ---- */
+.glossary-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--pico-muted-border-color);
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.glossary-tab {
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  color: var(--pico-muted-color);
+  font-weight: 500;
+  font-size: 0.85rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.glossary-tab:hover {
+  color: var(--pico-color);
+}
+
+.glossary-tab.active {
+  color: var(--pico-primary);
+  border-bottom-color: var(--pico-primary);
+}
+
+/* ---- Active tag ---- */
+.glossary-active-tag {
+  margin-bottom: 1rem;
+}
+
+.glossary-active-tag a {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: var(--pico-primary-focus);
+  border-radius: 1rem;
+  font-size: 0.85rem;
+  color: var(--pico-primary);
+  text-decoration: none;
+}
+
+/* ---- Header bar ---- */
+.glossary-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.glossary-result-count {
+  font-size: 0.85rem;
+  color: var(--pico-muted-color);
+}
+
+/* ---- Term list ---- */
+.glossary-term-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ---- Letter group headers ---- */
+.glossary-letter-group {
+  scroll-margin-top: 1rem;
+}
+
+.glossary-letter-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 0.4rem 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--pico-muted-color);
+  background: var(--pico-background-color);
+  border-bottom: 2px solid var(--pico-muted-border-color);
+  margin-bottom: 0.25rem;
+}
+
+/* ---- Term rows ---- */
+.glossary-terms {
+  display: flex;
+  flex-direction: column;
+}
+
+.glossary-term-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.65rem 0.5rem;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+  transition: background-color 0.15s ease;
+}
+
+.glossary-term-row:hover {
+  background-color: var(--pico-card-background-color);
+}
+
+.glossary-term-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  min-width: 180px;
+}
+
+.glossary-term-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--pico-color);
+}
+
+.glossary-term-def {
+  font-size: 0.9rem;
+  color: var(--pico-muted-color);
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* ---- Empty state ---- */
+.glossary-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--pico-muted-color);
+}
+
+/* ---- Detail page ---- */
+.glossary-detail {
+  max-width: 750px;
+  margin: 0 auto;
+  padding: 1rem 0;
+}
+
+.glossary-detail-article {
+  margin-top: 1rem;
+}
+
+.glossary-detail-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--pico-muted-border-color);
+}
+
+.glossary-detail-term {
+  font-size: 2.25rem;
+  font-weight: 800;
+  margin: 0 0 0.75rem;
+  line-height: 1.2;
+}
+
+.glossary-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--pico-muted-color);
+}
+
+.glossary-detail-content {
+  line-height: 1.8;
+  font-size: 1.05rem;
+}
+
+.glossary-detail-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--pico-muted-border-color);
+}
+
+.glossary-related-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--pico-muted-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 600px) {
+  .glossary-page {
+    padding: 0.5rem 0;
+  }
+
+  .glossary-search-input {
+    font-size: 1rem;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .glossary-alphabet {
+    gap: 0.1rem;
+  }
+
+  .glossary-alpha-link {
+    width: 1.6rem;
+    height: 1.6rem;
+    font-size: 0.75rem;
+  }
+
+  .glossary-letter-header {
+    font-size: 1.25rem;
+  }
+
+  .glossary-term-row {
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem;
+  }
+
+  .glossary-term-left {
+    min-width: auto;
+  }
+
+  .glossary-term-def {
+    font-size: 0.85rem;
+  }
+
+  .glossary-detail-term {
+    font-size: 1.75rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .glossary-term-left {
+    min-width: 220px;
+  }
+}

@@ -15,3 +15,7 @@
 | Template CSS not loading | Wrangler needs a rule to import `.css` as text | Add `{ type = "Text", globs = ["**/*.css"] }` to `server/wrangler.toml` `[[rules]]` |
 | Template CSS shows `[object Object]` | CSS imported as module instead of text | Ensure the wrangler `Text` rule is present; do not use CSS module imports |
 | Forgetting to register template | Template file exists but is not selectable | Add to `TEMPLATES` record in `web/src/templates/registry.ts` |
+| Creating template without checking catalog | Duplicate or rejected template gets built | Read `templates/src/catalog.ts` first — check for ID conflicts and rejected entries |
+| Using `meta` instead of `profile` on Template | `meta` was replaced by `profile` | Use `profile: config.profile` in template index.tsx, not `meta: { name, description }` |
+| Writing seed SQL by hand | UUIDs and schema can drift from profile seedData | Run `pnpm seed:generate <name>` to generate from the profile's `seedData` |
+| Missing catalog entry for shipped template | Hub and governance lose track of it | Add entry with `status: 'shipped'` to `TEMPLATE_CATALOG` in `catalog.ts` |

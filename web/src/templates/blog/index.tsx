@@ -32,11 +32,7 @@ export const blogTemplate: Template = {
 
   vocabulary: config.vocabulary,
   seo: config.seo,
-
-  meta: {
-    name: 'blog',
-    description: 'Classic blog layout with timeline-grouped feed and article post pages',
-  },
+  profile: config.profile,
 
   styles: '',
 };

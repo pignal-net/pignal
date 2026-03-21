@@ -14,7 +14,8 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "check-all": "pnpm type-check",
-    "template:create": "tsx scripts/create-template.ts"
+    "template:create": "tsx scripts/create-template.ts",
+    "seed:generate": "tsx scripts/generate-seed.ts"
   },
   "dependencies": {
     "@pignal/core": "workspace:*",

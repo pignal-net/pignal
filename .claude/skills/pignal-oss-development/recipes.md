@@ -50,13 +50,17 @@ Note: Drizzle schema changes in `db/src/schema.ts` do NOT auto-generate migratio
 
 ## 6. Create a New Web Template
 
-1. **Config** — Add a `TemplateConfig` in `templates/src/config.ts` with vocabulary, SEO hints, MCP config, and `schemaDescriptions`
-2. **Scaffold** — Run `pnpm template:create <name>` (from `templates/`) to generate JSX components in `web/src/templates/<name>/`
-3. **Components** — Implement `SourcePage`, `ItemPost`, `Layout`, and `PartialResults` in separate `.tsx` files
-4. **Styles** — Write scoped CSS in `styles.css` with `<name>-*` class prefix. Import as text via `import styles from './styles.css'`
-5. **Registry** — Import template in `web/src/templates/registry.ts` and add to the `TEMPLATES` record
-6. **Seeds** — (Optional) Add seed SQL in `templates/seeds/<name>.sql`
-7. **Wrangler rule** — Ensure `server/wrangler.toml` has a rule for `**/*.css` with `type = "Text"` (required for CSS text imports)
-8. **Verify** — `pnpm check-all`. Set `TEMPLATE = "<name>"` under `[vars]` in `server/wrangler.toml` and run `pnpm dev:server`
+**Profile-first workflow** — always define the identity before generating artifacts.
 
-See `templates/TEMPLATE_GUIDE.md` for full contract, prop types, and checklist.
+1. **Check catalog** — Read `templates/src/catalog.ts`. Verify no existing/rejected entry covers the same use case. Check the layout x contentType matrix in `templates/GENERATION_GUIDE.md`
+2. **Profile** — Add a `TemplateProfile` in `templates/src/config.ts` with id, displayName, tagline, description, domain, contentType, layout, audience, useCases, differentiators, and `seedData` (types, workspaces, settings)
+3. **Config** — Add the full `TemplateConfig` (profile + vocabulary + SEO + MCP with schemaDescriptions and responseLabels)
+4. **Catalog** — Add entry to `TEMPLATE_CATALOG` in `templates/src/catalog.ts` with `status: 'shipped'`
+5. **Seed SQL** — Run `pnpm seed:generate <name>` to generate `templates/seeds/<name>.sql` from the profile's seedData
+6. **Scaffold** — Run `pnpm template:create <name>` to generate JSX components in `web/src/templates/<name>/`
+7. **Components** — Implement `SourcePage`, `ItemPost`, `Layout`, and `PartialResults` in the generated `.tsx` files
+8. **Styles** — Write scoped CSS in `styles.css` with `<name>-*` class prefix
+9. **Wrangler rule** — Ensure `server/wrangler.toml` has a rule for `**/*.css` with `type = "Text"` (required for CSS text imports)
+10. **Verify** — `pnpm check-all`. Set `TEMPLATE = "<name>"` under `[vars]` in `server/wrangler.toml` and run `pnpm dev:server`
+
+See `templates/GENERATION_GUIDE.md` for full generation rules, differentiation criteria, and quality checklist.

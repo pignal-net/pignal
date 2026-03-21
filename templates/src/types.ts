@@ -1,10 +1,10 @@
 import type { Child } from 'hono/jsx';
 import type { Item } from '@pignal/core';
 import type { ItemTypeWithActions, WorkspaceSelect, SettingsMap } from '@pignal/db';
-import type { TemplateVocabulary, TemplateSeoHints } from './config';
+import type { TemplateVocabulary, TemplateSeoHints, TemplateProfile } from './config';
 
 export type { Item };
-export type { TemplateVocabulary, TemplateSeoHints } from './config';
+export type { TemplateVocabulary, TemplateSeoHints, TemplateProfile } from './config';
 
 export interface SourcePageProps {
   items: Item[];
@@ -113,6 +113,6 @@ export interface Template {
 
   vocabulary: TemplateVocabulary;
   seo: TemplateSeoHints;
-  meta: { name: string; description: string };
+  profile: TemplateProfile;
   styles: string;
 }

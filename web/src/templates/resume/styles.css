@@ -1,0 +1,524 @@
+/* Resume template styles */
+/* All classes are prefixed with "resume-" to avoid collisions. */
+
+/* ========== Hero Section ========== */
+.resume-hero {
+  text-align: center;
+  padding: 2.5rem 1rem 2rem;
+  border-bottom: 2px solid var(--pico-muted-border-color);
+  margin-bottom: 2rem;
+}
+
+.resume-hero-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+  border: 3px solid var(--pico-muted-border-color);
+}
+
+.resume-hero-name {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--pico-color);
+}
+
+.resume-hero-tagline {
+  font-size: 1.1rem;
+  color: var(--pico-muted-color);
+  margin: 0 0 1rem;
+  line-height: 1.5;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.resume-hero-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+
+.resume-hero-links a {
+  color: var(--pico-primary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.resume-hero-links a:hover {
+  text-decoration: underline;
+}
+
+/* ========== Skills Chips ========== */
+.resume-skills {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+
+.resume-skill-chip {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 1rem;
+  background: var(--pico-primary-focus);
+  color: var(--pico-primary);
+  letter-spacing: 0.01em;
+}
+
+/* ========== Profile Tabs (Workspace Filter) ========== */
+.resume-profiles {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 0 1rem;
+}
+
+.resume-profile-tab {
+  display: inline-block;
+  padding: 0.35rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 2rem;
+  border: 1px solid var(--pico-muted-border-color);
+  background: transparent;
+  color: var(--pico-muted-color);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.resume-profile-tab:hover {
+  border-color: var(--pico-primary);
+  color: var(--pico-primary);
+}
+
+.resume-profile-tab.active {
+  background: var(--pico-primary);
+  border-color: var(--pico-primary);
+  color: var(--pico-primary-inverse);
+}
+
+/* ========== Section Filter Chips ========== */
+.resume-section-filters {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  padding: 0 1rem;
+}
+
+.resume-section-chip {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 1rem;
+  border: 1px solid var(--pico-muted-border-color);
+  background: transparent;
+  color: var(--pico-muted-color);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.resume-section-chip:hover {
+  border-color: var(--pico-color);
+  color: var(--pico-color);
+}
+
+.resume-section-chip.active {
+  background: var(--pico-color);
+  border-color: var(--pico-color);
+  color: var(--pico-card-background-color);
+}
+
+.resume-section-chip-count {
+  font-weight: 400;
+  opacity: 0.7;
+  margin-left: 0.2rem;
+}
+
+/* ========== Active Tag Filter ========== */
+.resume-active-tag {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.resume-active-tag a {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  border-radius: 1rem;
+  background: var(--pico-primary-focus);
+  color: var(--pico-primary);
+  text-decoration: none;
+}
+
+.resume-active-tag a:hover {
+  text-decoration: line-through;
+}
+
+/* ========== Section Group ========== */
+.resume-sections {
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.resume-section {
+  margin-bottom: 2.5rem;
+}
+
+.resume-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--pico-primary);
+}
+
+.resume-section-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.resume-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--pico-primary);
+  margin: 0;
+}
+
+.resume-section-count {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--pico-muted-color);
+  margin-left: auto;
+}
+
+/* ========== Credential Entry (Timeline) ========== */
+.resume-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  padding-left: 1.25rem;
+}
+
+.resume-entries::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--pico-muted-border-color);
+}
+
+.resume-entry {
+  position: relative;
+  padding: 0.75rem 0;
+  padding-left: 0.75rem;
+}
+
+.resume-entry::before {
+  content: '';
+  position: absolute;
+  left: -1.25rem;
+  top: 1.15rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pico-muted-border-color);
+  border: 2px solid var(--pico-card-background-color);
+  z-index: 1;
+}
+
+.resume-entry:first-child::before {
+  background: var(--pico-primary);
+}
+
+.resume-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+}
+
+.resume-entry-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.4;
+  color: var(--pico-color);
+}
+
+.resume-entry-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.resume-entry-title a:hover {
+  color: var(--pico-primary);
+}
+
+.resume-entry-date {
+  font-size: 0.75rem;
+  color: var(--pico-muted-color);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.resume-entry-description {
+  font-size: 0.85rem;
+  color: var(--pico-muted-color);
+  line-height: 1.5;
+  margin: 0.25rem 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.resume-entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+
+.resume-entry-badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  background: var(--pico-primary-focus);
+  color: var(--pico-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.resume-entry-tag {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.65rem;
+  border-radius: 0.75rem;
+  background: var(--pico-secondary-focus);
+  color: var(--pico-muted-color);
+  text-decoration: none;
+}
+
+.resume-entry-tag:hover {
+  color: var(--pico-color);
+}
+
+/* ========== Post Page ========== */
+.resume-post {
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.resume-post-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--pico-primary);
+}
+
+.resume-post-section {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+
+.resume-post-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  line-height: 1.3;
+  color: var(--pico-color);
+}
+
+.resume-post-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--pico-muted-color);
+}
+
+.resume-post-meta a {
+  color: var(--pico-primary);
+  text-decoration: none;
+}
+
+.resume-post-meta a:hover {
+  text-decoration: underline;
+}
+
+.resume-post-content {
+  line-height: 1.7;
+}
+
+.resume-post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--pico-muted-border-color);
+}
+
+.resume-post-tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  border-radius: 1rem;
+  background: var(--pico-primary-focus);
+  color: var(--pico-primary);
+  text-decoration: none;
+}
+
+.resume-post-tag:hover {
+  text-decoration: underline;
+}
+
+/* ========== Empty State ========== */
+.resume-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--pico-muted-color);
+  font-size: 0.9rem;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 600px) {
+  .resume-hero {
+    padding: 1.5rem 1rem;
+  }
+
+  .resume-hero-name {
+    font-size: 1.5rem;
+  }
+
+  .resume-hero-tagline {
+    font-size: 1rem;
+  }
+
+  .resume-hero-avatar {
+    width: 72px;
+    height: 72px;
+  }
+
+  .resume-sections {
+    padding: 0 0.5rem;
+  }
+
+  .resume-entry-header {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .resume-entry-date {
+    font-size: 0.7rem;
+  }
+
+  .resume-post-title {
+    font-size: 1.3rem;
+  }
+}
+
+/* ========== Print Styles ========== */
+@media print {
+  .resume-profiles,
+  .resume-section-filters,
+  .resume-active-tag,
+  .source-actions,
+  .source-loading,
+  .pagination,
+  .app-header,
+  .app-footer {
+    display: none !important;
+  }
+
+  .resume-hero {
+    padding: 1rem 0;
+    border-bottom: 1px solid #000;
+    margin-bottom: 1rem;
+  }
+
+  .resume-hero-avatar {
+    width: 64px;
+    height: 64px;
+  }
+
+  .resume-hero-name {
+    font-size: 1.5rem;
+  }
+
+  .resume-section-header {
+    border-bottom: 1px solid #000;
+  }
+
+  .resume-section-title {
+    color: #000;
+  }
+
+  .resume-entries::before {
+    display: none;
+  }
+
+  .resume-entry::before {
+    display: none;
+  }
+
+  .resume-entries {
+    padding-left: 0;
+  }
+
+  .resume-entry {
+    padding-left: 0;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .resume-entry-description {
+    -webkit-line-clamp: unset;
+    overflow: visible;
+  }
+
+  .resume-skill-chip {
+    border: 1px solid #ccc;
+    background: transparent;
+    color: #000;
+  }
+
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+
+  body {
+    font-size: 11pt;
+  }
+}
