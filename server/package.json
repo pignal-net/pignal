@@ -7,7 +7,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev --persist-to .wrangler-state",
-    "deploy": "wrangler deploy",
+    "deploy": "pnpm --filter @pignal/web css:build && wrangler deploy",
     "db:migrate": "wrangler d1 migrations apply pignal-server-db --local --persist-to .wrangler-state",
     "db:migrate:prod": "wrangler d1 migrations apply pignal-server-db --remote",
     "db:seed": "wrangler d1 execute pignal-server-db --local --persist-to .wrangler-state --file",

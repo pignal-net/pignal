@@ -491,6 +491,7 @@
   a.outline[role="button"]:hover {
     background: var(--color-primary);
     color: var(--color-primary-inverse);
+    border-color: var(--color-primary);
   }
 
   /* Destructive button */
