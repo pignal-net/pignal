@@ -9,6 +9,7 @@ import type { ApiKeyStore } from '@pignal/core/store/api-keys';
 import { securityHeaders } from './middleware/headers';
 import { sessionMiddleware } from './middleware/session';
 import { csrfMiddleware } from './middleware/csrf';
+import { rateLimit } from '@pignal/core/middleware/rate-limit';
 import { clearSessionCookie } from './lib/cookie';
 
 // Static assets (imported as raw text)
@@ -270,9 +271,12 @@ export function createWebRoutes(config: WebRouteConfig) {
   });
   router.get('/s/:token', sharedPage);
 
-  // Admin login (no session required)
-  router.get('/pignal/login', loginPage);
-  router.post('/pignal/login', loginHandler);
+  // Admin login (no session required, but CSRF-protected + rate-limited)
+  // GET: csrfMiddleware sets the initial CSRF cookie for the form
+  // POST: CSRF validated manually in loginHandler (not via middleware, to avoid
+  //       the middleware's post-next() hook overwriting the regenerated CSRF cookie)
+  router.get('/pignal/login', csrfMiddleware, loginPage);
+  router.post('/pignal/login', rateLimit('login'), loginHandler);
 
   // All /pignal routes below require session + CSRF
   router.use('/pignal/*', sessionMiddleware);

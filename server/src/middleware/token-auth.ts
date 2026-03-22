@@ -3,6 +3,7 @@ import { HTTPException } from 'hono/http-exception';
 import { drizzle } from 'drizzle-orm/d1';
 
 import { ApiKeyStore } from '@pignal/core/store/api-keys';
+import { timingSafeEqual } from '@pignal/core/auth/timing-safe';
 import type { Env, Variables } from '../types';
 
 /**
@@ -32,8 +33,8 @@ export async function tokenAuth(c: Context<{ Bindings: Env; Variables: Variables
 
   const token = authHeader.slice(7);
 
-  // Fast path: SERVER_TOKEN grants full admin access
-  if (token === c.env.SERVER_TOKEN) {
+  // Fast path: SERVER_TOKEN grants full admin access (timing-safe comparison)
+  if (await timingSafeEqual(token, c.env.SERVER_TOKEN, c.env.SERVER_TOKEN)) {
     c.set('authPermissions', ['admin']);
     c.set('authWorkspaceIds', null);
     await next();

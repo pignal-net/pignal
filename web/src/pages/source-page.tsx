@@ -46,8 +46,8 @@ export async function sourcePageFeed(c: Context<{ Bindings: WebEnv; Variables: W
   const offset = parseInt(c.req.query('offset') ?? '0', 10) || 0;
   const typeId = c.req.query('type') || undefined;
   const workspaceId = c.req.query('workspace') || undefined;
-  const tag = c.req.query('tag') || undefined;
-  const q = c.req.query('q') || undefined;
+  const tag = (c.req.query('tag') || undefined)?.slice(0, 100);
+  const q = (c.req.query('q') || undefined)?.slice(0, 500);
   const sort = c.req.query('sort') === 'oldest' ? 'oldest' as const : 'newest' as const;
 
   // Build filter query string for pagination

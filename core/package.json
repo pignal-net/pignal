@@ -21,7 +21,10 @@
     "./mcp": "./src/mcp/tools.ts",
     "./mcp/manifest": "./src/mcp/manifest.ts",
     "./federation": "./src/federation/types.ts",
-    "./federation/well-known": "./src/federation/well-known.ts"
+    "./federation/well-known": "./src/federation/well-known.ts",
+    "./auth/timing-safe": "./src/auth/timing-safe.ts",
+    "./config/rate-limits": "./src/config/rate-limits.ts",
+    "./middleware/rate-limit": "./src/middleware/rate-limit.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",

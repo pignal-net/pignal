@@ -2,7 +2,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import type { RouteFactoryConfig } from '../types';
-import { updateSettingSchema } from '../validation/schemas';
+import { updateSettingSchema, ALLOWED_SETTINGS_KEYS } from '../validation/schemas';
 
 /**
  * Create settings management routes with configurable store resolution and middleware.
@@ -40,8 +40,12 @@ export function createSettingsRoutes(config: RouteFactoryConfig) {
   router.patch('/:key', zValidator('json', updateSettingSchema), async (c) => {
     const store = config.getStore(c);
     const key = c.req.param('key');
-    const { value } = c.req.valid('json');
 
+    if (!ALLOWED_SETTINGS_KEYS.has(key)) {
+      return c.json({ error: `Unknown setting key: ${key}` }, 400);
+    }
+
+    const { value } = c.req.valid('json');
     await store.updateSetting(key, value);
     return c.json({ key, value });
   });

@@ -31,8 +31,8 @@ export const listQuerySchema = z.object({
   visibility: z.enum(['private', 'unlisted', 'vouched']).optional(),
   limit: z.coerce.number().min(1).max(100).optional().default(50),
   offset: z.coerce.number().min(0).optional().default(0),
-  q: z.string().optional(),
-  tag: z.string().optional(),
+  q: z.string().max(500).optional(),
+  tag: z.string().max(100).optional(),
 });
 
 export const vouchSchema = z.object({
@@ -100,6 +100,42 @@ export const updateWorkspaceSchema = z.object({
 });
 
 // --- Settings schema ---
+
+/** Allowed setting keys — prevents arbitrary key writes via the API. */
+export const ALLOWED_SETTINGS_KEYS = new Set([
+  // Identity
+  'owner_name',
+  'source_title',
+  'source_description',
+  'source_url',
+  'source_logo_text',
+  // Social
+  'source_social_github',
+  'source_social_twitter',
+  'source_social_linkedin',
+  // Display
+  'source_posts_per_page',
+  'source_show_toc',
+  'source_show_reading_time',
+  'source_card_style',
+  'source_code_theme',
+  'source_custom_footer',
+  // Customization (admin-only: allows arbitrary CSS/HTML)
+  'source_custom_css',
+  'source_custom_head',
+  // Theme colors
+  'source_color_primary',
+  'source_color_secondary',
+  'source_color_background',
+  'source_color_text',
+  'source_color_muted',
+  // Content quality
+  'quality_guidelines',
+  'validation_limits',
+  'max_actions_per_type',
+  // Template
+  'source_template',
+]);
 
 export const updateSettingSchema = z.object({
   value: z.string().min(1).max(10000),

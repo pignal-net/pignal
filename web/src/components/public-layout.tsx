@@ -2,6 +2,7 @@ import type { Child } from 'hono/jsx';
 import type { SettingsMap } from '@pignal/db';
 import { Layout } from './layout';
 import { buildThemeStyleTag } from '../lib/theme';
+import { sanitizeCss } from '../lib/css-sanitize';
 import { APP_JS_URL, HTMX_JS_URL, LOGO_SVG_URL } from '../lib/static-versions';
 import { IconGitHub, IconTwitter, IconRSS } from '../components/icons';
 
@@ -14,9 +15,20 @@ interface PublicLayoutProps {
   children: Child;
 }
 
+/** Only allow http/https URLs — block javascript:, data:, file:, etc. */
+function safeUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {}, children }: PublicLayoutProps) {
-  const githubUrl = settings.source_social_github;
-  const twitterUrl = settings.source_social_twitter;
+  const githubUrl = safeUrl(settings.source_social_github);
+  const twitterUrl = safeUrl(settings.source_social_twitter);
   const customFooter = settings.source_custom_footer;
   const logoText = settings.source_logo_text || sourceTitle;
   const customCss = settings.source_custom_css;
@@ -24,9 +36,11 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
   const codeTheme = settings.source_code_theme;
 
   const themeStyle = buildThemeStyleTag(settings);
-  // Sanitize custom CSS: strip </style> sequences to prevent breaking out of the style context
-  const safeCss = customCss ? customCss.replace(/<\/style\s*>/gi, '/* blocked */') : '';
+  // Sanitize custom CSS: strip dangerous patterns (imports, expressions, script schemes)
+  const safeCss = customCss ? sanitizeCss(customCss) : '';
   const customCssTag = safeCss ? `<style>${safeCss}</style>` : '';
+  // SECURITY: source_custom_head is intentionally injected raw. It allows arbitrary
+  // HTML/scripts (analytics, fonts, etc.) and is only settable by the SERVER_TOKEN admin.
   const customHeadHtml = customHead || '';
 
   const headContent = (head || `<title>${title} | ${sourceTitle}</title>`) + themeStyle + customCssTag + customHeadHtml;

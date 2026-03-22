@@ -182,7 +182,8 @@ export async function mcpPermissionCheck(c: HonoContext, next: Next) {
     }
   } catch (err) {
     if (err instanceof HTTPException) throw err;
-    // Body not parseable — let the MCP handler deal with it
+    // Non-admin token with unparseable body — reject to prevent permission bypass
+    throw new HTTPException(400, { message: 'Invalid JSON-RPC body' });
   }
 
   await next();

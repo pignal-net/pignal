@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-pignal — a lightweight, self-hosted content platform powered by Cloudflare Workers + D1. Template-driven layouts, MCP server, REST API, and web UI. Federated architecture: each user owns their item store.
+Pignal — an AI-native website platform powered by Cloudflare Workers + D1. A growing template library with built-in SEO, structured data, and LLM-readiness. Every site is an MCP server for AI-driven content lifecycle management. REST API and web dashboard included. Open source (AGPL-3.0) for full customization.
 
 ## Commands
 

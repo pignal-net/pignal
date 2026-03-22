@@ -2,7 +2,7 @@
   <img src="web/src/static/logo.svg" alt="pignal" width="80" height="80" />
 </p>
 
-<h1 align="center">Pignal — A lightweight, self-hosted content platform powered by Cloudflare</h1>
+<h1 align="center">Pignal — AI-native website platform powered by Cloudflare</h1>
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg" alt="License: AGPL-3.0" /></a>
@@ -11,15 +11,17 @@
   <a href="https://modelcontextprotocol.io/"><img src="https://img.shields.io/badge/MCP-compatible-8A2BE2.svg" alt="MCP" /></a>
 </p>
 
-One Worker, one database, any domain. Pignal gives you a complete content platform — blog, shop, portfolio, docs, wiki — with a single deploy to Cloudflare Workers + D1.
+One Worker, one database, any domain. Pignal gives you a production website — blog, wiki, shop, portfolio, recipes, and more — with a single deploy to Cloudflare Workers + D1.
 
-**Template-driven** — pick a layout and vocabulary that matches your domain. 
+**High-value websites** — a growing template library with built-in SEO, JSON-LD structured data, sitemaps, Atom feeds, and E-E-A-T validation. Every page is optimized from the moment it's published.
 
-**MCP-native** — create structured content directly from AI conversations via Model Context Protocol. 
+**AI-native** — every site is an MCP server. Manage the full content lifecycle — draft, publish, archive — from Claude, Cursor, or any MCP-compatible AI client.
 
-**Edge-first** — SSR at Cloudflare's edge with Lighthouse 100 scores and sub-50ms responses.
+**LLM-discoverable** — every site ships `llms.txt`, raw markdown endpoints, and structured data. Your content is natively readable by AI systems.
 
-Runs within Cloudflare's free tier. Self-hosted, no third-party dependencies. **Your data never leaves your account**.
+**Edge-first** — SSR at Cloudflare's 300+ edge locations with Lighthouse 100 scores and sub-50ms responses. Free tier compatible.
+
+Open source (AGPL-3.0). Self-hosted, no third-party dependencies. **Your data, your code, yours to customize**.
 
 ---
 

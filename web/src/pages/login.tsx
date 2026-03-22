@@ -2,6 +2,8 @@ import type { Context } from 'hono';
 import type { WebEnv } from '../types';
 import { Layout } from '../components/layout';
 import { createSessionCookie } from '../lib/cookie';
+import { timingSafeEqual } from '@pignal/core/auth/timing-safe';
+import { getCsrfToken, CSRF_FIELD, CSRF_COOKIE } from '../middleware/csrf';
 import { APP_JS_URL, LOGO_SVG_URL } from '../lib/static-versions';
 
 export function loginPage(c: Context<{ Bindings: WebEnv }>) {
@@ -28,6 +30,7 @@ export function loginPage(c: Context<{ Bindings: WebEnv }>) {
               </div>
             )}
             <form method="post" action="/pignal/login">
+              <input type="hidden" name={CSRF_FIELD} value={getCsrfToken(c)} />
               <div class="mb-4">
                 <label for="token" class="block text-sm font-medium text-text mb-1.5">Server Token</label>
                 <input
@@ -53,15 +56,35 @@ export function loginPage(c: Context<{ Bindings: WebEnv }>) {
   );
 }
 
+/**
+ * Login POST handler with manual CSRF validation.
+ * Does NOT use csrfMiddleware (which would overwrite the regenerated CSRF cookie
+ * in its post-next() hook). Instead, validates CSRF inline and sets a fresh token.
+ */
 export async function loginHandler(c: Context<{ Bindings: WebEnv }>) {
-  const body = await c.req.parseBody();
-  const token = body.token as string;
+  // Manual CSRF validation (same logic as csrfMiddleware)
+  const cookieHeader = c.req.header('Cookie');
+  const csrfCookieMatch = cookieHeader?.match(new RegExp(`${CSRF_COOKIE}=([^;]+)`));
+  const cookieToken = csrfCookieMatch ? csrfCookieMatch[1] : null;
 
-  if (!token || token !== c.env.SERVER_TOKEN) {
+  const body = await c.req.parseBody();
+  const submittedToken = body[CSRF_FIELD] as string;
+
+  if (!cookieToken || !submittedToken || cookieToken !== submittedToken) {
+    return c.text('CSRF validation failed', 403);
+  }
+
+  const token = body.token as string;
+  if (!token || !(await timingSafeEqual(token, c.env.SERVER_TOKEN, c.env.SERVER_TOKEN))) {
     return c.redirect('/pignal/login?error=Invalid+token');
   }
 
-  const cookie = await createSessionCookie(c.env.SERVER_TOKEN);
-  c.header('Set-Cookie', cookie);
+  const sessionCookie = await createSessionCookie(c.env.SERVER_TOKEN);
+  c.header('Set-Cookie', sessionCookie);
+
+  // Regenerate CSRF token on login to prevent token fixation
+  const newCsrf = crypto.randomUUID();
+  c.header('Set-Cookie', `${CSRF_COOKIE}=${newCsrf}; SameSite=Strict; Path=/; Secure`, { append: true });
+
   return c.redirect('/pignal');
 }

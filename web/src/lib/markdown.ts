@@ -82,7 +82,7 @@ markedInstance.use({
     heading({ text, depth }: { text: string; depth: number }) {
       const id = slugify(text);
       const safeText = sanitizeInlineHtml(text);
-      return `<h${depth} id="${id}">${safeText}</h${depth}>\n`;
+      return `<h${depth} id="${escapeHtml(id)}">${safeText}</h${depth}>\n`;
     },
     link({ href, text }: { href: string; text: string }) {
       if (!isValidUrl(href)) {

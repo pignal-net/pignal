@@ -17,7 +17,7 @@ const ADMIN_CSP = [
 // (analytics scripts, external fonts, custom stylesheets, etc.)
 const PUBLIC_CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+  "script-src 'self' 'unsafe-inline' https:",
   "style-src 'self' 'unsafe-inline' https:",
   "font-src 'self' https: data:",
   "img-src 'self' data: https:",

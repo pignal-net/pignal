@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 
 import { drizzle } from 'drizzle-orm/d1';
@@ -20,6 +19,8 @@ import { createWebRoutes } from '@pignal/web';
 import { SelfHostedMcpAgent } from './mcp/agent';
 import { tokenAuth } from './middleware/token-auth';
 import { requirePermission, requireByMethod, resolveItemPermission, mcpPermissionCheck, enforceWorkspaceRestriction } from './middleware/permission-auth';
+import { corsMiddleware } from './middleware/cors';
+import { rateLimit } from './middleware/rate-limit';
 import { storeMiddleware } from './middleware/store';
 import type { Env, Variables } from './types';
 
@@ -31,8 +32,8 @@ const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 // Store middleware — creates ItemStore from D1 for every request
 app.use('*', storeMiddleware);
 
-// CORS for REST API routes
-app.use('/api/*', cors());
+// CORS for REST API routes (controlled by CORS_ORIGIN env var)
+app.use('/api/*', corsMiddleware());
 
 // Health check (no auth)
 app.get('/health', (c) => {
@@ -102,6 +103,15 @@ app.get('/.well-known/pignal', async (c) => {
   });
 });
 
+// Rate limiting for API routes (method-aware: read vs write tiers)
+const apiWriteLimit = rateLimit('apiWrite');
+const apiReadLimit = rateLimit('apiRead');
+app.use('/api/*', async (c, next) => {
+  const method = c.req.method.toUpperCase();
+  const isWrite = method === 'POST' || method === 'PATCH' || method === 'DELETE';
+  return isWrite ? apiWriteLimit(c, next) : apiReadLimit(c, next);
+});
+
 // Public REST API (no auth) — mount before authenticated routes
 // to avoid stats middleware at /api catching /api/public/*
 app.route('/api/public', createPublicRoutes({
@@ -132,6 +142,8 @@ app.route('/api/settings', createSettingsRoutes(noAuthConfig));
 app.route('/api', createStatsRoutes(noAuthConfig));
 
 // MCP endpoint — uses SDK's serveSSE() to bridge HTTP/SSE <-> DO WebSocket
+// MCP keeps origin: '*' because MCP clients connect from various origins and
+// all requests require a valid Bearer token (tokenAuth + mcpPermissionCheck below).
 const mcpHandler = SelfHostedMcpAgent.serveSSE('/mcp', {
   binding: 'MCP_AGENT',
   corsOptions: {
@@ -142,10 +154,10 @@ const mcpHandler = SelfHostedMcpAgent.serveSSE('/mcp', {
 
 // Permission enforcement for MCP: tokenAuth sets authPermissions, mcpPermissionCheck
 // parses JSON-RPC body and blocks tool calls that exceed the token's permissions.
-app.all('/mcp', tokenAuth, mcpPermissionCheck, (c) => {
+app.all('/mcp', rateLimit('mcp'), tokenAuth, mcpPermissionCheck, (c) => {
   return mcpHandler.fetch(c.req.raw, c.env, c.executionCtx);
 });
-app.all('/mcp/*', tokenAuth, mcpPermissionCheck, (c) => {
+app.all('/mcp/*', rateLimit('mcp'), tokenAuth, mcpPermissionCheck, (c) => {
   return mcpHandler.fetch(c.req.raw, c.env, c.executionCtx);
 });
 

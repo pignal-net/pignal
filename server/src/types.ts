@@ -7,6 +7,8 @@ export type Env = {
   MCP_AGENT: DurableObjectNamespace;
   SERVER_TOKEN: string;
   TEMPLATE?: string;
+  /** CORS allowed origins: unset = same-origin, "*" = all, comma-separated = explicit list */
+  CORS_ORIGIN?: string;
 };
 
 /**
