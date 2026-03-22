@@ -9,12 +9,12 @@ export function SourceActionBar({ slug, sourceUrl, showRawLink = true }: SourceA
   const fullMdUrl = slug ? `${sourceUrl}/item/${slug}.md` : undefined;
 
   return (
-    <div class="source-actions">
-      <nav class="source-breadcrumb" aria-label="Breadcrumb">
-        <a href="/">&larr; All posts</a>
+    <div class="flex justify-between items-center mb-8 pb-4 border-b border-border-subtle relative">
+      <nav class="flex items-center gap-1.5 text-sm text-muted" aria-label="Breadcrumb">
+        <a href="/" class="text-muted no-underline hover:text-primary transition-colors">&larr; All posts</a>
       </nav>
       <details class="dropdown" role="list">
-        <summary aria-haspopup="listbox">Copy page</summary>
+        <summary aria-haspopup="listbox" class="px-2.5 py-1 text-xs border border-border rounded-md text-muted hover:text-text hover:border-text/30 transition-colors bg-transparent cursor-pointer">Share</summary>
         <ul role="listbox">
           <li>
             <a href="#" data-action="copy-page" role="option">

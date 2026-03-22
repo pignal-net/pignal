@@ -4,13 +4,20 @@ import { RunbookSourcePage } from './source-page';
 import { RunbookItemPost } from './item-post';
 import { RunbookLayout } from './layout';
 import { Pagination } from '../../components/pagination';
-import templateStyles from './styles.css';
 
 const config = getTemplateConfig('runbook');
 
 function RunbookPartialResults(props: PartialResultsProps) {
   if (props.items.length === 0) {
-    return <p class="runbook-empty">No {props.vocabulary.itemPlural} matching this filter.</p>;
+    return (
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+        </div>
+        <p class="empty-state-title">{`No ${props.vocabulary.itemPlural} found`}</p>
+        <p class="empty-state-description">Try adjusting your filters or search query.</p>
+      </div>
+    );
   }
 
   // Group by playbook (workspace)
@@ -28,17 +35,19 @@ function RunbookPartialResults(props: PartialResultsProps) {
 
   return (
     <>
-      <div class="runbook-procedure-list">
+      <div class="flex flex-col gap-2">
         {groupNames.map((name) => (
           <>
-            <div class="runbook-group-header">{name}</div>
+            <div class="text-sm font-bold text-muted uppercase tracking-wide py-2 mt-6 first:mt-0 mb-2 border-b border-border-subtle">{name}</div>
             {grouped[name].map((item) => (
-              <div class="runbook-card">
-                <div class="runbook-card-body">
-                  <h3><a href={`/item/${item.slug}`}>{item.keySummary}</a></h3>
-                  <div class="runbook-card-meta">
-                    {item.typeName && <span class="runbook-system-badge">{item.typeName}</span>}
-                    {item.validationActionLabel && <span class="runbook-validation-badge">{item.validationActionLabel}</span>}
+              <div class="flex items-center gap-3 px-4 py-3 border border-border-subtle shadow-card rounded-xl bg-surface transition-all border-l-[3px] border-l-transparent hover:shadow-card-hover hover:border-l-primary">
+                <div class="flex-1 min-w-0">
+                  <h3 class="m-0 mb-0.5 text-[0.95rem] font-semibold leading-snug">
+                    <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary">{item.keySummary}</a>
+                  </h3>
+                  <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
+                    {item.typeName && <span class="text-[0.72rem] px-2 py-0.5 rounded-full bg-primary/12 text-primary font-medium whitespace-nowrap">{item.typeName}</span>}
+                    {item.validationActionLabel && <span class="text-[0.68rem] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap bg-green-500/15 text-green-600">{item.validationActionLabel}</span>}
                   </div>
                 </div>
               </div>
@@ -47,14 +56,16 @@ function RunbookPartialResults(props: PartialResultsProps) {
         ))}
         {ungrouped.length > 0 && (
           <>
-            {groupNames.length > 0 && <div class="runbook-group-header">Uncategorized</div>}
+            {groupNames.length > 0 && <div class="text-sm font-bold text-muted uppercase tracking-wide py-2 mt-6 mb-2 border-b border-border-subtle">Uncategorized</div>}
             {ungrouped.map((item) => (
-              <div class="runbook-card">
-                <div class="runbook-card-body">
-                  <h3><a href={`/item/${item.slug}`}>{item.keySummary}</a></h3>
-                  <div class="runbook-card-meta">
-                    {item.typeName && <span class="runbook-system-badge">{item.typeName}</span>}
-                    {item.validationActionLabel && <span class="runbook-validation-badge">{item.validationActionLabel}</span>}
+              <div class="flex items-center gap-3 px-4 py-3 border border-border-subtle shadow-card rounded-xl bg-surface transition-all border-l-[3px] border-l-transparent hover:shadow-card-hover hover:border-l-primary">
+                <div class="flex-1 min-w-0">
+                  <h3 class="m-0 mb-0.5 text-[0.95rem] font-semibold leading-snug">
+                    <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary">{item.keySummary}</a>
+                  </h3>
+                  <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
+                    {item.typeName && <span class="text-[0.72rem] px-2 py-0.5 rounded-full bg-primary/12 text-primary font-medium whitespace-nowrap">{item.typeName}</span>}
+                    {item.validationActionLabel && <span class="text-[0.68rem] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap bg-green-500/15 text-green-600">{item.validationActionLabel}</span>}
                   </div>
                 </div>
               </div>
@@ -84,5 +95,5 @@ export const runbookTemplate: Template = {
 
   profile: config.profile,
 
-  styles: templateStyles,
+  styles: '',
 };

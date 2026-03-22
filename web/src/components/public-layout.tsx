@@ -3,6 +3,7 @@ import type { SettingsMap } from '@pignal/db';
 import { Layout } from './layout';
 import { buildThemeStyleTag } from '../lib/theme';
 import { APP_JS_URL, HTMX_JS_URL, LOGO_SVG_URL } from '../lib/static-versions';
+import { IconGitHub, IconTwitter, IconRSS } from '../components/icons';
 
 interface PublicLayoutProps {
   title: string;
@@ -35,50 +36,99 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
   return (
     <Layout title={title} head={headContent}>
       <div {...(codeThemeAttr ? { 'data-code-theme': codeThemeAttr } : {})}>
-        <header class="container">
-          <nav aria-label="Source navigation">
-            <ul>
-              <li>
-                <strong>
-                  <a href="/" style="display:inline-flex;align-items:center;gap:0.35rem">
-                    <img src={LOGO_SVG_URL} alt="" width="20" height="20" style="border-radius:4px" />
-                    {logoText}
+        {/* Navigation */}
+        <header class="sticky top-0 z-40 border-b border-border bg-bg-page/60 backdrop-blur-md">
+          <div class="max-w-5xl mx-auto w-full px-4 sm:px-6">
+            <nav class="flex items-center justify-between h-14" aria-label="Source navigation">
+              {/* Left: Logo + site name */}
+              <div class="flex items-center">
+                <a href="/" class="inline-flex items-center gap-1.5 text-base font-bold text-text no-underline hover:text-primary transition-colors">
+                  <img src={LOGO_SVG_URL} alt="" width="20" height="20" class="rounded" />
+                  {logoText}
+                </a>
+              </div>
+
+              {/* Right: Social icon buttons + theme toggle */}
+              <div class="flex items-center gap-0.5">
+                {githubUrl && (
+                  <a
+                    href={githubUrl}
+                    target="_blank"
+                    rel="noopener"
+                    class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
+                    aria-label="GitHub"
+                  >
+                    <IconGitHub size={16} />
                   </a>
-                </strong>
-              </li>
-            </ul>
-            <ul>
-              {githubUrl && (
-                <li><a href={githubUrl} target="_blank" rel="noopener" class="secondary">GitHub</a></li>
-              )}
-              {twitterUrl && (
-                <li><a href={twitterUrl} target="_blank" rel="noopener" class="secondary">Twitter</a></li>
-              )}
-              <li><a href="/feed.xml" class="secondary">Feed</a></li>
-              <li>
+                )}
+                {twitterUrl && (
+                  <a
+                    href={twitterUrl}
+                    target="_blank"
+                    rel="noopener"
+                    class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
+                    aria-label="Twitter"
+                  >
+                    <IconTwitter size={16} />
+                  </a>
+                )}
+                <a
+                  href="/feed.xml"
+                  class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
+                  aria-label="RSS Feed"
+                >
+                  <IconRSS size={16} />
+                </a>
+
+                {/* Vertical divider */}
+                <div class="w-px h-5 bg-border mx-1" />
+
+                {/* Theme toggle */}
                 <button class="theme-toggle" type="button" aria-label="Toggle theme">
-                  {'\uD83D\uDCBB'}
                 </button>
-              </li>
-            </ul>
-          </nav>
+              </div>
+            </nav>
+          </div>
         </header>
-        <div id="nav-loading" class="nav-loading container" hidden>
+
+        {/* Loading indicator */}
+        <div id="nav-loading" class="nav-loading max-w-5xl mx-auto px-4 sm:px-6" hidden>
           <span class="app-spinner" />
         </div>
-        <main id="main-content">
+
+        {/* Main content */}
+        <main id="main-content" class="flex-1">
           {children}
         </main>
-        <footer id="main-footer" class="container">
-          <small>
-            {customFooter || (
-              <>Powered by <a href="https://github.com/pignal-net/pignal" rel="noopener" style="display:inline-flex;align-items:center;gap:0.25rem"><img src={LOGO_SVG_URL} alt="" width="14" height="14" style="border-radius:3px" />pignal</a></>
-            )}
-            {sourceUrl && (
-              <> | <a href={`${sourceUrl}/llms.txt`}>llms.txt</a></>
-            )}
-          </small>
+
+        {/* Footer */}
+        <footer class="border-t border-border mt-16">
+          <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted">
+              {/* Left: Brand text */}
+              <span>
+                {customFooter || (
+                  <>
+                    Powered by{' '}
+                    <a href="https://github.com/pignal-net/pignal" rel="noopener" class="inline-flex items-center gap-1 text-muted hover:text-primary transition-colors">
+                      <img src={LOGO_SVG_URL} alt="" width="14" height="14" class="rounded-sm" />
+                      pignal
+                    </a>
+                  </>
+                )}
+              </span>
+
+              {/* Right: Links */}
+              <div class="flex items-center gap-4">
+                {sourceUrl && (
+                  <a href={`${sourceUrl}/llms.txt`} class="text-muted hover:text-primary transition-colors">llms.txt</a>
+                )}
+                <a href="/feed.xml" class="text-muted hover:text-primary transition-colors">RSS</a>
+              </div>
+            </div>
+          </div>
         </footer>
+
         <script src={HTMX_JS_URL}></script>
         <script src={APP_JS_URL}></script>
       </div>

@@ -96,8 +96,7 @@ export function PodcastSourcePage(props: SourcePageProps) {
 
   const headContent = `${metaTags}${relLinks}`;
 
-  // Calculate episode numbers: total episodes minus current page offset gives the starting number
-  // Episodes are numbered in reverse chronological order (newest = highest number)
+  // Calculate episode numbers
   const totalEpisodes = pagination.total;
   const startEpisodeNum = filters.sort === 'oldest'
     ? pagination.offset + 1
@@ -107,7 +106,7 @@ export function PodcastSourcePage(props: SourcePageProps) {
     <PodcastLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--feed">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col">
         <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
 
         <div id="source-loading" class="source-loading htmx-indicator">
@@ -115,10 +114,14 @@ export function PodcastSourcePage(props: SourcePageProps) {
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <p class="empty-state">No {vocabulary.itemPlural} matching this filter.</p>
+            <div class="empty-state">
+              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+              <p class="empty-state-title">No items found</p>
+              <p class="empty-state-description">No {vocabulary.itemPlural} matching this filter.</p>
+            </div>
           ) : (
             <>
-              <div class="podcast-feed">
+              <div class="flex flex-col gap-6 py-4">
                 {items.map((item, index) => {
                   const episodeNum = filters.sort === 'oldest'
                     ? startEpisodeNum + index
@@ -127,39 +130,42 @@ export function PodcastSourcePage(props: SourcePageProps) {
                   const preview = stripMarkdown(item.content).slice(0, 150);
 
                   return (
-                    <article class="podcast-card">
-                      <div class="podcast-card-left">
-                        <span class="podcast-episode-badge">EP {episodeNum}</span>
+                    <article class="flex flex-col sm:flex-row border border-border-subtle shadow-card rounded-xl overflow-hidden bg-surface hover:shadow-card-hover transition-shadow">
+                      <div class="flex items-center justify-center sm:min-w-16 md:min-w-[4.5rem] px-4 py-2 sm:py-4 bg-primary shrink-0 sm:flex-col">
+                        <span class="text-xs font-bold uppercase tracking-widest text-white text-center leading-tight">EP {episodeNum}</span>
                       </div>
-                      <div class="podcast-card-content">
-                        <div class="podcast-card-header">
-                          <div class="podcast-card-meta">
+                      <div class="flex-1 min-w-0 px-4 py-3">
+                        <div class="mb-1">
+                          <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
                             <TypeBadge typeName={item.typeName} />
                             <time datetime={item.vouchedAt || item.createdAt}>
                               {formatDate(item.vouchedAt || item.createdAt)}
                             </time>
                             {duration && (
-                              <span class="podcast-duration">{duration}</span>
+                              <span class="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary/50" />
+                                {duration}
+                              </span>
                             )}
                           </div>
                         </div>
-                        <h3>
+                        <h3 class="text-base sm:text-lg font-semibold leading-snug my-1">
                           {item.slug ? (
-                            <a href={`/item/${item.slug}`}>{item.keySummary}</a>
+                            <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary transition-colors">{item.keySummary}</a>
                           ) : (
                             item.keySummary
                           )}
                         </h3>
-                        <p class="podcast-card-description">{preview}{item.content.length > 150 ? '...' : ''}</p>
+                        <p class="text-sm text-muted m-0 mb-2 leading-relaxed line-clamp-2">{preview}{item.content.length > 150 ? '...' : ''}</p>
                         {item.tags && item.tags.length > 0 && (
-                          <div class="item-tags">
+                          <div class="flex flex-wrap gap-1.5 mb-1.5">
                             {item.tags.map((t) => (
-                              <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                              <a href={`/?tag=${encodeURIComponent(t)}`} class="text-[0.7rem] text-primary hover:underline">#{t}</a>
                             ))}
                           </div>
                         )}
-                        <div class="podcast-card-footer">
-                          {item.slug && <a href={`/item/${item.slug}`}>View show notes &rarr;</a>}
+                        <div class="text-sm">
+                          {item.slug && <a href={`/item/${item.slug}`} class="text-primary font-medium no-underline hover:underline">View show notes &rarr;</a>}
                         </div>
                       </div>
                     </article>

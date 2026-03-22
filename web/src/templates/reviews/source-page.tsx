@@ -10,16 +10,14 @@ import { ReviewsLayout } from './layout';
 
 /**
  * Extract a numeric rating from item content.
- * Looks for patterns like "Rating: 4/5", "Score: 8/10", "★★★★☆", etc.
+ * Looks for patterns like "Rating: 4/5", "Score: 8/10", etc.
  */
 function extractRating(content: string): { score: number; max: number } | null {
-  // Match "Rating: X/Y" or "Score: X/Y"
   const ratingMatch = content.match(/(?:rating|score|grade)\s*[:=]\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+)/i);
   if (ratingMatch) {
     return { score: parseFloat(ratingMatch[1]), max: parseInt(ratingMatch[2], 10) };
   }
 
-  // Count filled stars
   const starMatch = content.match(/[★]{1,5}/);
   if (starMatch) {
     return { score: starMatch[0].length, max: 5 };
@@ -29,18 +27,17 @@ function extractRating(content: string): { score: number; max: number } | null {
 }
 
 function StarDisplay({ score, max }: { score: number; max: number }) {
-  // Normalize to 5-star scale
   const normalized = (score / max) * 5;
   const fullStars = Math.floor(normalized);
   const hasHalf = normalized - fullStars >= 0.25 && normalized - fullStars < 0.75;
   const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
 
   return (
-    <span class="reviews-stars" title={`${score}/${max}`}>
+    <span class="inline-flex items-center gap-px text-primary text-base tracking-wider" title={`${score}/${max}`}>
       {'★'.repeat(fullStars)}
-      {hasHalf && <span class="reviews-star-half">★</span>}
+      {hasHalf && <span class="opacity-40">★</span>}
       {'☆'.repeat(Math.max(0, emptyStars))}
-      <span class="reviews-score-text">{score}/{max}</span>
+      <span class="text-xs text-muted ml-1.5">{score}/{max}</span>
     </span>
   );
 }
@@ -113,7 +110,7 @@ export function ReviewsSourcePage(props: SourcePageProps) {
     <ReviewsLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--feed">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col">
         <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
 
         <div id="source-loading" class="source-loading htmx-indicator">
@@ -121,21 +118,25 @@ export function ReviewsSourcePage(props: SourcePageProps) {
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <p class="empty-state">No {vocabulary.itemPlural} matching this filter.</p>
+            <div class="empty-state">
+              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+              <p class="empty-state-title">No items found</p>
+              <p class="empty-state-description">No {vocabulary.itemPlural} matching this filter.</p>
+            </div>
           ) : (
             <>
-              <div class="reviews-feed">
+              <div class="flex flex-col gap-6 py-4">
                 {items.map((item) => {
                   const rating = extractRating(item.content);
                   const preview = stripMarkdown(item.content).slice(0, 180);
 
                   return (
-                    <article class="reviews-card">
-                      <div class="reviews-card-header">
-                        <div class="reviews-card-meta">
+                    <article class="border border-border-subtle shadow-card rounded-xl overflow-hidden bg-surface hover:shadow-card-hover transition-shadow">
+                      <div class="flex items-center justify-between px-4 py-3 border-b border-border-subtle bg-surface/50 flex-wrap gap-2 sm:flex-nowrap">
+                        <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
                           <TypeBadge typeName={item.typeName} />
                           {item.workspaceName && (
-                            <span class="workspace-badge">{item.workspaceName}</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">{item.workspaceName}</span>
                           )}
                           <time datetime={item.vouchedAt || item.createdAt}>
                             {formatDate(item.vouchedAt || item.createdAt)}
@@ -143,25 +144,25 @@ export function ReviewsSourcePage(props: SourcePageProps) {
                         </div>
                         {rating && <StarDisplay score={rating.score} max={rating.max} />}
                       </div>
-                      <div class="reviews-card-body">
-                        <h3>
+                      <div class="px-4 py-3">
+                        <h3 class="text-base sm:text-lg font-semibold leading-snug mb-2">
                           {item.slug ? (
-                            <a href={`/item/${item.slug}`}>{item.keySummary}</a>
+                            <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary transition-colors">{item.keySummary}</a>
                           ) : (
                             item.keySummary
                           )}
                         </h3>
-                        <p class="reviews-card-description">{preview}{item.content.length > 180 ? '...' : ''}</p>
+                        <p class="text-sm text-muted m-0 leading-relaxed line-clamp-3">{preview}{item.content.length > 180 ? '...' : ''}</p>
                       </div>
                       {item.tags && item.tags.length > 0 && (
-                        <div class="reviews-card-tags">
+                        <div class="px-4 pb-2 flex flex-wrap gap-1.5">
                           {item.tags.map((t) => (
-                            <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                            <a href={`/?tag=${encodeURIComponent(t)}`} class="text-xs text-primary hover:underline">#{t}</a>
                           ))}
                         </div>
                       )}
-                      <div class="reviews-card-footer">
-                        {item.slug && <a href={`/item/${item.slug}`}>Read full {vocabulary.item} &rarr;</a>}
+                      <div class="flex items-center justify-end px-4 py-2.5 border-t border-border-subtle text-sm">
+                        {item.slug && <a href={`/item/${item.slug}`} class="text-primary font-medium no-underline hover:underline">Read full {vocabulary.item} &rarr;</a>}
                       </div>
                     </article>
                   );

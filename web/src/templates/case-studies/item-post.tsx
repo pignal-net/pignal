@@ -21,34 +21,18 @@ function hxProps(url: string) {
   };
 }
 
-/**
- * Extract key outcome metrics from the content for the callout box.
- */
 function extractMetrics(content: string): { value: string; label: string }[] {
   const metrics: { value: string; label: string }[] = [];
   const lines = content.split('\n');
-
   for (const line of lines) {
     if (metrics.length >= 4) break;
-
     const pctMatch = line.match(/(\d+(?:\.\d+)?%)\s+([\w\s]{3,20})/i);
-    if (pctMatch && metrics.length < 4) {
-      metrics.push({ value: pctMatch[1], label: pctMatch[2].trim().slice(0, 20) });
-      continue;
-    }
-
+    if (pctMatch && metrics.length < 4) { metrics.push({ value: pctMatch[1], label: pctMatch[2].trim().slice(0, 20) }); continue; }
     const multMatch = line.match(/(\d+(?:\.\d+)?x)\s+([\w\s]{3,20})/i);
-    if (multMatch && metrics.length < 4) {
-      metrics.push({ value: multMatch[1], label: multMatch[2].trim().slice(0, 20) });
-      continue;
-    }
-
+    if (multMatch && metrics.length < 4) { metrics.push({ value: multMatch[1], label: multMatch[2].trim().slice(0, 20) }); continue; }
     const dollarMatch = line.match(/(\$[\d.]+[KMB]?)\s+([\w\s]{3,20})/i);
-    if (dollarMatch && metrics.length < 4) {
-      metrics.push({ value: dollarMatch[1], label: dollarMatch[2].trim().slice(0, 20) });
-    }
+    if (dollarMatch && metrics.length < 4) { metrics.push({ value: dollarMatch[1], label: dollarMatch[2].trim().slice(0, 20) }); }
   }
-
   return metrics;
 }
 
@@ -91,13 +75,13 @@ export function CaseStudiesItemPost(props: ItemPostProps) {
       <JsonLd data={jsonLd} />
 
       <div class="source-page source-page--post">
-        <main class="source-main">
+        <main class="source-main min-w-0 max-w-full">
           <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
           <article class="source-article">
-            <header class="case-studies-post-header">
+            <header>
               <div class="source-category">
-                <a href={`/?type=${item.typeId}`} class="case-studies-industry-badge" {...hxProps(`/?type=${item.typeId}`)}>
+                <a href={`/?type=${item.typeId}`} class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide text-white bg-primary no-underline hover:opacity-90 mb-4" {...hxProps(`/?type=${item.typeId}`)}>
                   {item.typeName}
                 </a>
                 {item.workspaceName && (
@@ -107,25 +91,25 @@ export function CaseStudiesItemPost(props: ItemPostProps) {
                 )}
               </div>
               <h1>{item.keySummary}</h1>
-              <div class="case-studies-post-meta">
+              <div class="flex items-center gap-3 flex-wrap text-[0.88rem] text-muted mt-3">
                 {githubUrl ? (
-                  <a href={githubUrl} target="_blank" rel="noopener" class="post-author">
+                  <a href={githubUrl} target="_blank" rel="noopener" class="text-text font-medium no-underline hover:text-primary">
                     {sourceAuthor}
                   </a>
                 ) : (
-                  <span class="post-author">{sourceAuthor}</span>
+                  <span class="text-text font-medium">{sourceAuthor}</span>
                 )}
-                <span class="case-studies-meta-sep">/</span>
+                <span class="text-muted opacity-40">/</span>
                 <time datetime={dateStr}>{formatDate(dateStr)}</time>
                 {showReadingTime && (
                   <>
-                    <span class="case-studies-meta-sep">/</span>
+                    <span class="text-muted opacity-40">/</span>
                     <span>{readingTime(item.content)}</span>
                   </>
                 )}
                 {item.validationActionLabel && (
                   <>
-                    <span class="case-studies-meta-sep">/</span>
+                    <span class="text-muted opacity-40">/</span>
                     <span class="validation-badge">
                       {item.validationActionLabel} by {sourceAuthor}
                     </span>
@@ -136,24 +120,24 @@ export function CaseStudiesItemPost(props: ItemPostProps) {
 
             {/* Key metrics callout box */}
             {metrics.length > 0 && (
-              <div class="case-studies-key-metrics">
-                <div class="case-studies-key-metrics-title">Key Outcomes</div>
-                <div class="case-studies-metrics">
-                  {metrics.map((m) => (
-                    <div class="case-studies-metric">
-                      <span class="case-studies-metric-value">{m.value}</span>
-                      <span class="case-studies-metric-label">{m.label}</span>
+              <div class="border-2 border-primary rounded-xl overflow-hidden my-6">
+                <div class="px-4 py-2 bg-primary text-white text-xs font-semibold uppercase tracking-wide">Key Outcomes</div>
+                <div class="flex max-sm:flex-col">
+                  {metrics.map((m, i) => (
+                    <div class={`flex-1 px-4 py-3 max-sm:py-2 text-center max-sm:text-left max-sm:flex max-sm:items-center max-sm:gap-2 bg-surface ${i > 0 ? 'border-l max-sm:border-l-0 max-sm:border-t border-border' : ''}`}>
+                      <span class="block max-sm:inline max-sm:min-w-[4rem] text-2xl max-sm:text-lg font-bold text-primary leading-tight mb-0.5">{m.value}</span>
+                      <span class="block max-sm:inline text-[0.72rem] text-muted uppercase tracking-wide">{m.label}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            <div class="content">
+            <div class="mt-8 content">
               {raw(renderedContent)}
             </div>
             {item.tags && item.tags.length > 0 && (
-              <footer class="item-tags-footer">
+              <footer class="mt-10 pt-6 border-t border-border-subtle">
                 <div class="item-tags">
                   {item.tags.map((t) => (
                     <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag" {...hxProps(`/?tag=${encodeURIComponent(t)}`)}>#{t}</a>
@@ -164,7 +148,11 @@ export function CaseStudiesItemPost(props: ItemPostProps) {
           </article>
         </main>
 
-        {showToc && <TableOfContents headings={headings} />}
+        {showToc && (
+          <div class="max-xl:hidden">
+            <TableOfContents headings={headings} />
+          </div>
+        )}
       </div>
     </CaseStudiesLayout>
   );

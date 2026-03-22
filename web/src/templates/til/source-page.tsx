@@ -111,7 +111,7 @@ export function TilSourcePage(props: SourcePageProps) {
     <TilLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--feed">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col">
         <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
 
         <div id="source-loading" class="source-loading htmx-indicator">
@@ -119,29 +119,33 @@ export function TilSourcePage(props: SourcePageProps) {
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <p class="empty-state">No {vocabulary.itemPlural} matching this filter.</p>
+            <div class="empty-state">
+              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+              <p class="empty-state-title">No items found</p>
+              <p class="empty-state-description">No {vocabulary.itemPlural} matching this filter.</p>
+            </div>
           ) : (
             <>
               {dateGroups.map((group) => (
-                <div class="til-date-group">
-                  <h3 class="til-date-header">{group.label}</h3>
-                  <div class="til-compact-list">
+                <div class="mb-6">
+                  <h3 class="text-xs font-semibold uppercase tracking-widest text-muted border-b border-border-subtle pb-1.5 mb-2">{group.label}</h3>
+                  <div class="flex flex-col gap-0.5 md:gap-px">
                     {group.items.map((item) => (
-                      <div class="til-card">
-                        <div class="til-card-body">
-                          <div class="til-card-meta">
+                      <div class="rounded hover:bg-surface transition-colors">
+                        <div class="px-2 py-1.5 sm:px-1 sm:py-1">
+                          <div class="flex items-center gap-1.5 mb-0.5 text-xs text-muted">
                             <TypeBadge typeName={item.typeName} />
                             {item.tags && item.tags.length > 0 && (
-                              <span class="til-tags-inline">
+                              <span class="inline-flex gap-1">
                                 {item.tags.slice(0, 3).map((t) => (
-                                  <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                                  <a href={`/?tag=${encodeURIComponent(t)}`} class="text-[0.7rem] text-muted hover:text-primary transition-colors">#{t}</a>
                                 ))}
                               </span>
                             )}
                           </div>
-                          <p class="til-card-summary">
+                          <p class="text-sm leading-snug text-text m-0">
                             {item.slug ? (
-                              <a href={`/item/${item.slug}`}>{item.keySummary}</a>
+                              <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary transition-colors">{item.keySummary}</a>
                             ) : (
                               item.keySummary
                             )}

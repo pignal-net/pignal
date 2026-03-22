@@ -5,6 +5,7 @@ import type { TypeActionSelect } from '@pignal/db';
 import { AppLayout } from '../components/app-layout';
 import { TypeBadge } from '../components/type-badge';
 import { VisibilityBadge } from '../components/visibility-badge';
+import { IconChevronLeft } from '../components/icons';
 import { getCsrfToken } from '../middleware/csrf';
 import { renderMarkdown } from '../lib/markdown';
 import { formatDate } from '../lib/time';
@@ -22,15 +23,15 @@ function ValidationPanel({ id, actions, currentActionLabel, csrfToken }: {
   csrfToken: string;
 }) {
   return (
-    <article id="validation-section">
-      <h3>Validation</h3>
-      <p>
+    <div id="validation-section" class="bg-surface rounded-xl border border-border-subtle shadow-card border-l-4 border-l-success p-5 mb-4">
+      <h3 class="text-sm font-semibold text-text mb-3">Validation</h3>
+      <p class="text-sm mb-3">
         {currentActionLabel
-          ? <strong>{currentActionLabel}</strong>
-          : <em class="muted">Not validated</em>}
+          ? <strong class="text-success">{currentActionLabel}</strong>
+          : <em class="text-muted">Not validated</em>}
       </p>
       {actions.length > 0 && (
-        <div class="action-row">
+        <div class="flex flex-wrap gap-2">
           {actions.map((action) => (
             <form method="post" action={`/pignal/items/${id}/validate`}
               hx-post={`/pignal/items/${id}/validate`}
@@ -38,7 +39,7 @@ function ValidationPanel({ id, actions, currentActionLabel, csrfToken }: {
               hx-swap="outerHTML">
               <input type="hidden" name="_csrf" value={csrfToken} />
               <input type="hidden" name="actionId" value={action.id} />
-              <button type="submit" class="outline btn-sm">
+              <button type="submit" class="outline text-xs px-4 py-2 rounded-lg">
                 {action.label}
               </button>
             </form>
@@ -49,13 +50,13 @@ function ValidationPanel({ id, actions, currentActionLabel, csrfToken }: {
             hx-swap="outerHTML">
             <input type="hidden" name="_csrf" value={csrfToken} />
             <input type="hidden" name="actionId" value="" />
-            <button type="submit" class="outline secondary btn-sm">
+            <button type="submit" class="outline secondary text-xs px-4 py-2 rounded-lg">
               Clear
             </button>
           </form>
         </div>
       )}
-    </article>
+    </div>
   );
 }
 
@@ -70,8 +71,8 @@ function VisibilityPanel({ id, visibility, shareToken, slug, sourceUrl, csrfToke
   workspaceName: string | null;
 }) {
   return (
-    <article id="visibility-section">
-      <h3>Visibility</h3>
+    <div id="visibility-section" class="bg-surface rounded-xl border border-border-subtle shadow-card border-l-4 border-l-info p-5 mb-4">
+      <h3 class="text-sm font-semibold text-text mb-3">Visibility</h3>
       <form method="post" action={`/pignal/items/${id}/visibility`}
         hx-post={`/pignal/items/${id}/visibility`}
         hx-target="#visibility-section"
@@ -82,24 +83,26 @@ function VisibilityPanel({ id, visibility, shareToken, slug, sourceUrl, csrfToke
           <option value="unlisted" selected={visibility === 'unlisted'}>Unlisted</option>
           <option value="vouched" selected={visibility === 'vouched'}>Vouched</option>
         </select>
-        <button type="submit" class="outline btn-sm">Update</button>
+        <button type="submit" class="outline text-xs px-4 py-2 rounded-lg">Update</button>
       </form>
       {visibility === 'unlisted' && shareToken && (
-        <div class="share-info">
-          <small>Share: <code>{sourceUrl}/s/{shareToken}</code></small>
+        <div class="mt-3 text-xs text-muted break-all">
+          Share: <code>{sourceUrl}/s/{shareToken}</code>
         </div>
       )}
       {visibility === 'vouched' && slug && (
-        <div class="share-info">
-          <small>Source: <a href={`/item/${slug}`}>{sourceUrl}/item/{slug}</a></small>
+        <div class="mt-3">
+          <div class="text-xs text-muted">
+            Source: <a href={`/item/${slug}`}>{sourceUrl}/item/{slug}</a>
+          </div>
           {workspaceVisibility === 'private' && workspaceName && (
-            <small class="warning-note" style="display:block;color:var(--pico-color-red-500,#dc3545);margin-top:0.25rem;">
+            <div class="text-xs text-error mt-1">
               Workspace "{workspaceName}" is private. Change it to public in <a href="/pignal/workspaces">Workspace Settings</a> so others can see this item.
-            </small>
+            </div>
           )}
         </div>
       )}
-    </article>
+    </div>
   );
 }
 
@@ -110,16 +113,16 @@ function ActionsPanel({ id, isArchived, isPinned, csrfToken }: {
   csrfToken: string;
 }) {
   return (
-    <article id="actions-section">
-      <h3>Actions</h3>
-      <div class="action-row">
+    <div id="actions-section" class="bg-surface rounded-xl border border-border-subtle shadow-card p-5 mb-4">
+      <h3 class="text-sm font-semibold text-text mb-3">Actions</h3>
+      <div class="flex flex-col gap-2">
         {!isPinned ? (
           <form method="post" action={`/pignal/items/${id}/pin`}
             hx-post={`/pignal/items/${id}/pin`}
             hx-target="#actions-section"
             hx-swap="outerHTML">
             <input type="hidden" name="_csrf" value={csrfToken} />
-            <button type="submit" class="outline btn-sm">
+            <button type="submit" class="outline text-xs px-4 py-2 rounded-lg w-full justify-center">
               Pin
             </button>
           </form>
@@ -129,7 +132,7 @@ function ActionsPanel({ id, isArchived, isPinned, csrfToken }: {
             hx-target="#actions-section"
             hx-swap="outerHTML">
             <input type="hidden" name="_csrf" value={csrfToken} />
-            <button type="submit" class="outline btn-sm">
+            <button type="submit" class="outline text-xs px-4 py-2 rounded-lg w-full justify-center">
               Unpin
             </button>
           </form>
@@ -140,7 +143,7 @@ function ActionsPanel({ id, isArchived, isPinned, csrfToken }: {
             hx-target="#actions-section"
             hx-swap="outerHTML">
             <input type="hidden" name="_csrf" value={csrfToken} />
-            <button type="submit" class="secondary btn-sm">
+            <button type="submit" class="secondary text-xs px-4 py-2 rounded-lg w-full justify-center">
               Archive
             </button>
           </form>
@@ -150,13 +153,13 @@ function ActionsPanel({ id, isArchived, isPinned, csrfToken }: {
             hx-target="#actions-section"
             hx-swap="outerHTML">
             <input type="hidden" name="_csrf" value={csrfToken} />
-            <button type="submit" class="secondary btn-sm">
+            <button type="submit" class="secondary text-xs px-4 py-2 rounded-lg w-full justify-center">
               Unarchive
             </button>
           </form>
         )}
       </div>
-    </article>
+    </div>
   );
 }
 
@@ -179,37 +182,48 @@ export async function itemDetailPage(c: Context<{ Bindings: WebEnv; Variables: W
 
   return c.html(
     <AppLayout title={item.keySummary} currentPath="/pignal/items" csrfToken={csrfToken}>
-      <nav class="breadcrumb">
-        <a href="/pignal/items">&larr; Back to items</a>
+      {/* Back navigation */}
+      <nav class="mb-6">
+        <a href="/pignal/items" class="inline-flex items-center gap-1 text-sm text-muted hover:text-primary transition-colors px-3 py-1.5 rounded-full hover:bg-surface-hover">
+          <IconChevronLeft size={14} />
+          Back to items
+        </a>
       </nav>
 
-      <div class="detail-layout">
-        <article>
-          <header>
-            <h1>{item.keySummary}</h1>
-            <div class="post-meta">
-              <TypeBadge typeName={item.typeName} />
-              <VisibilityBadge visibility={item.visibility ?? 'private'} />
-              {item.workspaceName && <span>{item.workspaceName}</span>}
-              <time datetime={item.createdAt}>{formatDate(item.createdAt)}</time>
-              <span>Source: {item.sourceAi}</span>
-            </div>
-          </header>
+      <div class="flex flex-col lg:flex-row gap-8">
+        {/* Main content — no card wrapper, let content breathe */}
+        <div class="flex-1 min-w-0">
+          {/* Metadata badges */}
+          <div class="flex items-center gap-2 text-xs text-muted flex-wrap mb-3">
+            <TypeBadge typeName={item.typeName} />
+            <VisibilityBadge visibility={item.visibility ?? 'private'} />
+            {item.workspaceName && <span>{item.workspaceName}</span>}
+            <time datetime={item.createdAt}>{formatDate(item.createdAt)}</time>
+            <span>Source: {item.sourceAi}</span>
+          </div>
+
+          {/* Title */}
+          <h1 class="text-2xl font-bold tracking-tight mb-6">{item.keySummary}</h1>
+
+          {/* Rendered content */}
           <div class="content">
             {raw(renderedContent)}
           </div>
+
+          {/* Tags */}
           {item.tags && item.tags.length > 0 && (
-            <footer class="item-tags-footer">
-              <div class="item-tags">
+            <div class="mt-8 pt-4 border-t border-border-subtle">
+              <div class="flex flex-wrap gap-2">
                 {item.tags.map((t) => (
-                  <a href={`/pignal/items?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                  <a href={`/pignal/items?tag=${encodeURIComponent(t)}`} class="text-xs text-primary hover:underline">#{t}</a>
                 ))}
               </div>
-            </footer>
+            </div>
           )}
-        </article>
+        </div>
 
-        <aside class="detail-sidebar">
+        {/* Sidebar */}
+        <aside class="w-full lg:w-72 shrink-0">
           <ValidationPanel
             id={id}
             actions={actions}

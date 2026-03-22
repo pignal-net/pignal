@@ -35,7 +35,10 @@ function relativeTime(dateStr: string): string {
 
 function PermissionBadge({ permission }: { permission: string }) {
   return (
-    <span class="permission-badge" title={permission}>
+    <span
+      class="inline-block text-xs font-semibold px-2 py-0.5 rounded whitespace-nowrap text-info border border-info-border bg-info-bg"
+      title={permission}
+    >
       {permission}
     </span>
   );
@@ -60,10 +63,10 @@ function ApiKeyRow({
     <tr id={`key-${apiKey.id}`}>
       <td>
         <strong>{apiKey.name}</strong>
-        {isExpired && <span class="muted" style="margin-left: 0.5rem">(expired)</span>}
+        {isExpired && <span class="text-muted ml-2">(expired)</span>}
       </td>
       <td>
-        <div class="permission-badges">
+        <div class="flex gap-1 flex-wrap">
           {permissions.map((p) => (
             <PermissionBadge permission={p} />
           ))}
@@ -75,7 +78,7 @@ function ApiKeyRow({
             {restrictedWorkspaces.length} workspace{restrictedWorkspaces.length !== 1 ? 's' : ''}
           </span>
         ) : (
-          <span class="muted">All</span>
+          <span class="text-muted">All</span>
         )}
       </td>
       <td class="text-sm">{relativeTime(apiKey.createdAt)}</td>
@@ -93,7 +96,7 @@ function ApiKeyRow({
           hx-confirm="Are you sure? This cannot be undone."
         >
           <input type="hidden" name="_csrf" value={csrfToken} />
-          <button type="submit" class="outline secondary btn-sm">
+          <button type="submit" class="outline secondary text-xs px-3 py-1.5">
             Revoke
           </button>
         </form>
@@ -104,21 +107,22 @@ function ApiKeyRow({
 
 function PermissionCheckboxes() {
   return (
-    <fieldset class="permission-selector">
-      <legend><strong>Permissions</strong> <small class="muted">(uncheck what you don't need)</small></legend>
-      <div class="permission-list">
+    <fieldset class="border border-border rounded-xl p-4 mt-2 mb-4">
+      <legend><strong>Permissions</strong> <small class="text-muted">(uncheck what you don't need)</small></legend>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
         {PERMISSION_LIST.map((perm) => (
-          <label class="permission-option">
+          <label class="flex items-start gap-2 cursor-pointer mb-0">
             <input
               type="checkbox"
               name="permissions"
               value={perm.value}
               aria-label={perm.label}
               checked
+              class="mt-0.5"
             />
-            <span>
-              <strong>{perm.label}</strong>
-              <small class="muted">{perm.desc}</small>
+            <span class="flex flex-col leading-tight">
+              <strong class="text-sm">{perm.label}</strong>
+              <small class="text-muted text-xs">{perm.desc}</small>
             </span>
           </label>
         ))}
@@ -131,16 +135,16 @@ function WorkspaceSelector({ workspaces }: { workspaces: WorkspaceSelect[] }) {
   if (workspaces.length === 0) return null;
 
   return (
-    <fieldset class="workspace-selector">
+    <fieldset class="border border-border rounded-xl p-4 mt-2 mb-4">
       <legend><strong>Workspace Access</strong></legend>
       <input type="hidden" name="totalWorkspaces" value={String(workspaces.length)} />
-      <div class="workspace-options">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-2">
         {workspaces.map((ws) => (
-          <label class="workspace-option">
-            <input type="checkbox" name="workspaceIds" value={ws.id} checked />
-            <span>
-              <strong>{ws.name}</strong>
-              {ws.description && <small class="muted">{ws.description}</small>}
+          <label class="flex items-start gap-2 cursor-pointer mb-0">
+            <input type="checkbox" name="workspaceIds" value={ws.id} checked class="mt-0.5" />
+            <span class="flex flex-col leading-tight">
+              <strong class="text-sm">{ws.name}</strong>
+              {ws.description && <small class="text-muted text-xs">{ws.description}</small>}
             </span>
           </label>
         ))}
@@ -163,10 +167,13 @@ export async function apiKeysPage(c: Context<{ Bindings: WebEnv; Variables: WebV
       currentPath="/pignal/api-keys"
       csrfToken={csrfToken}
     >
-      <style>{pageStyles}</style>
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold tracking-tight">API Keys</h1>
+        <p class="text-muted text-sm mt-1">Create and manage API keys for programmatic access</p>
+      </div>
 
-      <section>
-        <h2>Create New Key</h2>
+      <div class="border-2 border-dashed border-border hover:border-primary/30 transition-colors rounded-xl p-6 mb-8">
+        <h2 class="text-base font-semibold mb-4">Create New Key</h2>
         <form
           method="post"
           action="/pignal/api-keys"
@@ -176,7 +183,7 @@ export async function apiKeysPage(c: Context<{ Bindings: WebEnv; Variables: WebV
         >
           <input type="hidden" name="_csrf" value={csrfToken} />
 
-          <div class="key-form-grid">
+          <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4 mb-4">
             <div>
               <label for="key-name">Key Name</label>
               <input
@@ -191,7 +198,7 @@ export async function apiKeysPage(c: Context<{ Bindings: WebEnv; Variables: WebV
             </div>
             <div>
               <label for="key-expiry">Expiry</label>
-              <select id="key-expiry" name="expiryDays">
+              <select id="key-expiry" name="expiryDays" class="min-w-[140px]">
                 <option value="">No expiry</option>
                 <option value="30">30 days</option>
                 <option value="90" selected>90 days</option>
@@ -203,19 +210,23 @@ export async function apiKeysPage(c: Context<{ Bindings: WebEnv; Variables: WebV
           <PermissionCheckboxes />
           <WorkspaceSelector workspaces={workspaces} />
 
-          <button type="submit" style="margin-top: 1rem">Create Key</button>
+          <button type="submit" class="mt-4">Create Key</button>
         </form>
         <div id="key-result"></div>
-      </section>
+      </div>
 
-      <section>
-        <h2>Active Keys</h2>
+      <div class="bg-surface rounded-xl border border-border-subtle shadow-card p-6 sm:p-8">
+        <h2 class="text-lg font-semibold mb-4">Active Keys</h2>
         {keys.length === 0 ? (
-          <p class="muted" id="keys-empty">
-            No API keys created yet.
-          </p>
+          <div class="empty-state text-center py-12">
+            <svg class="mx-auto mb-4 text-muted/40" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+            </svg>
+            <p class="text-muted font-medium" id="keys-empty">No API keys created yet.</p>
+            <p class="text-muted text-sm mt-1">Create one above to get started.</p>
+          </div>
         ) : (
-          <div style="overflow-x: auto">
+          <div class="overflow-x-auto -mx-6 sm:-mx-8 px-6 sm:px-8">
             <table>
               <thead>
                 <tr>
@@ -236,7 +247,7 @@ export async function apiKeysPage(c: Context<{ Bindings: WebEnv; Variables: WebV
             </table>
           </div>
         )}
-      </section>
+      </div>
     </AppLayout>
   );
 }
@@ -299,31 +310,31 @@ export async function createApiKeyHandler(c: Context<{ Bindings: WebEnv; Variabl
   if (isHtmxRequest(c)) {
     c.header('HX-Trigger', toastTrigger('API key created'));
     return c.html(
-      <div class="key-created-callout" role="alert">
+      <div class="bg-success-bg border border-success-border rounded-lg p-4 mt-2" role="alert">
         <p>
           <strong>API key created.</strong> Copy it now — it won't be shown again.
         </p>
-        <div class="key-display">
-          <code id="raw-key-value">{rawKey}</code>
+        <div class="flex items-center gap-2 mt-2">
+          <code id="raw-key-value" class="flex-1 break-all text-sm">{rawKey}</code>
           <button
             type="button"
-            class="outline btn-sm"
+            class="outline text-xs px-3 py-1.5"
             onclick="navigator.clipboard.writeText(document.getElementById('raw-key-value').textContent).then(()=>{this.textContent='Copied!'})"
           >
             Copy
           </button>
         </div>
-        <p class="text-sm muted" style="margin-top: 0.5rem">
+        <p class="text-sm text-muted mt-2">
           Use this key as a Bearer token:{' '}
           <code>Authorization: Bearer {rawKey.slice(0, 12)}...</code>
         </p>
-        <div class="text-sm muted" style="margin-top: 0.25rem">
+        <div class="text-sm text-muted mt-1">
           Permissions: {selectedPermissions.join(', ')}
           {!allWorkspacesSelected && selectedWorkspaceIds.length > 0 && (
             <span> | Workspaces: {selectedWorkspaceIds.length} restricted</span>
           )}
         </div>
-        <p class="text-sm muted" style="margin-top: 0.5rem">
+        <p class="text-sm text-muted mt-2">
           <a href="/pignal/api-keys">Refresh page</a> to see the key in the list.
         </p>
       </div>
@@ -348,121 +359,3 @@ export async function deleteApiKeyHandler(c: Context<{ Bindings: WebEnv; Variabl
   }
   return c.redirect('/pignal/api-keys');
 }
-
-/** Inline styles for permission selector — keeps styling co-located with the component. */
-const pageStyles = `
-.key-form-grid {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-.key-form-grid select { min-width: 140px; }
-@media (max-width: 600px) {
-  .key-form-grid { grid-template-columns: 1fr; }
-}
-
-.permission-selector {
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  border: 1px solid var(--pico-muted-border-color);
-  border-radius: var(--pico-border-radius);
-}
-.permission-selector legend {
-  font-size: 0.95rem;
-  padding: 0 0.35rem;
-}
-
-.permission-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.permission-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  cursor: pointer;
-  margin-bottom: 0;
-}
-.permission-option input[type="checkbox"] {
-  margin-top: 0.2rem;
-  margin-bottom: 0;
-}
-.permission-option span {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.3;
-}
-.permission-option small {
-  font-size: 0.75rem;
-}
-
-.workspace-selector {
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  border: 1px solid var(--pico-muted-border-color);
-  border-radius: var(--pico-border-radius);
-}
-.workspace-selector legend {
-  font-size: 0.95rem;
-  padding: 0 0.35rem;
-}
-
-.workspace-options {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.5rem;
-}
-
-.workspace-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  cursor: pointer;
-  margin-bottom: 0;
-}
-.workspace-option input[type="checkbox"] {
-  margin-top: 0.2rem;
-  margin-bottom: 0;
-}
-
-.permission-badges {
-  display: flex;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-}
-.permission-badge {
-  display: inline-block;
-  font-size: 0.65rem;
-  font-weight: 600;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  white-space: nowrap;
-  color: var(--app-info, #7C3AED);
-  border: 1px solid var(--app-info-border, color-mix(in srgb, #7C3AED 25%, transparent));
-  background: var(--app-info-bg, color-mix(in srgb, #7C3AED 10%, transparent));
-}
-
-.key-created-callout {
-  background: var(--app-success-bg);
-  border: 1px solid var(--app-success-border);
-  border-radius: var(--pico-border-radius);
-  padding: 1rem;
-  margin-top: 0.5rem;
-}
-.key-display {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-.key-display code {
-  flex: 1;
-  word-break: break-all;
-  font-size: 0.85rem;
-}
-`;

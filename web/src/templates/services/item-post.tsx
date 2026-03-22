@@ -41,22 +41,22 @@ export function ServicesItemPost(props: ItemPostProps) {
     <ServicesLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="services-post">
+      <div class="max-w-3xl mx-auto px-4 pt-8 pb-16">
         <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
-        <article class="source-article">
-          <header class="services-post-header">
+        <article class="min-w-0 max-w-full">
+          <header class="mb-6">
             <div class="source-category">
               <TypeBadge typeName={item.typeName} />
               {item.workspaceName && (
                 <a href={`/?workspace=${item.workspaceId}`} class="workspace-badge">{item.workspaceName}</a>
               )}
               {item.validationActionLabel && (
-                <span class="services-availability-badge">{item.validationActionLabel}</span>
+                <span class="text-[0.7rem] px-2 py-0.5 rounded-full font-semibold bg-green-500/15 text-green-600 whitespace-nowrap">{item.validationActionLabel}</span>
               )}
             </div>
             <h1>{item.keySummary}</h1>
-            <div class="services-post-meta">
+            <div class="post-meta">
               {githubUrl ? (
                 <a href={githubUrl} target="_blank" rel="noopener" class="post-author">
                   {sourceAuthor}
@@ -70,12 +70,12 @@ export function ServicesItemPost(props: ItemPostProps) {
             </div>
           </header>
 
-          <div class="services-post-content content">
+          <div class="content leading-relaxed">
             {raw(renderedContent)}
           </div>
 
           {item.tags && item.tags.length > 0 && (
-            <footer class="services-post-tags">
+            <footer class="mt-10 pt-6 border-t border-border-subtle">
               <div class="item-tags">
                 {item.tags.map((t) => (
                   <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>

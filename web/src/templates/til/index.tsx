@@ -4,7 +4,6 @@ import { TilSourcePage } from './source-page';
 import { TilItemPost } from './item-post';
 import { TilLayout } from './layout';
 import { FeedResults } from '../../components/item-feed';
-import templateStyles from './styles.css';
 
 const config = getTemplateConfig('til');
 
@@ -36,5 +35,5 @@ export const tilTemplate: Template = {
 
   profile: config.profile,
 
-  styles: templateStyles,
+  styles: '',
 };

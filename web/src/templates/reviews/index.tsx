@@ -4,7 +4,6 @@ import { ReviewsSourcePage } from './source-page';
 import { ReviewsItemPost } from './item-post';
 import { ReviewsLayout } from './layout';
 import { FeedResults } from '../../components/item-feed';
-import templateStyles from './styles.css';
 
 const config = getTemplateConfig('reviews');
 
@@ -36,5 +35,5 @@ export const reviewsTemplate: Template = {
 
   profile: config.profile,
 
-  styles: templateStyles,
+  styles: '',
 };

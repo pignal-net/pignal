@@ -21,15 +21,37 @@ function getSeverityLevel(typeName: string): string {
   return 'p3';
 }
 
-/** Map validation action label to a status CSS class */
-function getStatusClass(actionLabel: string | null | undefined): string {
+/** Map severity to badge Tailwind classes */
+function getSeverityClasses(severity: string): string {
+  switch (severity) {
+    case 'p0': return 'bg-red-600 text-white';
+    case 'p1': return 'bg-red-500/70 text-white';
+    case 'p2': return 'bg-primary/70 text-white';
+    case 'p3': return 'bg-muted/80 text-white';
+    default: return 'bg-muted/80 text-white';
+  }
+}
+
+/** Map severity to left border Tailwind classes */
+function getSeverityBorderClass(severity: string): string {
+  switch (severity) {
+    case 'p0': return 'border-l-red-600';
+    case 'p1': return 'border-l-red-500/70';
+    case 'p2': return 'border-l-primary/70';
+    case 'p3': return 'border-l-muted/50';
+    default: return 'border-l-muted/50';
+  }
+}
+
+/** Map validation action label to status Tailwind classes */
+function getStatusClasses(actionLabel: string | null | undefined): string {
   if (!actionLabel) return '';
   const lower = actionLabel.toLowerCase();
-  if (lower.includes('resolved') || lower.includes('fix')) return 'incidents-status--resolved';
-  if (lower.includes('investigating') || lower.includes('false alarm')) return 'incidents-status--investigating';
-  if (lower.includes('monitoring') || lower.includes('downgraded')) return 'incidents-status--monitoring';
-  if (lower.includes('escalated') || lower.includes('upgraded')) return 'incidents-status--escalated';
-  return 'incidents-status--default';
+  if (lower.includes('resolved') || lower.includes('fix')) return 'bg-emerald-500/20 text-emerald-600';
+  if (lower.includes('investigating') || lower.includes('false alarm')) return 'bg-red-500/15 text-red-600';
+  if (lower.includes('monitoring') || lower.includes('downgraded')) return 'bg-primary/15 text-primary';
+  if (lower.includes('escalated') || lower.includes('upgraded')) return 'bg-red-500/15 text-red-600';
+  return 'bg-muted/15 text-muted';
 }
 
 interface DateGroup {
@@ -129,7 +151,7 @@ export function IncidentsSourcePage(props: SourcePageProps) {
     <IncidentsLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--feed">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col">
         <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
 
         <div id="source-loading" class="source-loading htmx-indicator">
@@ -137,42 +159,48 @@ export function IncidentsSourcePage(props: SourcePageProps) {
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <p class="incidents-empty">No {vocabulary.vouched} {vocabulary.itemPlural} matching this filter.</p>
+            <div class="empty-state">
+              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+              <p class="empty-state-title">No items found</p>
+              <p class="empty-state-description">No {vocabulary.vouched} {vocabulary.itemPlural} matching this filter.</p>
+            </div>
           ) : (
             <>
-              <div class="incidents-timeline">
+              <div class="relative pl-8 my-4 sm:border-l-[3px] sm:border-border-subtle sm:ml-2">
                 {groups.map((group) => (
-                  <div class="incidents-date-group">
-                    <div class="incidents-date-marker">{group.label}</div>
+                  <div class="relative mb-6">
+                    <div class="relative text-xs font-semibold text-muted uppercase tracking-wider py-1 mb-3 before:content-[''] before:absolute before:hidden sm:before:block before:-left-[calc(2rem+5.5px)] before:top-1/2 before:-translate-y-1/2 before:w-[11px] before:h-[11px] before:rounded-full before:bg-border before:border-2 before:border-surface before:z-10">{group.label}</div>
                     {group.items.map((item) => {
                       const severity = getSeverityLevel(item.typeName);
-                      const statusClass = getStatusClass(item.validationActionLabel);
+                      const severityClasses = getSeverityClasses(severity);
+                      const borderClass = getSeverityBorderClass(severity);
+                      const statusClasses = getStatusClasses(item.validationActionLabel);
                       return (
-                        <a href={`/item/${item.slug}`} class={`incidents-entry incidents-entry--${severity}`}>
-                          <div class="incidents-entry-header">
-                            <span class={`incidents-severity incidents-severity--${severity}`}>{item.typeName}</span>
+                        <a href={`/item/${item.slug}`} class={`relative block p-3 sm:p-4 mb-2 border border-border-subtle shadow-card border-l-[3px] ${borderClass} rounded-xl bg-surface no-underline text-inherit hover:shadow-card-hover hover:border-primary transition-all`}>
+                          <div class="flex items-center gap-2 flex-wrap mb-1.5 sm:flex-nowrap">
+                            <span class={`inline-block px-2 py-0.5 rounded text-[0.72rem] font-semibold tracking-tight whitespace-nowrap ${severityClasses}`}>{item.typeName}</span>
                             {item.validationActionLabel && (
-                              <span class={`incidents-status ${statusClass}`}>{item.validationActionLabel}</span>
+                              <span class={`inline-block px-1.5 py-0.5 rounded text-[0.7rem] font-semibold tracking-tight whitespace-nowrap ${statusClasses}`}>{item.validationActionLabel}</span>
                             )}
                             {item.workspaceName && (
-                              <span class="incidents-service-badge">{item.workspaceName}</span>
+                              <span class="inline-block px-1.5 py-0.5 rounded text-[0.72rem] font-medium bg-muted/20 text-text">{item.workspaceName}</span>
                             )}
                           </div>
-                          <div class="incidents-entry-title">
+                          <div class="text-[0.95rem] font-semibold leading-snug mb-1 text-text">
                             {item.keySummary}
                           </div>
-                          <div class="incidents-entry-meta">
+                          <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
                             <time datetime={item.vouchedAt || item.createdAt}>
                               {formatDate(item.vouchedAt || item.createdAt)}
                             </time>
                           </div>
-                          <p class="incidents-entry-preview">
+                          <p class="text-[0.82rem] text-muted m-0 mt-1 leading-relaxed line-clamp-2">
                             {stripMarkdown(item.content).slice(0, 160)}{item.content.length > 160 ? '...' : ''}
                           </p>
                           {item.tags && item.tags.length > 0 && (
-                            <div class="incidents-tags">
+                            <div class="flex flex-wrap gap-1.5 mt-1.5">
                               {item.tags.map((t) => (
-                                <span class="incidents-tag">#{t}</span>
+                                <span class="text-[0.72rem] text-primary">#{t}</span>
                               ))}
                             </div>
                           )}

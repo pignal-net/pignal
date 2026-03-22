@@ -50,13 +50,13 @@ export function GlossaryItemPost(props: ItemPostProps) {
     <GlossaryLayout title={termName} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="glossary-detail">
+      <div class="max-w-[750px] mx-auto py-8 pb-16">
         <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
-        <article class="glossary-detail-article">
-          <header class="glossary-detail-header">
-            <h1 class="glossary-detail-term">{termName}</h1>
-            <div class="glossary-detail-meta">
+        <article class="mt-4">
+          <header class="mb-8 pb-4 border-b-2 border-border-subtle">
+            <h1 class="text-3xl sm:text-4xl font-extrabold m-0 leading-tight mb-4">{termName}</h1>
+            <div class="flex items-center gap-2 flex-wrap text-sm text-muted">
               <TypeBadge typeName={item.typeName} />
               {item.workspaceName && (
                 <a href={`/?workspace=${item.workspaceId}`} class="workspace-badge">{item.workspaceName}</a>
@@ -74,13 +74,13 @@ export function GlossaryItemPost(props: ItemPostProps) {
             </div>
           </header>
 
-          <div class="glossary-detail-content content">
+          <div class="leading-loose text-[1.05rem] content">
             {raw(renderedContent)}
           </div>
 
           {item.tags && item.tags.length > 0 && (
-            <footer class="glossary-detail-footer">
-              <div class="glossary-related-label">Related topics</div>
+            <footer class="mt-10 pt-6 border-t border-border-subtle">
+              <div class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Related topics</div>
               <div class="item-tags">
                 {item.tags.map((t) => (
                   <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>

@@ -10,15 +10,15 @@ import { ChangelogLayout } from './layout';
 /* HTMX constants */
 const HX_TARGET = '#source-results';
 
-/** Map type name to CSS class for change type badge coloring */
-function getTypeClass(typeName: string): string {
+/** Map type name to Tailwind badge classes */
+function getTypeBadgeClasses(typeName: string): string {
   const lower = typeName.toLowerCase();
-  if (lower.includes('feature') || lower.includes('new')) return 'changelog-type-feature';
-  if (lower.includes('fix') || lower.includes('bug')) return 'changelog-type-fix';
-  if (lower.includes('breaking')) return 'changelog-type-breaking';
-  if (lower.includes('improvement') || lower.includes('enhance')) return 'changelog-type-improvement';
-  if (lower.includes('deprecat')) return 'changelog-type-deprecation';
-  return 'changelog-type-default';
+  if (lower.includes('feature') || lower.includes('new')) return 'bg-primary/85 text-white';
+  if (lower.includes('fix') || lower.includes('bug')) return 'bg-emerald-600/85 text-white';
+  if (lower.includes('breaking')) return 'bg-red-600/85 text-white';
+  if (lower.includes('improvement') || lower.includes('enhance')) return 'bg-primary/60 text-white';
+  if (lower.includes('deprecat')) return 'bg-red-600/50 text-white';
+  return 'bg-muted/60 text-white';
 }
 
 interface DateGroup {
@@ -118,7 +118,7 @@ export function ChangelogSourcePage(props: SourcePageProps) {
     <ChangelogLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--feed">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col">
         <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
 
         <div id="source-loading" class="source-loading htmx-indicator">
@@ -126,34 +126,38 @@ export function ChangelogSourcePage(props: SourcePageProps) {
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <p class="changelog-empty">No {vocabulary.vouched} {vocabulary.itemPlural} matching this filter.</p>
+            <div class="empty-state">
+              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+              <p class="empty-state-title">No items found</p>
+              <p class="empty-state-description">No {vocabulary.vouched} {vocabulary.itemPlural} matching this filter.</p>
+            </div>
           ) : (
             <>
-              <div class="changelog-timeline">
+              <div class="relative pl-8 my-4 sm:border-l-[3px] sm:border-border-subtle sm:ml-2">
                 {groups.map((group) => (
-                  <div class="changelog-date-group">
-                    <div class="changelog-date-marker">{group.label}</div>
+                  <div class="relative mb-6">
+                    <div class="relative text-xs font-semibold text-muted uppercase tracking-wider py-1 mb-3 before:content-[''] before:absolute before:hidden sm:before:block before:-left-[calc(2rem+5.5px)] before:top-1/2 before:-translate-y-1/2 before:w-[11px] before:h-[11px] before:rounded-full before:bg-border before:border-2 before:border-surface before:z-10">{group.label}</div>
                     {group.items.map((item) => {
-                      const typeClass = getTypeClass(item.typeName);
+                      const badgeClasses = getTypeBadgeClasses(item.typeName);
                       return (
-                        <a href={`/item/${item.slug}`} class="changelog-entry">
-                          <div class="changelog-entry-body">
-                            <div class="changelog-entry-meta">
-                              <span class={`changelog-type-badge ${typeClass}`}>{item.typeName}</span>
+                        <a href={`/item/${item.slug}`} class="relative block p-3 sm:p-4 mb-2 border border-border-subtle shadow-card rounded-xl bg-surface no-underline text-inherit hover:shadow-card-hover hover:border-primary transition-all before:content-[''] before:absolute before:hidden sm:before:block before:-left-[calc(2rem+3.5px)] before:top-4 before:-translate-x-1/2 before:w-[7px] before:h-[7px] before:rounded-full before:bg-muted before:z-10">
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap text-xs text-muted mb-1">
+                              <span class={`inline-block px-2 py-0.5 rounded text-[0.72rem] font-semibold tracking-tight whitespace-nowrap ${badgeClasses}`}>{item.typeName}</span>
                               {item.workspaceName && (
-                                <span class="changelog-product-badge">{item.workspaceName}</span>
+                                <span class="inline-block px-1.5 py-0.5 rounded text-[0.72rem] font-medium bg-muted/20 text-text">{item.workspaceName}</span>
                               )}
                             </div>
-                            <div class="changelog-entry-title">
+                            <div class="text-[0.95rem] font-semibold leading-snug mb-1">
                               {item.keySummary}
                             </div>
-                            <p class="changelog-entry-preview">
+                            <p class="text-[0.82rem] text-muted m-0 leading-relaxed line-clamp-2">
                               {stripMarkdown(item.content).slice(0, 160)}{item.content.length > 160 ? '...' : ''}
                             </p>
                             {item.tags && item.tags.length > 0 && (
-                              <div class="changelog-tags">
+                              <div class="flex flex-wrap gap-1.5 mt-1.5">
                                 {item.tags.map((t) => (
-                                  <span class="changelog-tag">#{t}</span>
+                                  <span class="text-[0.72rem] text-primary">#{t}</span>
                                 ))}
                               </div>
                             )}

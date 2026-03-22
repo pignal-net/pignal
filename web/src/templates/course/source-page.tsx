@@ -111,15 +111,16 @@ export function CourseSourcePage(props: SourcePageProps) {
     <CourseLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="course-page">
+      <div class="max-w-7xl mx-auto px-4 pt-8 pb-16 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 items-start">
         {/* Sidebar: module outline */}
-        <aside class="course-sidebar">
-          <div class="course-sidebar-search">
+        <aside class="sticky top-6 text-sm max-h-[calc(100vh-3rem)] overflow-y-auto max-lg:static max-lg:max-h-none max-lg:border-b max-lg:border-border-subtle max-lg:pb-4 max-lg:mb-0 lg:bg-surface lg:rounded-xl lg:border lg:border-border-subtle lg:shadow-card lg:p-4">
+          <div class="mb-4">
             <input
               type="text"
               name="q"
               placeholder={`Search ${vocabulary.itemPlural}...`}
               value={filters.q || ''}
+              class="w-full m-0 h-9 text-sm px-3 py-1"
               hx-get="/"
               hx-target={HX_TARGET}
               hx-swap={HX_SWAP}
@@ -134,9 +135,9 @@ export function CourseSourcePage(props: SourcePageProps) {
           {(() => {
             const url = buildFilterUrl({ q: filters.q, sort: sortParam });
             return (
-              <a href={url} class={`course-sidebar-all ${!filters.typeId && !filters.workspaceId ? 'active' : ''}`} {...hxProps(url)}>
+              <a href={url} class={`flex justify-between items-center px-2.5 py-2 rounded-lg no-underline text-sm font-semibold mb-2 transition-colors ${!filters.typeId && !filters.workspaceId ? 'bg-primary/10 text-primary' : 'text-text hover:bg-primary/8 hover:text-primary'}`} {...hxProps(url)}>
                 <span>All {vocabulary.itemPlural}</span>
-                <span class="course-sidebar-count">{counts.total}</span>
+                <span class={`text-xs font-normal ${!filters.typeId && !filters.workspaceId ? 'text-primary/80' : 'text-muted'}`}>{counts.total}</span>
               </a>
             );
           })()}
@@ -144,21 +145,21 @@ export function CourseSourcePage(props: SourcePageProps) {
           {/* Modules (types) */}
           {typesWithItems.length > 0 && (
             <>
-              <hr class="course-sidebar-divider" />
-              <div class="course-sidebar-title">{vocabulary.typePlural}</div>
+              <hr class="border-0 border-t border-border-subtle my-3" />
+              <div class="flex justify-between items-center px-2.5 py-2 text-[0.7rem] font-bold uppercase tracking-wider text-muted">{vocabulary.typePlural}</div>
               {typesWithItems.map((type) => {
                 const isActive = filters.typeId === type.id;
                 const typeUrl = buildFilterUrl({ type: isActive ? undefined : type.id, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                 return (
-                  <details class="course-sidebar-module" open={isActive || undefined}>
-                    <summary>
-                      {type.icon && <span class="course-module-icon">{type.icon}</span>}
+                  <details class="mb-1" open={isActive || undefined}>
+                    <summary class="flex justify-between items-center px-2.5 py-2 rounded-lg cursor-pointer text-[0.82rem] font-semibold text-text list-none transition-colors hover:bg-primary/8 hover:text-primary [&::-webkit-details-marker]:hidden before:content-['\25B6'] before:text-[0.55rem] before:mr-2 before:inline-block before:transition-transform [details[open]>&]:before:rotate-90">
+                      {type.icon && <span class="mr-1.5">{type.icon}</span>}
                       <span style="flex:1">{type.name}</span>
-                      <span class="course-sidebar-count">{counts.byType[type.id] ?? 0}</span>
+                      <span class="text-[0.72rem] font-normal text-muted min-w-[1.2em] text-right">{counts.byType[type.id] ?? 0}</span>
                     </summary>
-                    <ul class="course-sidebar-list">
+                    <ul class="list-none pl-2 mt-1 mb-2">
                       <li>
-                        <a href={typeUrl} class={`course-sidebar-link ${isActive ? 'active' : ''}`} {...hxProps(typeUrl)}>
+                        <a href={typeUrl} class={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg no-underline text-[0.82rem] border-l-2 transition-colors ${isActive ? 'bg-primary/10 text-primary font-semibold border-l-primary' : 'text-text border-l-transparent hover:bg-primary/8 hover:text-primary'}`} {...hxProps(typeUrl)}>
                           All {type.name}
                         </a>
                       </li>
@@ -172,14 +173,14 @@ export function CourseSourcePage(props: SourcePageProps) {
           {/* Tracks (workspaces) */}
           {workspacesWithItems.length > 0 && (
             <>
-              <hr class="course-sidebar-divider" />
-              <div class="course-sidebar-title">{vocabulary.workspacePlural}</div>
-              <ul class="course-sidebar-list">
+              <hr class="border-0 border-t border-border-subtle my-3" />
+              <div class="flex justify-between items-center px-2.5 py-2 text-[0.7rem] font-bold uppercase tracking-wider text-muted">{vocabulary.workspacePlural}</div>
+              <ul class="list-none pl-2 mt-1 mb-2">
                 {workspacesWithItems.map((ws) => {
                   const wsUrl = buildFilterUrl({ workspace: filters.workspaceId === ws.id ? undefined : ws.id, type: filters.typeId, q: filters.q, sort: sortParam });
                   return (
                     <li>
-                      <a href={wsUrl} class={`course-sidebar-link ${filters.workspaceId === ws.id ? 'active' : ''}`} {...hxProps(wsUrl)}>
+                      <a href={wsUrl} class={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg no-underline text-[0.82rem] border-l-2 transition-colors ${filters.workspaceId === ws.id ? 'bg-primary/10 text-primary font-semibold border-l-primary' : 'text-text border-l-transparent hover:bg-primary/8 hover:text-primary'}`} {...hxProps(wsUrl)}>
                         <span>{ws.name}</span>
                       </a>
                     </li>
@@ -193,11 +194,11 @@ export function CourseSourcePage(props: SourcePageProps) {
         {/* Main content */}
         <div>
           {filters.tag && (
-            <div class="course-active-tag">
+            <div class="mb-3">
               {(() => {
                 const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                 return (
-                  <a href={url} title="Clear tag filter" {...hxProps(url)}>
+                  <a href={url} class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.8rem] font-medium no-underline bg-primary text-white" title="Clear tag filter" {...hxProps(url)}>
                     #{filters.tag} &times;
                   </a>
                 );
@@ -205,17 +206,17 @@ export function CourseSourcePage(props: SourcePageProps) {
             </div>
           )}
 
-          <div class="course-header-bar">
-            <span class="course-result-count">
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-border-subtle">
+            <span class="text-sm text-muted">
               {pagination.total} {pagination.total === 1 ? vocabulary.item : vocabulary.itemPlural}
               {activeType && <> in {activeType.name}</>}
               {activeWorkspace && <> in {activeWorkspace.name}</>}
             </span>
-            <div class="course-sort">
-              <a href={newestUrl} class={`course-sort-tab ${filters.sort === 'newest' ? 'active' : ''}`} {...hxProps(newestUrl)}>
+            <div class="flex">
+              <a href={newestUrl} class={`text-sm px-3 py-1.5 no-underline transition-colors ${filters.sort === 'newest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(newestUrl)}>
                 Newest
               </a>
-              <a href={oldestUrl} class={`course-sort-tab ${filters.sort === 'oldest' ? 'active' : ''}`} {...hxProps(oldestUrl)}>
+              <a href={oldestUrl} class={`text-sm px-3 py-1.5 no-underline transition-colors ${filters.sort === 'oldest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(oldestUrl)}>
                 Sequence
               </a>
             </div>
@@ -226,24 +227,32 @@ export function CourseSourcePage(props: SourcePageProps) {
           </div>
           <div id="source-results">
             {items.length === 0 ? (
-              <p class="course-empty">No {vocabulary.itemPlural} matching this filter.</p>
+              <div class="empty-state">
+                <div class="empty-state-icon">
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+                </div>
+                <p class="empty-state-title">{`No ${vocabulary.itemPlural} found`}</p>
+                <p class="empty-state-description">Try adjusting your filters or search query.</p>
+              </div>
             ) : (
               <>
-                <div class="course-lesson-list">
+                <div class="flex flex-col gap-3">
                   {items.map((item, idx) => {
                     const num = pagination.offset + idx + 1;
                     const desc = stripMarkdown(item.content).slice(0, 120);
                     return (
-                      <div class="course-card">
-                        <div class="course-card-num">{num}</div>
-                        <div class="course-card-body">
-                          <h3><a href={`/item/${item.slug}`}>{item.keySummary}</a></h3>
-                          <div class="course-card-meta">
-                            {item.typeName && <span class="course-module-badge">{item.typeName}</span>}
-                            {item.workspaceName && <span class="course-track-badge">{item.workspaceName}</span>}
+                      <div class="flex items-start max-sm:flex-col gap-4 max-sm:gap-2 p-4 border border-border-subtle shadow-card rounded-xl bg-surface transition-all hover:shadow-card-hover hover:border-primary">
+                        <div class="flex items-center justify-center w-10 h-10 max-sm:w-8 max-sm:h-8 rounded-full bg-primary/12 text-primary text-base max-sm:text-sm font-bold shrink-0">{num}</div>
+                        <div class="flex-1 min-w-0">
+                          <h3 class="m-0 mb-1 text-base font-semibold leading-snug">
+                            <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary">{item.keySummary}</a>
+                          </h3>
+                          <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
+                            {item.typeName && <span class="text-[0.72rem] px-2 py-0.5 rounded-full bg-primary/12 text-primary font-medium whitespace-nowrap">{item.typeName}</span>}
+                            {item.workspaceName && <span class="text-[0.72rem] text-muted">{item.workspaceName}</span>}
                             <span>{readingTime(item.content)}</span>
                           </div>
-                          {desc && <div class="course-card-description">{desc}</div>}
+                          {desc && <div class="text-sm text-muted mt-1 line-clamp-2 leading-relaxed">{desc}</div>}
                         </div>
                       </div>
                     );

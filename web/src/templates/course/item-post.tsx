@@ -42,24 +42,24 @@ export function CourseItemPost(props: ItemPostProps) {
     <CourseLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="course-post">
+      <div class="max-w-3xl mx-auto px-4 pt-8 pb-16">
         <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
         {/* Breadcrumb */}
-        <nav class="course-breadcrumb" aria-label="Breadcrumb">
-          <a href="/">{sourceTitle}</a>
-          <span class="course-breadcrumb-sep">/</span>
+        <nav class="flex items-center gap-1.5 text-sm text-muted mb-4 flex-wrap" aria-label="Breadcrumb">
+          <a href="/" class="text-primary no-underline hover:underline">{sourceTitle}</a>
+          <span class="text-muted opacity-50">/</span>
           {item.typeName && (
             <>
-              <a href={`/?type=${item.typeId}`}>{item.typeName}</a>
-              <span class="course-breadcrumb-sep">/</span>
+              <a href={`/?type=${item.typeId}`} class="text-primary no-underline hover:underline">{item.typeName}</a>
+              <span class="text-muted opacity-50">/</span>
             </>
           )}
           <span>{item.keySummary}</span>
         </nav>
 
         <article class="source-article">
-          <header class="course-post-header">
+          <header class="mb-6">
             <div class="source-category">
               <TypeBadge typeName={item.typeName} />
               {item.workspaceName && (
@@ -67,7 +67,7 @@ export function CourseItemPost(props: ItemPostProps) {
               )}
             </div>
             <h1>{item.keySummary}</h1>
-            <div class="course-post-meta">
+            <div class="post-meta flex items-center gap-2.5 flex-wrap text-sm text-muted">
               {githubUrl ? (
                 <a href={githubUrl} target="_blank" rel="noopener" class="post-author">
                   {sourceAuthor}
@@ -87,12 +87,12 @@ export function CourseItemPost(props: ItemPostProps) {
             </div>
           </header>
 
-          <div class="course-post-content content">
+          <div class="mt-8 content">
             {raw(renderedContent)}
           </div>
 
           {item.tags && item.tags.length > 0 && (
-            <footer class="course-post-tags">
+            <footer class="mt-10 pt-6 border-t border-border-subtle">
               <div class="item-tags">
                 {item.tags.map((t) => (
                   <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
@@ -102,10 +102,10 @@ export function CourseItemPost(props: ItemPostProps) {
           )}
 
           {/* Navigation back to course */}
-          <nav class="course-nav" aria-label="Lesson navigation">
-            <a href={item.typeId ? `/?type=${item.typeId}` : '/'} class="course-nav-link course-nav-link--prev">
-              <span class="course-nav-label">Back to</span>
-              <span class="course-nav-title">{item.typeName || 'All lessons'}</span>
+          <nav class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-10 pt-6 border-t border-border-subtle" aria-label="Lesson navigation">
+            <a href={item.typeId ? `/?type=${item.typeId}` : '/'} class="flex flex-col gap-1 px-4 py-3 border border-border-subtle shadow-card rounded-xl no-underline text-text transition-colors hover:border-primary hover:bg-primary/4">
+              <span class="text-[0.72rem] uppercase tracking-wide text-muted font-semibold">Back to</span>
+              <span class="text-[0.9rem] font-medium text-primary">{item.typeName || 'All lessons'}</span>
             </a>
           </nav>
         </article>

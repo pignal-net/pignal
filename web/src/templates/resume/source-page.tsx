@@ -149,40 +149,40 @@ export function ResumeSourcePage(props: SourcePageProps) {
     <ResumeLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="resume-hero">
+      <div class="text-center px-4 pt-10 pb-8 border-b-2 border-border-subtle mb-8">
         {githubUsername && (
           <img
             src={`https://avatars.githubusercontent.com/${githubUsername}?s=192`}
             alt={sourceTitle}
-            class="resume-hero-avatar"
+            class="w-24 h-24 rounded-full mb-4 border-[3px] border-border-subtle mx-auto max-sm:w-[72px] max-sm:h-[72px]"
             width="96"
             height="96"
           />
         )}
-        <h1 class="resume-hero-name">{sourceTitle}</h1>
-        {sourceDescription && <p class="resume-hero-tagline">{sourceDescription}</p>}
+        <h1 class="text-3xl max-sm:text-2xl font-bold m-0 mb-1 leading-tight tracking-tight text-text">{sourceTitle}</h1>
+        {sourceDescription && <p class="text-lg max-sm:text-base text-muted m-0 mb-4 leading-relaxed max-w-[600px] mx-auto">{sourceDescription}</p>}
 
-        <div class="resume-hero-links">
+        <div class="flex justify-center items-center gap-4 flex-wrap text-sm">
           {githubUrl && (
-            <a href={githubUrl} target="_blank" rel="noopener">GitHub</a>
+            <a href={githubUrl} target="_blank" rel="noopener" class="text-primary no-underline inline-flex items-center gap-1 hover:underline">GitHub</a>
           )}
           {settings.source_social_twitter && (
-            <a href={settings.source_social_twitter} target="_blank" rel="noopener">Twitter</a>
+            <a href={settings.source_social_twitter} target="_blank" rel="noopener" class="text-primary no-underline inline-flex items-center gap-1 hover:underline">Twitter</a>
           )}
           {settings.source_social_linkedin && (
-            <a href={settings.source_social_linkedin} target="_blank" rel="noopener">LinkedIn</a>
+            <a href={settings.source_social_linkedin} target="_blank" rel="noopener" class="text-primary no-underline inline-flex items-center gap-1 hover:underline">LinkedIn</a>
           )}
           {settings.source_url && (
-            <a href={settings.source_url} target="_blank" rel="noopener">Website</a>
+            <a href={settings.source_url} target="_blank" rel="noopener" class="text-primary no-underline inline-flex items-center gap-1 hover:underline">Website</a>
           )}
         </div>
 
         {allSkills.length > 0 && (
-          <div class="resume-skills">
+          <div class="flex justify-center flex-wrap gap-1.5 mt-4">
             {allSkills.map((skill) => {
               const url = buildFilterUrl({ tag: skill, workspace: filters.workspaceId, sort: sortParam });
               return (
-                <a href={url} class="resume-skill-chip" {...hxProps(url)}>{skill}</a>
+                <a href={url} class="inline-block px-2.5 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary tracking-wide no-underline" {...hxProps(url)}>{skill}</a>
               );
             })}
           </div>
@@ -191,11 +191,11 @@ export function ResumeSourcePage(props: SourcePageProps) {
 
       {/* Profile tabs (workspace filter) */}
       {workspacesWithItems.length > 0 && (
-        <div class="resume-profiles">
+        <div class="flex justify-center gap-2 flex-wrap mb-6 px-4">
           {(() => {
             const url = buildFilterUrl({ type: filters.typeId, tag: filters.tag, q: filters.q, sort: sortParam });
             return (
-              <a href={url} class={`resume-profile-tab ${!filters.workspaceId ? 'active' : ''}`} {...hxProps(url)}>
+              <a href={url} class={`inline-block px-4 py-1.5 text-[0.8rem] font-medium rounded-full border no-underline transition-all ${!filters.workspaceId ? 'bg-primary border-primary text-white' : 'border-border text-muted hover:border-primary hover:text-primary'}`} {...hxProps(url)}>
                 All {vocabulary.workspacePlural}
               </a>
             );
@@ -209,7 +209,7 @@ export function ResumeSourcePage(props: SourcePageProps) {
               sort: sortParam,
             });
             return (
-              <a href={url} class={`resume-profile-tab ${filters.workspaceId === ws.id ? 'active' : ''}`} {...hxProps(url)}>
+              <a href={url} class={`inline-block px-4 py-1.5 text-[0.8rem] font-medium rounded-full border no-underline transition-all ${filters.workspaceId === ws.id ? 'bg-primary border-primary text-white' : 'border-border text-muted hover:border-primary hover:text-primary'}`} {...hxProps(url)}>
                 {ws.name}
               </a>
             );
@@ -219,21 +219,21 @@ export function ResumeSourcePage(props: SourcePageProps) {
 
       {/* Section filter chips */}
       {typesWithItems.length > 1 && (
-        <div class="resume-section-filters">
+        <div class="flex justify-center gap-1.5 flex-wrap mb-8 px-4">
           {(() => {
             const url = buildFilterUrl({ workspace: filters.workspaceId, tag: filters.tag, q: filters.q, sort: sortParam });
             return (
-              <a href={url} class={`resume-section-chip ${!filters.typeId ? 'active' : ''}`} {...hxProps(url)}>
-                All <span class="resume-section-chip-count">({counts.total})</span>
+              <a href={url} class={`inline-block px-3 py-1 text-xs font-medium rounded-full border no-underline transition-all ${!filters.typeId ? 'bg-text border-text text-surface' : 'border-border text-muted hover:border-text hover:text-text'}`} {...hxProps(url)}>
+                All <span class="font-normal opacity-70 ml-0.5">({counts.total})</span>
               </a>
             );
           })()}
           {typesWithItems.map((type) => {
             const url = buildFilterUrl({ type: type.id, workspace: filters.workspaceId, tag: filters.tag, q: filters.q, sort: sortParam });
             return (
-              <a href={url} class={`resume-section-chip ${filters.typeId === type.id ? 'active' : ''}`} {...hxProps(url)}>
+              <a href={url} class={`inline-block px-3 py-1 text-xs font-medium rounded-full border no-underline transition-all ${filters.typeId === type.id ? 'bg-text border-text text-surface' : 'border-border text-muted hover:border-text hover:text-text'}`} {...hxProps(url)}>
                 {type.icon ? `${type.icon} ` : ''}{type.name}
-                <span class="resume-section-chip-count">({counts.byType[type.id] ?? 0})</span>
+                <span class="font-normal opacity-70 ml-0.5">({counts.byType[type.id] ?? 0})</span>
               </a>
             );
           })}
@@ -242,11 +242,11 @@ export function ResumeSourcePage(props: SourcePageProps) {
 
       {/* Active tag filter badge */}
       {filters.tag && (
-        <div class="resume-active-tag">
+        <div class="text-center mb-6">
           {(() => {
             const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
             return (
-              <a href={url} {...hxProps(url)}>
+              <a href={url} class="inline-block px-3 py-1 text-[0.8rem] rounded-full bg-primary/10 text-primary no-underline hover:line-through" {...hxProps(url)}>
                 #{filters.tag} &times;
               </a>
             );
@@ -288,49 +288,57 @@ function ResumeResults(props: {
   const sortParam = filters.sort === 'oldest' ? 'oldest' : undefined;
 
   if (items.length === 0) {
-    return <p class="resume-empty">No {vocabulary.itemPlural} matching this filter.</p>;
+    return (
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+        </div>
+        <p class="empty-state-title">{`No ${vocabulary.itemPlural} found`}</p>
+        <p class="empty-state-description">Try adjusting your filters or search query.</p>
+      </div>
+    );
   }
 
   return (
     <>
-      <div class="resume-sections">
+      <div class="max-w-[740px] mx-auto px-4 max-sm:px-2">
         {sections.map((section) => (
-          <div class="resume-section">
-            <div class="resume-section-header">
-              {section.typeIcon && <span class="resume-section-icon">{section.typeIcon}</span>}
-              <h2 class="resume-section-title">{section.typeName}</h2>
-              <span class="resume-section-count">{section.items.length} {section.items.length === 1 ? vocabulary.item : vocabulary.itemPlural}</span>
+          <div class="mb-10">
+            <div class="flex items-center gap-3 mb-4 pb-2 border-b-2 border-primary">
+              {section.typeIcon && <span class="text-lg shrink-0">{section.typeIcon}</span>}
+              <h2 class="text-xs font-bold uppercase tracking-wider text-primary m-0">{section.typeName}</h2>
+              <span class="text-[0.7rem] font-normal text-muted ml-auto">{section.items.length} {section.items.length === 1 ? vocabulary.item : vocabulary.itemPlural}</span>
             </div>
-            <div class="resume-entries">
+            <div class="flex flex-col relative pl-5 before:content-[''] before:absolute before:left-[3px] before:top-2 before:bottom-2 before:w-0.5 before:bg-border-subtle">
               {section.items.map((item) => {
                 const description = stripMarkdown(item.content).slice(0, 200);
                 const dateStr = item.vouchedAt || item.createdAt;
                 return (
-                  <div class="resume-entry">
-                    <div class="resume-entry-header">
-                      <h3 class="resume-entry-title">
+                  <div class="relative py-3 pl-3 before:content-[''] before:absolute before:-left-5 before:top-[1.15rem] before:w-2 before:h-2 before:rounded-full before:border-2 before:border-surface before:z-[1] before:bg-border-subtle first:before:bg-primary">
+                    <div class="flex justify-between items-baseline gap-3 flex-wrap max-sm:flex-col max-sm:gap-0.5 mb-1">
+                      <h3 class="text-[0.95rem] font-semibold m-0 leading-snug text-text">
                         {item.slug ? (
-                          <a href={`/item/${item.slug}`}>{item.keySummary}</a>
+                          <a href={`/item/${item.slug}`} class="text-inherit no-underline hover:text-primary">{item.keySummary}</a>
                         ) : (
                           item.keySummary
                         )}
                       </h3>
-                      <time class="resume-entry-date" datetime={dateStr}>{formatDate(dateStr)}</time>
+                      <time class="text-xs text-muted whitespace-nowrap shrink-0" datetime={dateStr}>{formatDate(dateStr)}</time>
                     </div>
                     {description && (
-                      <p class="resume-entry-description">{description}</p>
+                      <p class="text-sm text-muted leading-relaxed m-0 mt-1 line-clamp-3">{description}</p>
                     )}
-                    <div class="resume-entry-meta">
+                    <div class="flex items-center gap-2 flex-wrap mt-1.5">
                       {item.validationActionLabel && (
-                        <span class="resume-entry-badge">{item.validationActionLabel}</span>
+                        <span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold rounded-xl bg-primary/10 text-primary uppercase tracking-wide">{item.validationActionLabel}</span>
                       )}
                       {item.workspaceName && (
-                        <span class="resume-entry-badge">{item.workspaceName}</span>
+                        <span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold rounded-xl bg-primary/10 text-primary uppercase tracking-wide">{item.workspaceName}</span>
                       )}
                       {item.tags && item.tags.slice(0, 5).map((t) => {
                         const url = buildFilterUrl({ tag: t, type: filters.typeId, workspace: filters.workspaceId, sort: sortParam });
                         return (
-                          <a href={url} class="resume-entry-tag" {...hxProps(url)}>
+                          <a href={url} class="inline-block px-1.5 py-0.5 text-[0.65rem] rounded-full bg-muted/8 border border-border-subtle text-muted no-underline hover:text-text" {...hxProps(url)}>
                             {t}
                           </a>
                         );

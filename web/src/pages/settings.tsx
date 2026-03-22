@@ -56,6 +56,7 @@ interface FieldConfig {
 const CATEGORIES = [
   {
     title: 'Profile',
+    slug: 'profile',
     description: 'Your identity, branding, and social links',
     keys: [
       'owner_name',
@@ -67,16 +68,19 @@ const CATEGORIES = [
   },
   {
     title: 'Source Page',
+    slug: 'source-page',
     description: 'Public source page metadata',
     keys: ['source_title', 'source_description'],
   },
   {
     title: 'Source Theme',
+    slug: 'source-theme',
     description: 'Color palette for your source page. Dark mode variants are generated automatically.',
     keys: THEME_SETTING_KEYS,
   },
   {
     title: 'Source Layout',
+    slug: 'source-layout',
     description: 'Display preferences and content rendering',
     keys: [
       'source_posts_per_page',
@@ -88,11 +92,13 @@ const CATEGORIES = [
   },
   {
     title: 'Advanced',
+    slug: 'advanced',
     description: 'Custom CSS and HTML injection for source pages',
     keys: ['source_custom_css', 'source_custom_head'],
   },
   {
     title: 'Content Quality',
+    slug: 'content-quality',
     description: 'Validation rules and limits',
     keys: ['quality_guidelines', 'validation_limits', 'max_actions_per_type'],
   },
@@ -188,7 +194,7 @@ const FIELDS: Record<string, FieldConfig> = {
     description: 'Color scheme for code blocks in source posts.',
     type: 'select',
     options: [
-      { value: 'default', label: 'Default — Pico CSS default' },
+      { value: 'default', label: 'Default — system default' },
       { value: 'github', label: 'GitHub — light gray background' },
       { value: 'monokai', label: 'Monokai — dark background' },
     ],
@@ -326,12 +332,13 @@ function SettingField({ settingKey, value }: {
 
     case 'color':
       inputElement = (
-        <div role="group">
+        <div class="flex items-center gap-3">
           <input
             type="color"
             value={value || config.placeholder || '#000000'}
             data-sync={`#color-text-${settingKey}`}
             aria-label={`${config.label} picker`}
+            class="w-12 h-10 rounded-lg"
           />
           <input
             type="text"
@@ -370,10 +377,10 @@ function SettingField({ settingKey, value }: {
   }
 
   return (
-    <div class="setting-field" id={`setting-${settingKey}`}>
+    <div class="mb-4" id={`setting-${settingKey}`}>
       <label>{config.label}</label>
       {config.description && (
-        <small class="muted">{config.description}</small>
+        <p class="text-sm text-muted leading-relaxed mb-2">{config.description}</p>
       )}
       {inputElement}
     </div>
@@ -396,30 +403,73 @@ export async function settingsPage(c: Context<{ Bindings: WebEnv; Variables: Web
       csrfToken={csrfToken}
       flash={flash}
     >
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold tracking-tight">Settings</h1>
+        <p class="text-muted text-sm mt-1">Configure your signal store</p>
+      </div>
+
       <script id="setting-defaults" type="application/json">
         {raw(JSON.stringify(DEFAULTS))}
       </script>
 
-      {CATEGORIES.map((category, index) => {
-        const resetKeys = category.keys.filter((k) => k in DEFAULTS);
-        return (
-          <details class="settings-group" open={index === 0}>
-            <summary>{category.title} <small class="muted">{category.description}</small></summary>
-            {category.keys.map((key) => (
-              <SettingField settingKey={key} value={settings[key] ?? ''} />
-            ))}
-            {resetKeys.length > 0 && (
-              <button
-                type="button"
-                class="outline secondary btn-sm reset-defaults-btn"
-                data-reset-keys={JSON.stringify(resetKeys)}
+      {/* Sidebar + Content two-column layout */}
+      <div class="flex flex-col lg:flex-row gap-8">
+        {/* Left sidebar: vertical nav on desktop, horizontal pills on mobile */}
+        <nav class="lg:w-48 shrink-0 lg:sticky lg:top-20 lg:self-start">
+          {/* Mobile: horizontal scroll pills */}
+          <div class="flex lg:hidden gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+            {CATEGORIES.map((cat) => (
+              <a
+                href={`#settings-${cat.slug}`}
+                class="px-3 py-1.5 text-sm rounded-full whitespace-nowrap bg-surface border border-border-subtle text-muted hover:text-text hover:bg-surface-hover transition-colors"
               >
-                Reset to defaults
-              </button>
-            )}
-          </details>
-        );
-      })}
+                {cat.title}
+              </a>
+            ))}
+          </div>
+          {/* Desktop: vertical nav links */}
+          <div class="hidden lg:flex flex-col gap-0.5">
+            {CATEGORIES.map((cat) => (
+              <a
+                href={`#settings-${cat.slug}`}
+                class="px-3 py-2 text-sm rounded-lg text-muted hover:text-text hover:bg-surface-hover transition-colors"
+              >
+                {cat.title}
+              </a>
+            ))}
+          </div>
+        </nav>
+
+        {/* Right content: open sections */}
+        <div class="flex-1 min-w-0 space-y-8">
+          {CATEGORIES.map((category) => {
+            const resetKeys = category.keys.filter((k) => k in DEFAULTS);
+            return (
+              <section
+                id={`settings-${category.slug}`}
+                class="bg-surface rounded-xl border border-border-subtle shadow-card p-6 sm:p-8 scroll-mt-20"
+              >
+                <div class="mb-6">
+                  <h2 class="text-lg font-semibold">{category.title}</h2>
+                  <p class="text-sm text-muted mt-1">{category.description}</p>
+                </div>
+                {category.keys.map((key) => (
+                  <SettingField settingKey={key} value={settings[key] ?? ''} />
+                ))}
+                {resetKeys.length > 0 && (
+                  <button
+                    type="button"
+                    class="outline secondary text-sm px-4 py-2 mt-2"
+                    data-reset-keys={JSON.stringify(resetKeys)}
+                  >
+                    Reset to defaults
+                  </button>
+                )}
+              </section>
+            );
+          })}
+        </div>
+      </div>
 
       <div id="save-bar" class="save-bar" hidden>
         <div class="save-bar-content">

@@ -78,10 +78,10 @@ export function FilterBar({
   const searchUrl = isAdmin ? `${basePath}/list` : basePath;
 
   return (
-    <nav class="source-filter-bar" aria-label="Filters">
+    <nav class="source-filter-bar flex flex-col gap-0 mb-6" aria-label="Filters">
       {activeTag && (
-        <div class="filter-bar-tag">
-          <a href={basePath} class="filter-tag-chip active" title="Clear tag filter"
+        <div class="filter-bar-tag flex items-center gap-2 mb-1">
+          <a href={basePath} class="filter-tag-chip active inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium no-underline bg-primary text-primary-inverse"
             hx-get={basePath} hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}>
             #{activeTag} &times;
           </a>
@@ -89,11 +89,11 @@ export function FilterBar({
       )}
 
       {/* Row 1: Search + Sort */}
-      <div class="feed-bar">
+      <div class="feed-bar flex flex-col sm:flex-row sm:items-center gap-2 py-1.5 mb-1 border-b border-border">
         <input
           type="text"
           name="q"
-          class="feed-search"
+          class="feed-search flex-1 sm:max-w-[50%] h-10 m-0 px-2.5 py-1 text-sm border border-border rounded-lg bg-surface text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary-focus"
           placeholder="Search items..."
           value={query || ''}
           hx-get={searchUrl}
@@ -104,24 +104,24 @@ export function FilterBar({
           hx-indicator={htmxIndicator}
           hx-vals={hxVals}
         />
-        <span class="feed-tabs">
-          <a href={newestUrl} class={`feed-tab ${sort === 'newest' ? 'feed-tab-active' : ''}`}
+        <div class="feed-tabs flex bg-surface-hover rounded-lg p-0.5 border border-border shrink-0">
+          <a href={newestUrl} class={`feed-tab px-3 py-1.5 rounded-md text-xs font-medium transition-all ${sort === 'newest' ? 'feed-tab-active bg-surface text-text shadow-xs' : 'text-muted hover:text-text'}`}
             hx-get={newestUrl} hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}>
             Newest
           </a>
-          <a href={oldestUrl} class={`feed-tab ${sort === 'oldest' ? 'feed-tab-active' : ''}`}
+          <a href={oldestUrl} class={`feed-tab px-3 py-1.5 rounded-md text-xs font-medium transition-all ${sort === 'oldest' ? 'feed-tab-active bg-surface text-text shadow-xs' : 'text-muted hover:text-text'}`}
             hx-get={oldestUrl} hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}>
             Oldest
           </a>
-        </span>
+        </div>
       </div>
 
       {/* Row 2: Workspace chips with type dropdowns */}
       {hasWorkspaces && (
-      <div class="filter-bar-chips">
+      <div class="filter-bar-chips flex items-center flex-wrap gap-2 py-1.5">
         {/* Archived toggle (admin only) */}
         {isArchived !== undefined && (
-          <label class="filter-archived-toggle">
+          <label class="filter-archived-toggle inline-flex items-center gap-1 text-xs text-muted cursor-pointer shrink-0 m-0">
             <input type="checkbox" name="isArchived" value="true" checked={isArchived}
               hx-get={searchUrl} hx-trigger="change" hx-target={htmxTarget}
               hx-include="[name='q']"
@@ -148,7 +148,7 @@ export function FilterBar({
           return (
             <div class="ws-dropdown">
               <a href={chipUrl}
-                class={`filter-chip ${isActiveWs ? 'active' : ''}`}
+                class={`filter-chip px-3 py-1.5 rounded-full text-sm font-medium ${isActiveWs ? 'active' : ''}`}
                 hx-get={chipUrl} hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}>
                 {ws.name}{wsCount !== undefined ? <span class="filter-chip-count"> ({wsCount})</span> : ''}
               </a>
@@ -173,7 +173,7 @@ export function FilterBar({
       )}
 
       {totalResults !== undefined && (
-        <p class="result-count">{totalResults} item{totalResults !== 1 ? 's' : ''} found</p>
+        <p class="text-sm text-muted mb-3">{totalResults} item{totalResults !== 1 ? 's' : ''} found</p>
       )}
     </nav>
   );

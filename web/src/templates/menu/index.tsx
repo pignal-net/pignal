@@ -5,7 +5,6 @@ import { MenuItemPost } from './item-post';
 import { MenuLayout } from './layout';
 import { Pagination } from '../../components/pagination';
 import { stripMarkdown } from '../../lib/markdown';
-import templateStyles from './styles.css';
 
 const config = getTemplateConfig('menu');
 
@@ -36,31 +35,36 @@ function groupByType(items: Item[]): Map<string, Item[]> {
 
 function MenuPartialResults(props: PartialResultsProps) {
   if (props.items.length === 0) {
-    return <p class="menu-empty">No {props.vocabulary.itemPlural} found.</p>;
+    return (
+      <div class="empty-state">
+        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        <p>{`No ${props.vocabulary.itemPlural} found.`}</p>
+      </div>
+    );
   }
 
   const grouped = groupByType(props.items);
 
   return (
     <>
-      <div class="menu-table-container">
+      <div class="flex flex-col gap-8">
         {Array.from(grouped.entries()).map(([typeName, sectionItems]) => (
-          <div class="menu-section">
-            <div class="menu-section-header">
-              <span class="menu-section-name">{typeName}</span>
+          <div class="flex flex-col">
+            <div class="py-3 border-b-2 border-primary mb-1">
+              <span class="text-xl font-bold text-text tracking-wide">{typeName}</span>
             </div>
-            <div class="menu-items">
+            <div class="flex flex-col">
               {sectionItems.map((item) => {
                 const price = extractPrice(item.content);
                 const desc = getDescription(item.content, 80);
                 return (
-                  <a href={`/item/${item.slug}`} class="menu-row">
-                    <div class="menu-row-left">
-                      <span class="menu-item-name">{item.keySummary}</span>
-                      <span class="menu-item-dots" />
-                      {price && <span class="menu-item-price">{price}</span>}
+                  <a href={`/item/${item.slug}`} class="block py-3 no-underline text-inherit border-b border-border-subtle transition-colors hover:bg-surface max-sm:p-3 max-sm:mb-2 max-sm:border max-sm:border-border-subtle max-sm:rounded-lg max-sm:bg-surface">
+                    <div class="flex items-baseline gap-0 min-h-[1.4em]">
+                      <span class="font-semibold text-base text-text shrink-0">{item.keySummary}</span>
+                      <span class="flex-1 border-b border-dotted border-border-subtle mx-2 min-w-4 relative -top-1 max-sm:hidden" />
+                      {price && <span class="font-semibold text-base text-primary shrink-0 whitespace-nowrap">{price}</span>}
                     </div>
-                    {desc && <div class="menu-item-desc">{desc}</div>}
+                    {desc && <div class="text-sm text-muted mt-0.5 leading-snug">{desc}</div>}
                   </a>
                 );
               })}
@@ -90,5 +94,5 @@ export const menuTemplate: Template = {
 
   profile: config.profile,
 
-  styles: templateStyles,
+  styles: '',
 };

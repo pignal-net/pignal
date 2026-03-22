@@ -107,11 +107,11 @@ export function MenuSourcePage(props: SourcePageProps) {
   const headContent = `${metaTags}${relLinks}`;
   const sortParam = filters.sort === 'oldest' ? 'oldest' : undefined;
 
-  // Workspace (menu) tabs — only those with items
+  // Workspace (menu) tabs -- only those with items
   const workspacesWithItems = workspaces.filter((w) => (counts.byWorkspace[w.id] ?? 0) > 0);
 
   // Group items by type (section) for table rendering
-  // When a specific type filter is active, no grouping needed — just show one section
+  // When a specific type filter is active, no grouping needed -- just show one section
   const typeOrder = types.filter((t) => !filters.typeId || t.id === filters.typeId);
 
   const itemsByType: Record<string, typeof items> = {};
@@ -125,14 +125,14 @@ export function MenuSourcePage(props: SourcePageProps) {
     <MenuLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="menu-page">
+      <div class="max-w-3xl mx-auto py-4">
         {/* Menu (workspace) tabs */}
         {workspacesWithItems.length > 0 && (
-          <nav class="menu-tabs">
+          <nav class="flex border-b-2 border-border-subtle mb-6 overflow-x-auto" style="-webkit-overflow-scrolling: touch">
             {(() => {
               const url = buildFilterUrl({ type: filters.typeId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} class={`menu-tab ${!filters.workspaceId ? 'active' : ''}`} {...hxProps(url)}>
+                <a href={url} class={`px-5 py-2.5 no-underline font-medium text-sm whitespace-nowrap border-b-2 -mb-[2px] transition-colors ${!filters.workspaceId ? 'text-primary border-primary' : 'text-muted border-transparent hover:text-text'}`} {...hxProps(url)}>
                   All
                 </a>
               );
@@ -145,7 +145,7 @@ export function MenuSourcePage(props: SourcePageProps) {
                 sort: sortParam,
               });
               return (
-                <a href={url} class={`menu-tab ${filters.workspaceId === ws.id ? 'active' : ''}`} {...hxProps(url)}>
+                <a href={url} class={`px-5 py-2.5 no-underline font-medium text-sm whitespace-nowrap border-b-2 -mb-[2px] transition-colors ${filters.workspaceId === ws.id ? 'text-primary border-primary' : 'text-muted border-transparent hover:text-text'}`} {...hxProps(url)}>
                   {ws.name}
                 </a>
               );
@@ -155,11 +155,11 @@ export function MenuSourcePage(props: SourcePageProps) {
 
         {/* Active tag filter */}
         {filters.tag && (
-          <div class="menu-active-tag">
+          <div class="mb-4">
             {(() => {
               const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} title="Clear tag filter" {...hxProps(url)}>
+                <a href={url} title="Clear tag filter" class="inline-block px-3 py-1 bg-primary/10 rounded-full text-sm text-primary no-underline" {...hxProps(url)}>
                   #{filters.tag} &times;
                 </a>
               );
@@ -168,8 +168,8 @@ export function MenuSourcePage(props: SourcePageProps) {
         )}
 
         {/* Header bar */}
-        <div class="menu-header-bar">
-          <span class="menu-result-count">
+        <div class="flex justify-between items-center mb-4 pb-2">
+          <span class="text-sm text-muted">
             {pagination.total} {pagination.total === 1 ? vocabulary.item : vocabulary.itemPlural}
             {activeType && <> in {activeType.name}</>}
             {activeWorkspace && <> &middot; {activeWorkspace.name}</>}
@@ -181,34 +181,37 @@ export function MenuSourcePage(props: SourcePageProps) {
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <p class="menu-empty">No {vocabulary.itemPlural} found.</p>
+            <div class="empty-state">
+              <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              <p>{`No ${vocabulary.itemPlural} found.`}</p>
+            </div>
           ) : (
             <>
-              <div class="menu-table-container">
+              <div class="flex flex-col gap-8">
                 {typeOrder
                   .filter((t) => itemsByType[t.id] && itemsByType[t.id].length > 0)
                   .map((type) => (
-                    <div class="menu-section">
-                      <div class="menu-section-header">
-                        <span class="menu-section-name">{type.icon ? `${type.icon} ` : ''}{type.name}</span>
-                        {type.description && <span class="menu-section-desc">{type.description}</span>}
+                    <div class="flex flex-col">
+                      <div class="py-3 border-b-2 border-primary mb-1 flex items-baseline gap-3">
+                        <span class="text-xl font-bold text-text tracking-wide">{type.icon ? `${type.icon} ` : ''}{type.name}</span>
+                        {type.description && <span class="text-sm text-muted italic">{type.description}</span>}
                       </div>
-                      <div class="menu-items">
+                      <div class="flex flex-col">
                         {itemsByType[type.id].map((item) => {
                           const price = extractPrice(item.content);
                           const desc = getDescription(item.content, 80);
                           return (
-                            <a href={`/item/${item.slug}`} class="menu-row" {...hxProps(`/item/${item.slug}`)}>
-                              <div class="menu-row-left">
-                                <span class="menu-item-name">{item.keySummary}</span>
-                                <span class="menu-item-dots" />
-                                {price && <span class="menu-item-price">{price}</span>}
+                            <a href={`/item/${item.slug}`} class="block py-3 no-underline text-inherit border-b border-border-subtle transition-colors hover:bg-surface max-sm:p-3 max-sm:mb-2 max-sm:border max-sm:border-border-subtle max-sm:rounded-lg max-sm:bg-surface" {...hxProps(`/item/${item.slug}`)}>
+                              <div class="flex items-baseline gap-0 min-h-[1.4em]">
+                                <span class="font-semibold text-base text-text shrink-0">{item.keySummary}</span>
+                                <span class="flex-1 border-b border-dotted border-border-subtle mx-2 min-w-4 relative -top-1 max-sm:hidden" />
+                                {price && <span class="font-semibold text-base text-primary shrink-0 whitespace-nowrap">{price}</span>}
                               </div>
-                              {desc && <div class="menu-item-desc">{desc}</div>}
+                              {desc && <div class="text-sm text-muted mt-0.5 leading-snug">{desc}</div>}
                               {item.tags && item.tags.length > 0 && (
-                                <div class="menu-item-tags">
+                                <div class="flex gap-1.5 mt-1 flex-wrap">
                                   {item.tags.map((t) => (
-                                    <span class="menu-item-tag">{t}</span>
+                                    <span class="text-[0.7rem] px-1.5 py-0.5 rounded-xl bg-primary/10 text-primary uppercase tracking-wide font-medium">{t}</span>
                                   ))}
                                 </div>
                               )}

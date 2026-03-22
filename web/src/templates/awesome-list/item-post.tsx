@@ -39,19 +39,19 @@ export function AwesomeListItemPost(props: ItemPostProps) {
     <AwesomeListLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--post awesome-list-post-page">
-        <main class="source-main awesome-list-post-main">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
+        <main class="min-w-0 max-w-full break-words">
           <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
-          <article class="source-article awesome-list-article">
+          <article class="source-article min-w-0 max-w-full">
             <header>
-              <h1 class="awesome-list-post-title">{item.keySummary}</h1>
-              <div class="post-meta awesome-list-post-meta">
+              <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight mb-4">{item.keySummary}</h1>
+              <div class="flex items-center gap-2.5 flex-wrap text-xs text-muted">
                 {item.workspaceName && (
-                  <a href={`/?workspace=${item.workspaceId}`} class="workspace-badge">{item.workspaceName}</a>
+                  <a href={`/?workspace=${item.workspaceId}`} class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">{item.workspaceName}</a>
                 )}
                 {githubUrl ? (
-                  <a href={githubUrl} target="_blank" rel="noopener" class="post-author">
+                  <a href={githubUrl} target="_blank" rel="noopener" class="font-medium text-text hover:text-primary transition-colors">
                     {sourceAuthor}
                   </a>
                 ) : (
@@ -61,20 +61,20 @@ export function AwesomeListItemPost(props: ItemPostProps) {
                   {formatDate(item.vouchedAt || item.createdAt)}
                 </time>
                 {item.validationActionLabel && (
-                  <span class="validation-badge">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-success/80 bg-success/10">
                     {item.validationActionLabel} by {sourceAuthor}
                   </span>
                 )}
               </div>
             </header>
-            <div class="content awesome-list-content">
+            <div class="content mt-8 text-[0.95rem] leading-relaxed">
               {raw(renderedContent)}
             </div>
             {item.tags && item.tags.length > 0 && (
-              <footer class="item-tags-footer">
-                <div class="item-tags">
+              <footer class="mt-10 pt-6 border-t border-border-subtle">
+                <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag text-sm text-primary hover:underline">#{t}</a>
                   ))}
                 </div>
               </footer>

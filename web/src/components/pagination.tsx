@@ -36,11 +36,15 @@ export function Pagination({ total, limit, offset, baseUrl, htmxTarget }: Pagina
   const pages = buildPageList(currentPage, totalPages);
   const separator = baseUrl.includes('?') ? '&' : '?';
 
+  const linkClass = 'inline-flex items-center justify-center min-w-[2.2rem] h-10 px-2 rounded-lg text-sm no-underline transition-colors text-muted hover:bg-primary hover:text-primary-inverse';
+  const currentClass = 'inline-flex items-center justify-center min-w-[2.2rem] h-10 px-2 rounded-lg text-sm font-semibold bg-primary text-primary-inverse';
+
   return (
-    <nav class="pagination" aria-label="Pagination">
+    <nav class="flex justify-center items-center gap-1.5 mt-8 pt-6 border-t border-border-subtle flex-wrap" aria-label="Pagination">
       {currentPage > 1 && (
         <a
           href={`${baseUrl}${separator}offset=${(currentPage - 2) * limit}`}
+          class={linkClass}
           rel="prev"
           {...(htmxTarget ? { 'hx-get': `${baseUrl}${separator}offset=${(currentPage - 2) * limit}`, 'hx-target': htmxTarget, 'hx-push-url': 'true' } : {})}
         >
@@ -49,12 +53,13 @@ export function Pagination({ total, limit, offset, baseUrl, htmxTarget }: Pagina
       )}
       {pages.map((page) => (
         page === '...' ? (
-          <span class="ellipsis">…</span>
+          <span class="text-muted px-1">&hellip;</span>
         ) : page === currentPage ? (
-          <span class="current">{page}</span>
+          <span class={currentClass}>{page}</span>
         ) : (
           <a
             href={`${baseUrl}${separator}offset=${(page - 1) * limit}`}
+            class={linkClass}
             {...(htmxTarget ? { 'hx-get': `${baseUrl}${separator}offset=${(page - 1) * limit}`, 'hx-target': htmxTarget, 'hx-push-url': 'true' } : {})}
           >
             {page}
@@ -64,6 +69,7 @@ export function Pagination({ total, limit, offset, baseUrl, htmxTarget }: Pagina
       {currentPage < totalPages && (
         <a
           href={`${baseUrl}${separator}offset=${currentPage * limit}`}
+          class={linkClass}
           rel="next"
           {...(htmxTarget ? { 'hx-get': `${baseUrl}${separator}offset=${currentPage * limit}`, 'hx-target': htmxTarget, 'hx-push-url': 'true' } : {})}
         >

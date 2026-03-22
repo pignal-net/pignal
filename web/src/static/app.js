@@ -17,21 +17,30 @@
     updateButtons(theme);
   }
 
+  /* SVG icon strings for theme toggle (16x16, stroke-based, hardcoded constants) */
+  var ICON_SUN = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1.5v1M8 13.5v1M1.5 8h1M13.5 8h1M3.4 3.4l.7.7M11.9 11.9l.7.7M3.4 12.6l.7-.7M11.9 4.1l.7-.7"></path></svg>';
+  var ICON_MOON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8.5a5.5 5.5 0 1 1-6-6 4.5 4.5 0 0 0 6 6z"></path></svg>';
+  var ICON_MONITOR = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2" width="13" height="9" rx="1.5"></rect><path d="M5.5 14h5M8 11v3"></path></svg>';
+
   function updateButtons(theme) {
     var buttons = document.querySelectorAll('.theme-toggle');
-    var icon, label;
+    var svgContent, label;
     if (theme === 'dark') {
-      icon = '\u2600\uFE0F'; // sun
+      svgContent = ICON_SUN;
       label = 'Switch to auto mode';
     } else if (theme === 'light') {
-      icon = '\uD83C\uDF19'; // moon
+      svgContent = ICON_MOON;
       label = 'Switch to dark mode';
     } else {
-      icon = '\uD83D\uDCBB'; // system
+      svgContent = ICON_MONITOR;
       label = 'Switch to light mode';
     }
     for (var i = 0; i < buttons.length; i++) {
-      buttons[i].textContent = icon;
+      /* SVG strings are hardcoded constants above — safe to use as markup */
+      buttons[i].textContent = '';
+      var tpl = document.createElement('template');
+      tpl.innerHTML = svgContent;
+      buttons[i].appendChild(tpl.content.cloneNode(true));
       buttons[i].setAttribute('aria-label', label);
     }
   }
@@ -42,12 +51,12 @@
     setTheme(next);
   }
 
-  // Apply stored preference on load (default to light if no preference stored)
+  // Apply stored preference on load (default to auto — respects system preference)
   var stored = getStored();
   if (stored === 'light' || stored === 'dark' || stored === 'auto') {
     setTheme(stored);
   } else {
-    setTheme('light');
+    setTheme('auto');
   }
 
   // Bind click handlers (event delegation)

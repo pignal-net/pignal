@@ -17,18 +17,29 @@ function getSeverityLevel(typeName: string): string {
   return 'p3';
 }
 
-/** Map validation action label to a status CSS class */
-function getStatusClass(actionLabel: string | null | undefined): string {
-  if (!actionLabel) return '';
-  const lower = actionLabel.toLowerCase();
-  if (lower.includes('resolved') || lower.includes('fix')) return 'incidents-status--resolved';
-  if (lower.includes('investigating') || lower.includes('false alarm')) return 'incidents-status--investigating';
-  if (lower.includes('monitoring') || lower.includes('downgraded')) return 'incidents-status--monitoring';
-  if (lower.includes('escalated') || lower.includes('upgraded')) return 'incidents-status--escalated';
-  return 'incidents-status--default';
+/** Map severity to badge Tailwind classes */
+function getSeverityClasses(severity: string): string {
+  switch (severity) {
+    case 'p0': return 'bg-red-600 text-white';
+    case 'p1': return 'bg-red-500/70 text-white';
+    case 'p2': return 'bg-primary/70 text-white';
+    case 'p3': return 'bg-muted/80 text-white';
+    default: return 'bg-muted/80 text-white';
+  }
 }
 
-/** Try to extract duration from content (e.g. "Duration: 45 minutes" or "lasted 2 hours") */
+/** Map validation action label to status Tailwind classes */
+function getStatusClasses(actionLabel: string | null | undefined): string {
+  if (!actionLabel) return '';
+  const lower = actionLabel.toLowerCase();
+  if (lower.includes('resolved') || lower.includes('fix')) return 'bg-emerald-500/20 text-emerald-600';
+  if (lower.includes('investigating') || lower.includes('false alarm')) return 'bg-red-500/15 text-red-600';
+  if (lower.includes('monitoring') || lower.includes('downgraded')) return 'bg-primary/15 text-primary';
+  if (lower.includes('escalated') || lower.includes('upgraded')) return 'bg-red-500/15 text-red-600';
+  return 'bg-muted/15 text-muted';
+}
+
+/** Try to extract duration from content */
 function extractDuration(content: string): string | null {
   const patterns = [
     /duration:\s*(.+?)(?:\n|$)/i,
@@ -56,7 +67,8 @@ export function IncidentsItemPost(props: ItemPostProps) {
 
   const sourceTitle = settings.source_title || 'Incident Log';
   const severity = getSeverityLevel(item.typeName);
-  const statusClass = getStatusClass(item.validationActionLabel);
+  const severityClasses = getSeverityClasses(severity);
+  const statusClasses = getStatusClasses(item.validationActionLabel);
   const duration = extractDuration(item.content);
 
   const githubUsername = githubUrl.replace(/\/$/, '').split('/').pop() || '';
@@ -79,77 +91,77 @@ export function IncidentsItemPost(props: ItemPostProps) {
     <IncidentsLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--post">
-        <main class="source-main">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
+        <main class="min-w-0 max-w-full break-words">
           <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
-          <article class="source-article">
+          <article class="source-article min-w-0 max-w-full">
             <header>
-              <div class="incidents-post-header">
-                <span class={`incidents-severity incidents-severity--${severity}`}>{item.typeName}</span>
+              <div class="flex items-center gap-2 flex-wrap mb-2">
+                <span class={`inline-block px-2 py-0.5 rounded text-[0.72rem] font-semibold tracking-tight whitespace-nowrap ${severityClasses}`}>{item.typeName}</span>
                 {item.validationActionLabel && (
-                  <span class={`incidents-status ${statusClass}`}>{item.validationActionLabel}</span>
+                  <span class={`inline-block px-1.5 py-0.5 rounded text-[0.7rem] font-semibold tracking-tight whitespace-nowrap ${statusClasses}`}>{item.validationActionLabel}</span>
                 )}
                 {item.workspaceName && (
-                  <a href={`/?workspace=${item.workspaceId}`} class="incidents-service-badge">{item.workspaceName}</a>
+                  <a href={`/?workspace=${item.workspaceId}`} class="inline-block px-1.5 py-0.5 rounded text-[0.72rem] font-medium bg-muted/20 text-text no-underline hover:bg-muted/35 transition-colors">{item.workspaceName}</a>
                 )}
               </div>
-              <h1>{item.keySummary}</h1>
+              <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight mb-4">{item.keySummary}</h1>
 
               {/* Metadata grid */}
-              <div class="incidents-post-meta-grid">
-                <span class="incidents-post-meta-label">{vocabulary.type}:</span>
+              <div class="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm text-muted mb-5 p-3 sm:p-4 border border-border-subtle shadow-card rounded-xl bg-surface">
+                <span class="font-semibold text-text">{vocabulary.type}:</span>
                 <span>{item.typeName}</span>
 
-                <span class="incidents-post-meta-label">Reported:</span>
+                <span class="font-semibold text-text">Reported:</span>
                 <time datetime={item.createdAt}>{formatDate(item.createdAt)}</time>
 
                 {item.vouchedAt && item.vouchedAt !== item.createdAt && (
                   <>
-                    <span class="incidents-post-meta-label">Published:</span>
+                    <span class="font-semibold text-text">Published:</span>
                     <time datetime={item.vouchedAt}>{formatDate(item.vouchedAt)}</time>
                   </>
                 )}
 
                 {duration && (
                   <>
-                    <span class="incidents-post-meta-label">Duration:</span>
-                    <span class="incidents-duration">{duration}</span>
+                    <span class="font-semibold text-text">Duration:</span>
+                    <span class="text-sm text-muted italic">{duration}</span>
                   </>
                 )}
 
                 {item.workspaceName && (
                   <>
-                    <span class="incidents-post-meta-label">{vocabulary.workspace}:</span>
+                    <span class="font-semibold text-text">{vocabulary.workspace}:</span>
                     <span>{item.workspaceName}</span>
                   </>
                 )}
 
                 {item.validationActionLabel && (
                   <>
-                    <span class="incidents-post-meta-label">Status:</span>
-                    <span class={`incidents-status ${statusClass}`}>{item.validationActionLabel}</span>
+                    <span class="font-semibold text-text">Status:</span>
+                    <span class={`inline-block px-1.5 py-0.5 rounded text-[0.7rem] font-semibold w-fit ${statusClasses}`}>{item.validationActionLabel}</span>
                   </>
                 )}
 
-                <span class="incidents-post-meta-label">Author:</span>
+                <span class="font-semibold text-text">Author:</span>
                 <span>
                   {githubUrl ? (
-                    <a href={githubUrl} target="_blank" rel="noopener">{sourceAuthor}</a>
+                    <a href={githubUrl} target="_blank" rel="noopener" class="text-primary hover:underline">{sourceAuthor}</a>
                   ) : (
                     sourceAuthor
                   )}
                 </span>
               </div>
             </header>
-            <div class="content">
+            <div class="content mt-8">
               {raw(renderedContent)}
             </div>
             {item.tags && item.tags.length > 0 && (
-              <footer class="item-tags-footer">
-                <div class="item-tags">
+              <footer class="mt-10 pt-6 border-t border-border-subtle">
+                <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag text-sm text-primary hover:underline">#{t}</a>
                   ))}
                 </div>
               </footer>

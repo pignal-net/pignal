@@ -6,7 +6,6 @@ import { GlossaryLayout } from './layout';
 import { Pagination } from '../../components/pagination';
 import { TypeBadge } from '../../components/type-badge';
 import { stripMarkdown } from '../../lib/markdown';
-import templateStyles from './styles.css';
 
 const config = getTemplateConfig('glossary');
 
@@ -53,28 +52,36 @@ function groupAlphabetically(items: Item[]): Map<string, Item[]> {
 
 function GlossaryPartialResults(props: PartialResultsProps) {
   if (props.items.length === 0) {
-    return <p class="glossary-empty">No {props.vocabulary.itemPlural} found.</p>;
+    return (
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+        </div>
+        <p class="empty-state-title">{`No ${props.vocabulary.itemPlural} found`}</p>
+        <p class="empty-state-description">Try adjusting your filters or search query.</p>
+      </div>
+    );
   }
 
   const grouped = groupAlphabetically(props.items);
 
   return (
     <>
-      <div class="glossary-term-list">
+      <div class="flex flex-col gap-6">
         {Array.from(grouped.entries()).map(([letter, letterItems]) => (
-          <div class="glossary-letter-group" id={`letter-${letter}`}>
-            <div class="glossary-letter-header">{letter}</div>
-            <div class="glossary-terms">
+          <div class="scroll-mt-4" id={`letter-${letter}`}>
+            <div class="sticky top-0 z-[5] py-1.5 text-2xl font-extrabold text-muted bg-bg-page border-b-2 border-border-subtle mb-1">{letter}</div>
+            <div class="flex flex-col">
               {letterItems.map((item) => {
                 const termName = getTermName(item.keySummary);
                 const definition = getDefinition(item.content, 100);
                 return (
-                  <a href={`/item/${item.slug}`} class="glossary-term-row">
-                    <div class="glossary-term-left">
-                      <span class="glossary-term-name">{termName}</span>
+                  <a href={`/item/${item.slug}`} class="flex items-start max-sm:flex-col gap-4 max-sm:gap-1 px-2 py-2.5 no-underline text-inherit border-b border-border-subtle transition-colors hover:bg-surface">
+                    <div class="flex items-center gap-2 shrink-0 min-w-[180px] lg:min-w-[220px] max-sm:min-w-0">
+                      <span class="font-semibold text-text">{termName}</span>
                       <TypeBadge typeName={item.typeName} />
                     </div>
-                    <div class="glossary-term-def">{definition}</div>
+                    <div class="text-[0.9rem] text-muted leading-relaxed flex-1 max-sm:text-sm">{definition}</div>
                   </a>
                 );
               })}
@@ -104,5 +111,5 @@ export const glossaryTemplate: Template = {
 
   profile: config.profile,
 
-  styles: templateStyles,
+  styles: '',
 };

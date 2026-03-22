@@ -4,6 +4,7 @@ import type { WebEnv } from '../types';
 import { AppLayout } from '../components/app-layout';
 import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
+import { TypeBadge } from '../components/type-badge';
 
 type WebVars = { store: ItemStoreRpc };
 
@@ -12,8 +13,12 @@ function TypeCard({ type, csrfToken }: { type: ItemTypeWithActions; csrfToken: s
 
   if (type.isSystem) {
     return (
-      <article id={`type-${type.id}`}>
-        <div class="grid">
+      <div id={`type-${type.id}`} class="bg-surface rounded-xl border border-border-subtle shadow-card p-6 mb-5">
+        <div class="flex items-center gap-3 mb-4">
+          <TypeBadge typeName={type.name} color={type.color ?? undefined} />
+          <span class="text-xs text-muted bg-muted/10 px-2 py-0.5 rounded-full">System</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <label>
             Name
             <input type="text" value={type.name} disabled />
@@ -28,9 +33,12 @@ function TypeCard({ type, csrfToken }: { type: ItemTypeWithActions; csrfToken: s
           </label>
         </div>
         {guidance && (
-          <details>
-            <summary>AI Guidance</summary>
-            <div class="grid">
+          <details class="mt-4">
+            <summary class="text-sm font-medium text-muted cursor-pointer">
+              AI Guidance
+              <span class="ml-1 text-xs text-muted/60">&rsaquo;</span>
+            </summary>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
               <label>
                 When to use
                 <input type="text" value={guidance.whenToUse ?? ''} disabled />
@@ -40,31 +48,34 @@ function TypeCard({ type, csrfToken }: { type: ItemTypeWithActions; csrfToken: s
                 <input type="text" value={guidance.pattern ?? ''} disabled />
               </label>
             </div>
-            <label>
+            <label class="mt-3">
               Example
               <textarea disabled rows={2}>{guidance.example ?? ''}</textarea>
             </label>
-            <label>
+            <label class="mt-3">
               Content hints
               <input type="text" value={guidance.contentHints ?? ''} disabled />
             </label>
           </details>
         )}
         {type.actions.length > 0 && (
-          <p><small><strong>Actions:</strong> {type.actions.map((a) => a.label).join(', ')}</small></p>
+          <p class="mt-3 text-xs text-muted"><strong>Actions:</strong> {type.actions.map((a) => a.label).join(', ')}</p>
         )}
-      </article>
+      </div>
     );
   }
 
   return (
-    <article id={`type-${type.id}`}>
+    <div id={`type-${type.id}`} class="bg-surface rounded-xl border border-border-subtle shadow-card p-6 mb-5">
       <form method="post" action={`/pignal/types/${type.id}/update`}
         hx-post={`/pignal/types/${type.id}/update`}
         hx-target={`#type-${type.id}`}
         hx-swap="outerHTML">
         <input type="hidden" name="_csrf" value={csrfToken} />
-        <div class="grid">
+        <div class="flex items-center gap-3 mb-4">
+          <TypeBadge typeName={type.name} color={type.color ?? undefined} />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label>
             Name
             <input type="text" name="name" value={type.name} required maxlength={50} />
@@ -74,7 +85,7 @@ function TypeCard({ type, csrfToken }: { type: ItemTypeWithActions; csrfToken: s
             <input type="text" name="description" value={type.description ?? ''} maxlength={500} />
           </label>
         </div>
-        <div class="grid">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-1">
           <label>
             Color
             <input type="color" name="color" value={type.color ?? '#6B7280'} />
@@ -85,9 +96,12 @@ function TypeCard({ type, csrfToken }: { type: ItemTypeWithActions; csrfToken: s
           </label>
         </div>
 
-        <details>
-          <summary>AI Guidance</summary>
-          <div class="grid">
+        <details class="mt-4">
+          <summary class="text-sm font-medium text-muted cursor-pointer">
+            AI Guidance
+            <span class="ml-1 text-xs text-muted/60">&rsaquo;</span>
+          </summary>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
             <label>
               When to use
               <input type="text" name="guidance_whenToUse" value={guidance?.whenToUse ?? ''} maxlength={500} />
@@ -97,22 +111,22 @@ function TypeCard({ type, csrfToken }: { type: ItemTypeWithActions; csrfToken: s
               <input type="text" name="guidance_pattern" value={guidance?.pattern ?? ''} maxlength={500} />
             </label>
           </div>
-          <label>
+          <label class="mt-3">
             Example
             <textarea name="guidance_example" maxlength={1000} rows={2}>{guidance?.example ?? ''}</textarea>
           </label>
-          <label>
+          <label class="mt-3">
             Content hints
             <input type="text" name="guidance_contentHints" value={guidance?.contentHints ?? ''} maxlength={500} />
           </label>
         </details>
 
         {type.actions.length > 0 && (
-          <p><small><strong>Actions:</strong> {type.actions.map((a) => a.label).join(', ')}</small></p>
+          <p class="mt-3 text-xs text-muted"><strong>Actions:</strong> {type.actions.map((a) => a.label).join(', ')}</p>
         )}
 
-        <div style="display:flex;gap:0.5rem;justify-content:flex-end">
-          <button type="button" class="outline secondary btn-sm"
+        <div class="flex gap-2 justify-end mt-4">
+          <button type="button" class="outline secondary text-xs px-3 py-1.5"
             hx-post={`/pignal/types/${type.id}/delete`}
             hx-target={`#type-${type.id}`}
             hx-swap="outerHTML"
@@ -120,10 +134,10 @@ function TypeCard({ type, csrfToken }: { type: ItemTypeWithActions; csrfToken: s
             hx-include="closest form">
             Delete
           </button>
-          <button type="submit" class="btn-sm">Save</button>
+          <button type="submit" class="text-xs px-3 py-1.5">Save</button>
         </div>
       </form>
-    </article>
+    </div>
   );
 }
 
@@ -159,23 +173,20 @@ export async function typesPage(c: Context<{ Bindings: WebEnv; Variables: WebVar
       csrfToken={csrfToken}
       flash={flash}
     >
-      <div id="types-list">
-        {types.map((type) => (
-          <TypeCard type={type} csrfToken={csrfToken} />
-        ))}
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold tracking-tight">Types</h1>
+        <p class="text-muted text-sm mt-1">Define categories and validation actions for your signals</p>
       </div>
 
-      <article>
-        <header>
-          <h2>Create Type</h2>
-        </header>
+      <div class="border-2 border-dashed border-border hover:border-primary/30 transition-colors rounded-xl p-6 mb-8">
+        <h2 class="text-base font-semibold mb-4">Create Type</h2>
         <form method="post" action="/pignal/types"
           hx-post="/pignal/types"
           hx-target="#types-list"
           hx-swap="beforeend"
           data-reset-on-success>
           <input type="hidden" name="_csrf" value={csrfToken} />
-          <div class="grid">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label>
               Name
               <input type="text" name="name" required maxlength={50} />
@@ -185,7 +196,7 @@ export async function typesPage(c: Context<{ Bindings: WebEnv; Variables: WebVar
               <input type="text" name="description" maxlength={500} />
             </label>
           </div>
-          <div class="grid">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-1">
             <label>
               Color
               <input type="color" name="color" value="#6B7280" />
@@ -196,9 +207,12 @@ export async function typesPage(c: Context<{ Bindings: WebEnv; Variables: WebVar
             </label>
           </div>
 
-          <details>
-            <summary>AI Guidance</summary>
-            <div class="grid">
+          <details class="mt-4">
+            <summary class="text-sm font-medium text-muted cursor-pointer">
+              AI Guidance
+              <span class="ml-1 text-xs text-muted/60">&rsaquo;</span>
+            </summary>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
               <label>
                 When to use
                 <input type="text" name="guidance_whenToUse" maxlength={500} />
@@ -208,23 +222,29 @@ export async function typesPage(c: Context<{ Bindings: WebEnv; Variables: WebVar
                 <input type="text" name="guidance_pattern" maxlength={500} />
               </label>
             </div>
-            <label>
+            <label class="mt-3">
               Example
               <textarea name="guidance_example" maxlength={1000} rows={2}></textarea>
             </label>
-            <label>
+            <label class="mt-3">
               Content hints
               <input type="text" name="guidance_contentHints" maxlength={500} />
             </label>
           </details>
 
-          <label>
+          <label class="mt-4">
             Actions (comma-separated labels)
             <input type="text" name="actions" required placeholder="e.g. Confirmed, Wrong, Uncertain" />
           </label>
-          <button type="submit">Create Type</button>
+          <button type="submit" class="mt-2">Create Type</button>
         </form>
-      </article>
+      </div>
+
+      <div id="types-list">
+        {types.map((type) => (
+          <TypeCard type={type} csrfToken={csrfToken} />
+        ))}
+      </div>
     </AppLayout>
   );
 }

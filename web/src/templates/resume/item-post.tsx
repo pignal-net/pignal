@@ -45,18 +45,18 @@ export function ResumeItemPost(props: ItemPostProps) {
       <JsonLd data={jsonLd} />
 
       <div class="source-page source-page--post">
-        <main class="resume-post">
+        <main class="max-w-[740px] mx-auto px-4">
           <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
           <article class="source-article">
-            <header class="resume-post-header">
-              <div class="resume-post-section">
+            <header class="mb-8 pb-6 border-b-2 border-primary">
+              <div class="inline-block mb-4">
                 <TypeBadge typeName={item.typeName} />
               </div>
-              <h1 class="resume-post-title">{item.keySummary}</h1>
-              <div class="resume-post-meta">
+              <h1 class="text-3xl sm:text-4xl max-sm:text-xl font-bold m-0 leading-tight mb-4 text-text">{item.keySummary}</h1>
+              <div class="flex items-center gap-3 flex-wrap text-[0.8rem] text-muted">
                 {githubUrl ? (
-                  <a href={githubUrl} target="_blank" rel="noopener">
+                  <a href={githubUrl} target="_blank" rel="noopener" class="text-primary no-underline hover:underline">
                     {sourceAuthor}
                   </a>
                 ) : (
@@ -64,24 +64,24 @@ export function ResumeItemPost(props: ItemPostProps) {
                 )}
                 <time datetime={dateStr}>{formatDate(dateStr)}</time>
                 {item.validationActionLabel && (
-                  <span class="resume-entry-badge">
+                  <span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold rounded-xl bg-primary/10 text-primary uppercase tracking-wide">
                     {item.validationActionLabel}
                   </span>
                 )}
                 {item.workspaceName && (
-                  <span class="resume-entry-badge">{item.workspaceName}</span>
+                  <span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold rounded-xl bg-primary/10 text-primary uppercase tracking-wide">{item.workspaceName}</span>
                 )}
               </div>
             </header>
 
-            <div class="resume-post-content content">
+            <div class="mt-8 content">
               {raw(renderedContent)}
             </div>
 
             {item.tags && item.tags.length > 0 && (
-              <footer class="resume-post-tags">
+              <footer class="flex flex-wrap gap-1.5 mt-10 pt-6 border-t border-border-subtle">
                 {item.tags.map((t) => (
-                  <a href={`/?tag=${encodeURIComponent(t)}`} class="resume-post-tag">#{t}</a>
+                  <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-2.5 py-0.5 text-xs rounded-full bg-primary/10 text-primary no-underline hover:underline">#{t}</a>
                 ))}
               </footer>
             )}

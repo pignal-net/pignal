@@ -9,8 +9,15 @@ type WebVars = { store: ItemStoreRpc };
 
 function WorkspaceCard({ ws }: { ws: WorkspaceSelect }) {
   return (
-    <article id={`ws-${ws.id}`}>
-      <div class="grid">
+    <div id={`ws-${ws.id}`} class="bg-surface rounded-xl border border-border-subtle shadow-card p-6 mb-5">
+      <div class="flex items-center gap-3 mb-4">
+        <span class={`w-2 h-2 rounded-full ${ws.visibility === 'public' ? 'bg-success' : 'bg-muted/40'}`} />
+        <span class="text-sm font-semibold">{ws.name}</span>
+        {ws.isDefault && (
+          <span class="text-xs text-muted bg-muted/10 px-2 py-0.5 rounded-full">Default</span>
+        )}
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <label>
           Name
           <input type="text" data-ws-id={ws.id} data-ws-field="name" data-original={ws.name} value={ws.name} maxlength={100} />
@@ -28,8 +35,8 @@ function WorkspaceCard({ ws }: { ws: WorkspaceSelect }) {
         </label>
       </div>
       {!ws.isDefault && (
-        <div style="text-align:right">
-          <button type="button" class="outline secondary btn-sm"
+        <div class="border-t border-border-subtle pt-4 mt-4 text-right">
+          <button type="button" class="outline secondary text-xs px-3 py-1.5"
             hx-post={`/pignal/workspaces/${ws.id}/delete`}
             hx-target={`#ws-${ws.id}`}
             hx-swap="outerHTML"
@@ -39,7 +46,7 @@ function WorkspaceCard({ ws }: { ws: WorkspaceSelect }) {
           </button>
         </div>
       )}
-    </article>
+    </div>
   );
 }
 
@@ -57,25 +64,22 @@ export async function workspacesPage(c: Context<{ Bindings: WebEnv; Variables: W
       csrfToken={csrfToken}
       flash={flash}
     >
-      <input type="hidden" id="ws-csrf" name="_csrf" value={csrfToken} />
-
-      <div id="workspaces-list">
-        {workspaces.map((ws) => (
-          <WorkspaceCard ws={ws} />
-        ))}
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold tracking-tight">Workspaces</h1>
+        <p class="text-muted text-sm mt-1">Organize signals into workspaces with visibility controls</p>
       </div>
 
-      <article>
-        <header>
-          <h2>Create Workspace</h2>
-        </header>
+      <input type="hidden" id="ws-csrf" name="_csrf" value={csrfToken} />
+
+      <div class="border-2 border-dashed border-border hover:border-primary/30 transition-colors rounded-xl p-6 mb-8">
+        <h2 class="text-base font-semibold mb-4">Create Workspace</h2>
         <form method="post" action="/pignal/workspaces"
           hx-post="/pignal/workspaces"
           hx-target="#workspaces-list"
           hx-swap="beforeend"
           data-reset-on-success>
           <input type="hidden" name="_csrf" value={csrfToken} />
-          <div class="grid">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <label>
               Name
               <input type="text" name="name" required maxlength={100} />
@@ -92,9 +96,15 @@ export async function workspacesPage(c: Context<{ Bindings: WebEnv; Variables: W
               </select>
             </label>
           </div>
-          <button type="submit">Create Workspace</button>
+          <button type="submit" class="mt-2">Create Workspace</button>
         </form>
-      </article>
+      </div>
+
+      <div id="workspaces-list">
+        {workspaces.map((ws) => (
+          <WorkspaceCard ws={ws} />
+        ))}
+      </div>
 
       <div id="ws-save-bar" class="save-bar" hidden>
         <div class="save-bar-content">

@@ -54,23 +54,23 @@ export function JournalItemPost(props: ItemPostProps) {
     <JournalLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--post journal-post-page">
-        <main class="source-main journal-post-main">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
+        <main class="min-w-0 max-w-full break-words">
           <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
-          <article class="source-article journal-article">
-            <header class="journal-post-header">
-              <div class="journal-post-date">
-                <span class="journal-post-date-day">{jd.day}</span>
-                <div class="journal-post-date-details">
-                  <span class="journal-post-date-dow">{jd.dayOfWeek}</span>
-                  <span class="journal-post-date-monthyear">{jd.month} {jd.year}</span>
+          <article class="source-article min-w-0 max-w-full">
+            <header class="mb-6">
+              <div class="flex items-center gap-3 mb-4 pb-3 border-b border-border-subtle">
+                <span class="text-4xl sm:text-5xl font-semibold leading-none text-text">{jd.day}</span>
+                <div class="flex flex-col">
+                  <span class="text-sm font-medium text-text">{jd.dayOfWeek}</span>
+                  <span class="text-xs uppercase tracking-widest text-muted">{jd.month} {jd.year}</span>
                 </div>
               </div>
-              <h1>{item.keySummary}</h1>
-              <div class="post-meta journal-post-meta">
+              <h1 class="text-3xl sm:text-4xl font-medium leading-tight mb-4">{item.keySummary}</h1>
+              <div class="flex items-center gap-2.5 flex-wrap text-sm text-muted">
                 {githubUrl ? (
-                  <a href={githubUrl} target="_blank" rel="noopener" class="post-author">
+                  <a href={githubUrl} target="_blank" rel="noopener" class="font-medium text-text hover:text-primary transition-colors">
                     {sourceAuthor}
                   </a>
                 ) : (
@@ -80,20 +80,20 @@ export function JournalItemPost(props: ItemPostProps) {
                   {formatDate(item.vouchedAt || item.createdAt)}
                 </time>
                 {item.validationActionLabel && (
-                  <span class="validation-badge">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-success/80 bg-success/10">
                     {item.validationActionLabel} by {sourceAuthor}
                   </span>
                 )}
               </div>
             </header>
-            <div class="content journal-content">
+            <div class="content mt-8 leading-relaxed">
               {raw(renderedContent)}
             </div>
             {item.tags && item.tags.length > 0 && (
-              <footer class="item-tags-footer">
-                <div class="item-tags">
+              <footer class="mt-10 pt-6 border-t border-border-subtle">
+                <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag text-sm text-primary hover:underline">#{t}</a>
                   ))}
                 </div>
               </footer>

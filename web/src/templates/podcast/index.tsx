@@ -4,7 +4,6 @@ import { PodcastSourcePage } from './source-page';
 import { PodcastItemPost } from './item-post';
 import { PodcastLayout } from './layout';
 import { FeedResults } from '../../components/item-feed';
-import templateStyles from './styles.css';
 
 const config = getTemplateConfig('podcast');
 
@@ -36,5 +35,5 @@ export const podcastTemplate: Template = {
 
   profile: config.profile,
 
-  styles: templateStyles,
+  styles: '',
 };

@@ -23,32 +23,35 @@ export function ShopCard({ item, vocabulary }: { item: Item; vocabulary: Templat
   const icon = item.typeName ? item.typeName.charAt(0).toUpperCase() : '?';
 
   return (
-    <article class="shop-card">
-      <div class="shop-card-image">
-        <span>{icon}</span>
-        <div class="shop-card-badge">
+    <article class="group bg-surface rounded-xl border border-border-subtle shadow-card overflow-hidden flex flex-col transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
+      <div class="aspect-[4/3] bg-gradient-to-br from-primary/5 to-primary/15 flex items-center justify-center text-4xl text-primary opacity-60 relative overflow-hidden">
+        <span class="transition-transform duration-300 group-hover:scale-110">{icon}</span>
+        <div class="absolute top-2.5 left-2.5 z-10">
           <TypeBadge typeName={item.typeName} />
         </div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-surface" />
       </div>
-      <div class="shop-card-body">
-        <h3><a href={detailUrl}>{item.keySummary}</a></h3>
-        <p class="shop-card-description">{preview}{item.content.length > 120 ? '...' : ''}</p>
+      <div class="px-4 pt-3 pb-4 flex-1 flex flex-col">
+        <h3 class="m-0 mb-1 text-[0.95rem] font-semibold leading-snug">
+          <a href={detailUrl} class="no-underline text-text hover:text-primary transition-colors">{item.keySummary}</a>
+        </h3>
+        <p class="text-[0.82rem] text-muted leading-relaxed m-0 mb-2 line-clamp-2 flex-1">{preview}{item.content.length > 120 ? '...' : ''}</p>
         {item.tags && item.tags.length > 0 && (
-          <div class="shop-card-tags">
+          <div class="flex gap-1 flex-wrap mt-auto pt-2">
             {item.tags.slice(0, 3).map((t) => {
               const tagUrl = `/?tag=${encodeURIComponent(t)}`;
               return (
-                <a href={tagUrl} class="item-tag" {...hxProps(tagUrl)}>#{t}</a>
+                <a href={tagUrl} class="item-tag text-[0.7rem] px-1.5 py-0.5" {...hxProps(tagUrl)}>#{t}</a>
               );
             })}
           </div>
         )}
       </div>
-      <div class="shop-card-footer">
+      <div class="flex items-center justify-between px-4 py-2 border-t border-border-subtle text-xs text-muted">
         <time datetime={item.vouchedAt || item.createdAt}>
           {formatDate(item.vouchedAt || item.createdAt)}
         </time>
-        <a href={detailUrl}>View {vocabulary.item} &rarr;</a>
+        <a href={detailUrl} class="text-primary no-underline font-semibold text-[0.8rem] hover:underline">View {vocabulary.item} &rarr;</a>
       </div>
     </article>
   );

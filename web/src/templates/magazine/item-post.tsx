@@ -57,14 +57,14 @@ export function MagazineItemPost(props: ItemPostProps) {
     <MagazineLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--post">
-        <main class="source-main">
+      <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_200px] gap-12 items-start max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
+        <main class="min-w-0 max-w-full break-words">
           <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
-          <article class="source-article">
-            <header class="magazine-post-header">
-              <div class="source-category">
-                <a href={`/?type=${item.typeId}`} class="magazine-section-badge" {...hxProps(`/?type=${item.typeId}`)}>
+          <article class="min-w-0 max-w-full">
+            <header class="mb-6">
+              <div class="source-category mb-4">
+                <a href={`/?type=${item.typeId}`} class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide text-white bg-primary no-underline hover:opacity-90" {...hxProps(`/?type=${item.typeId}`)}>
                   {item.typeName}
                 </a>
                 {item.workspaceName && (
@@ -74,27 +74,27 @@ export function MagazineItemPost(props: ItemPostProps) {
                 )}
               </div>
               <h1>{item.keySummary}</h1>
-              <div class="magazine-post-meta">
+              <div class="flex items-center gap-3 flex-wrap text-[0.88rem] text-muted mt-3">
                 {githubUrl ? (
-                  <a href={githubUrl} target="_blank" rel="noopener" class="post-author">
+                  <a href={githubUrl} target="_blank" rel="noopener" class="text-text font-medium no-underline hover:text-primary">
                     {sourceAuthor}
                   </a>
                 ) : (
-                  <span class="post-author">{sourceAuthor}</span>
+                  <span class="text-text font-medium">{sourceAuthor}</span>
                 )}
-                <span class="magazine-meta-sep">/</span>
-                <time datetime={dateStr} class="magazine-time">
+                <span class="opacity-40">/</span>
+                <time datetime={dateStr} class="whitespace-nowrap">
                   {relativeTime(dateStr)}
                 </time>
                 {showReadingTime && (
                   <>
-                    <span class="magazine-meta-sep">/</span>
-                    <span class="magazine-reading-time">{readingTime(item.content)}</span>
+                    <span class="opacity-40">/</span>
+                    <span class="whitespace-nowrap">{readingTime(item.content)}</span>
                   </>
                 )}
                 {item.validationActionLabel && (
                   <>
-                    <span class="magazine-meta-sep">/</span>
+                    <span class="opacity-40">/</span>
                     <span class="validation-badge">
                       {item.validationActionLabel} by {sourceAuthor}
                     </span>
@@ -106,7 +106,7 @@ export function MagazineItemPost(props: ItemPostProps) {
               {raw(renderedContent)}
             </div>
             {item.tags && item.tags.length > 0 && (
-              <footer class="item-tags-footer">
+              <footer class="mt-10 pt-6 border-t border-border-subtle">
                 <div class="item-tags">
                   {item.tags.map((t) => (
                     <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag" {...hxProps(`/?tag=${encodeURIComponent(t)}`)}>#{t}</a>
@@ -117,7 +117,11 @@ export function MagazineItemPost(props: ItemPostProps) {
           </article>
         </main>
 
-        {showToc && <TableOfContents headings={headings} />}
+        {showToc && (
+          <div class="max-xl:hidden">
+            <TableOfContents headings={headings} />
+          </div>
+        )}
       </div>
     </MagazineLayout>
   );

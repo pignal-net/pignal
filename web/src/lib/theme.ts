@@ -34,28 +34,16 @@ export const THEME_TOKENS: ThemeColorToken[] = [
     description: 'Main accent color for links, buttons, and interactive elements. Leave empty for default blue.',
     placeholder: '#1095C1',
     lightVars: (c) => [
-      `--pico-primary:${c}`,
-      `--pico-primary-background:${c}`,
-      `--pico-primary-border:${c}`,
-      `--pico-primary-underline:color-mix(in srgb,${c} 50%,transparent)`,
-      `--pico-primary-hover:color-mix(in srgb,${c} 80%,black)`,
-      `--pico-primary-hover-background:color-mix(in srgb,${c} 80%,black)`,
-      `--pico-primary-hover-border:color-mix(in srgb,${c} 80%,black)`,
-      `--pico-primary-hover-underline:color-mix(in srgb,${c} 80%,black)`,
-      `--pico-primary-focus:color-mix(in srgb,${c} 25%,transparent)`,
-      `--pico-primary-inverse:#fff`,
+      `--tw-primary:${c}`,
+      `--tw-primary-bg:${c}`,
+      `--tw-primary-hover:color-mix(in srgb,${c} 80%,black)`,
+      `--tw-primary-focus:color-mix(in srgb,${c} 25%,transparent)`,
     ].join(';'),
     darkVars: (c) => [
-      `--pico-primary:color-mix(in srgb,${c} 85%,white)`,
-      `--pico-primary-background:${c}`,
-      `--pico-primary-border:${c}`,
-      `--pico-primary-underline:color-mix(in srgb,${c} 50%,transparent)`,
-      `--pico-primary-hover:color-mix(in srgb,${c} 90%,white)`,
-      `--pico-primary-hover-background:color-mix(in srgb,${c} 90%,white)`,
-      `--pico-primary-hover-border:color-mix(in srgb,${c} 90%,white)`,
-      `--pico-primary-hover-underline:color-mix(in srgb,${c} 90%,white)`,
-      `--pico-primary-focus:color-mix(in srgb,${c} 25%,transparent)`,
-      `--pico-primary-inverse:#fff`,
+      `--tw-primary:color-mix(in srgb,${c} 85%,white)`,
+      `--tw-primary-bg:${c}`,
+      `--tw-primary-hover:color-mix(in srgb,${c} 90%,white)`,
+      `--tw-primary-focus:color-mix(in srgb,${c} 25%,transparent)`,
     ].join(';'),
   },
   {
@@ -64,28 +52,12 @@ export const THEME_TOKENS: ThemeColorToken[] = [
     description: 'Used for secondary buttons and accents. Leave empty for default gray.',
     placeholder: '#596B7C',
     lightVars: (c) => [
-      `--pico-secondary:${c}`,
-      `--pico-secondary-background:${c}`,
-      `--pico-secondary-border:${c}`,
-      `--pico-secondary-underline:color-mix(in srgb,${c} 50%,transparent)`,
-      `--pico-secondary-hover:color-mix(in srgb,${c} 80%,black)`,
-      `--pico-secondary-hover-background:color-mix(in srgb,${c} 80%,black)`,
-      `--pico-secondary-hover-border:color-mix(in srgb,${c} 80%,black)`,
-      `--pico-secondary-hover-underline:color-mix(in srgb,${c} 80%,black)`,
-      `--pico-secondary-focus:color-mix(in srgb,${c} 25%,transparent)`,
-      `--pico-secondary-inverse:#fff`,
+      `--tw-secondary:${c}`,
+      `--tw-secondary-hover:color-mix(in srgb,${c} 80%,black)`,
     ].join(';'),
     darkVars: (c) => [
-      `--pico-secondary:color-mix(in srgb,${c} 85%,white)`,
-      `--pico-secondary-background:${c}`,
-      `--pico-secondary-border:${c}`,
-      `--pico-secondary-underline:color-mix(in srgb,${c} 50%,transparent)`,
-      `--pico-secondary-hover:color-mix(in srgb,${c} 90%,white)`,
-      `--pico-secondary-hover-background:color-mix(in srgb,${c} 90%,white)`,
-      `--pico-secondary-hover-border:color-mix(in srgb,${c} 90%,white)`,
-      `--pico-secondary-hover-underline:color-mix(in srgb,${c} 90%,white)`,
-      `--pico-secondary-focus:color-mix(in srgb,${c} 25%,transparent)`,
-      `--pico-secondary-inverse:#fff`,
+      `--tw-secondary:color-mix(in srgb,${c} 85%,white)`,
+      `--tw-secondary-hover:color-mix(in srgb,${c} 90%,white)`,
     ].join(';'),
   },
   {
@@ -93,24 +65,24 @@ export const THEME_TOKENS: ThemeColorToken[] = [
     label: 'Page Background',
     description: 'Page background color. Leave empty for default.',
     placeholder: '#FFFFFF',
-    lightVars: (c) => `--pico-background-color:${c}`,
-    darkVars: (c) => `--pico-background-color:color-mix(in srgb,${c} 15%,#11191f)`,
+    lightVars: (c) => `--tw-bg:${c};--tw-bg-page:${c}`,
+    darkVars: (c) => `--tw-bg:color-mix(in srgb,${c} 15%,#0d1117);--tw-bg-page:color-mix(in srgb,${c} 10%,#010409)`,
   },
   {
     settingsKey: 'source_color_text',
     label: 'Text Color',
     description: 'Main body text color. Leave empty for default.',
     placeholder: '#373C44',
-    lightVars: (c) => `--pico-color:${c}`,
-    darkVars: (c) => `--pico-color:color-mix(in srgb,${c} 20%,#e5e7eb)`,
+    lightVars: (c) => `--tw-text:${c}`,
+    darkVars: (c) => `--tw-text:color-mix(in srgb,${c} 20%,#e6edf3)`,
   },
   {
     settingsKey: 'source_color_muted',
     label: 'Muted Text Color',
     description: 'Secondary text, captions, and subtle borders. Leave empty for default.',
     placeholder: '#646B79',
-    lightVars: (c) => `--pico-muted-color:${c};--pico-muted-border-color:color-mix(in srgb,${c} 30%,transparent)`,
-    darkVars: (c) => `--pico-muted-color:color-mix(in srgb,${c} 70%,#9ca3af);--pico-muted-border-color:color-mix(in srgb,${c} 25%,transparent)`,
+    lightVars: (c) => `--tw-muted:${c};--tw-border:color-mix(in srgb,${c} 30%,transparent)`,
+    darkVars: (c) => `--tw-muted:color-mix(in srgb,${c} 70%,#8b949e);--tw-border:color-mix(in srgb,${c} 25%,transparent)`,
   },
 ];
 
@@ -123,7 +95,7 @@ export const THEME_SETTING_KEYS: string[] = THEME_TOKENS.map((t) => t.settingsKe
 
 /**
  * Build minified CSS from settings. Returns an empty string when no
- * theme colors are configured (= use Pico defaults).
+ * theme colors are configured (= use defaults).
  */
 export function buildThemeCss(settings: SettingsMap): string {
   const lightParts: string[] = [];

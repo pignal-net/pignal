@@ -26,7 +26,7 @@ export interface Template {
   vocabulary: TemplateVocabulary;   // Domain language mapping (from template config)
   seo: TemplateSeoHints;            // Schema.org types (from template config)
   meta: { name: string; description: string };
-  styles: string;                   // CSS text (imported from .css file)
+  styles: string;                   // Empty string — all styling via Tailwind utilities in JSX
 }
 ```
 
@@ -40,8 +40,6 @@ import { getTemplateConfig } from '@pignal/templates';
 import { ShopSourcePage } from './source-page';
 import { ShopItemPost } from './item-post';
 import { ShopLayout } from './layout';
-import shopStyles from './styles.css';
-
 const config = getTemplateConfig('shop');
 
 export const shopTemplate: Template = {
@@ -51,7 +49,7 @@ export const shopTemplate: Template = {
   vocabulary: config.vocabulary,
   seo: config.seo,
   meta: { name: 'shop', description: 'Grid-based product catalog layout' },
-  styles: shopStyles,
+  styles: '',
 };
 ```
 
@@ -123,43 +121,196 @@ export const shopTemplate: Template = {
 
 ---
 
-## CSS Naming Convention
+## Styling Convention
 
-All template CSS classes must be prefixed with `.<template-name>-` to avoid collisions with base styles and other templates.
+Templates use **Tailwind v4 utility classes** directly in JSX. There are no per-template CSS files — all templates set `styles: ''`. Never create a separate `styles.css` file for a template.
 
-```css
-/* Good */
-.news-card { ... }
-.news-card-header { ... }
-.news-grid { ... }
+A single compiled CSS file (`web/src/static/tailwind.css`, built from `web/src/styles/input.css`) provides the design system tokens and base styles for all pages. Run `pnpm css:build` before deploying (or `pnpm css:watch` during development).
 
-/* Bad — collides with other templates or base styles */
-.card { ... }
-.grid { ... }
+### Design tokens
+
+All tokens are defined in `input.css` under `@theme {}` and adapt to light/dark mode automatically. Use them as Tailwind utility classes or as CSS custom properties for inline styles.
+
+**Surface colors:**
+
+| Utility | Usage |
+|---|---|
+| `bg-bg` | Container background |
+| `bg-bg-page` | Page/body background |
+| `bg-surface` | Card/surface background |
+| `bg-surface-raised` | Elevated surface (e.g., code blocks, nested cards) |
+| `bg-surface-hover` | Surface hover state |
+
+**Text colors:**
+
+| Utility | Usage |
+|---|---|
+| `text-text` | Primary text |
+| `text-muted` | Secondary/muted text |
+| `text-primary` | Accent color (links, interactive elements) |
+
+**Border colors:**
+
+| Utility | Usage |
+|---|---|
+| `border-border` | Standard borders, dividers |
+| `border-border-subtle` | Subtle card borders, section separators |
+
+**Shadows:**
+
+| Utility | Usage |
+|---|---|
+| `shadow-xs` | Minimal depth (buttons at rest) |
+| `shadow-sm` | Light depth (button hover) |
+| `shadow-card` | Standard card elevation |
+| `shadow-card-hover` | Card hover elevation |
+| `shadow-md` | Medium depth (dropdowns) |
+| `shadow-lg` | High depth (modals, toast) |
+
+**Semantic colors:**
+
+| Utility | Usage |
+|---|---|
+| `text-success`, `bg-success-bg`, `border-success-border` | Success state |
+| `text-error`, `bg-error-bg`, `border-error-border` | Error state |
+| `text-warning`, `bg-warning-bg`, `border-warning-border` | Warning state |
+| `text-info`, `bg-info-bg`, `border-info-border` | Info state |
+
+**CSS custom properties** (for inline styles or `color-mix`):
+
+Use these when Tailwind utilities are not sufficient (e.g., in `style` attributes or `color-mix()` expressions):
+
+`var(--color-primary)`, `var(--color-primary-hover)`, `var(--color-primary-focus)`, `var(--color-primary-inverse)`, `var(--color-secondary)`, `var(--color-text)`, `var(--color-muted)`, `var(--color-border)`, `var(--color-border-subtle)`, `var(--color-surface)`, `var(--color-surface-raised)`, `var(--color-bg-page)`, `var(--color-success)`, `var(--color-error)`, `var(--color-warning)`, `var(--color-info)`
+
+### Standard component patterns
+
+**Card:**
+
+```tsx
+<div class="bg-surface rounded-xl border border-border-subtle shadow-card p-6">
+  {/* card content */}
+</div>
 ```
 
-Template styles are imported as text and injected at runtime via the `styles` field. The base Pico CSS framework and `app.css` styles are always available.
+**Card with hover:**
 
-**Wrangler requirement**: `server/wrangler.toml` must include a rule to import `.css` files as text:
-
-```toml
-[[rules]]
-type = "Text"
-globs = ["**/*.css"]
+```tsx
+<a class="bg-surface rounded-xl border border-border-subtle shadow-card p-6 hover:shadow-card-hover transition-shadow block">
+  {/* clickable card content */}
+</a>
 ```
 
-Without this rule, CSS imports will fail or return `[object Object]` instead of CSS text.
+**Empty state** (use the `.empty-state` CSS class pattern defined in `input.css`):
 
-Shared CSS classes from `app.css` that any template can use:
-- `.source-page`, `.source-page--post`, `.source-page--feed`
-- `.source-card`, `.source-card-header`, `.source-card-footer`
-- `.source-article`, `.source-main`, `.source-category`
-- `.item-tags`, `.item-tag`, `.item-tags-footer`
-- `.post-meta`, `.post-author`
-- `.workspace-badge`, `.validation-badge`
-- `.source-loading`, `.htmx-indicator`, `.app-spinner`
-- `.container`, `.content`
-- `.empty-state`
+```tsx
+<div class="empty-state">
+  <IconEmptyInbox class="empty-state-icon" />
+  <p class="empty-state-title">No {vocabulary.itemPlural} found</p>
+  <p class="empty-state-description">
+    Try adjusting your filters or check back later.
+  </p>
+</div>
+```
+
+**Tag pill:**
+
+```tsx
+<a class="rounded-full bg-muted/8 border border-border-subtle px-2.5 py-0.5 text-xs text-muted hover:text-primary hover:border-primary transition-colors">
+  tagname
+</a>
+```
+
+**Badge (tinted)** — use `color-mix` for the background with a colored text:
+
+```tsx
+<span
+  class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+  style={`background: color-mix(in srgb, ${typeColor} 15%, transparent); color: ${typeColor};`}
+>
+  Badge Text
+</span>
+```
+
+### Article typography hierarchy
+
+Use these patterns for item post pages:
+
+```tsx
+{/* Title */}
+<h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight mb-4">
+  {item.keySummary}
+</h1>
+
+{/* Content separator (no border, just vertical space) */}
+<div class="mt-8">
+  {raw(renderedContent)}
+</div>
+
+{/* Tags footer */}
+<footer class="mt-10 pt-6 border-t border-border-subtle flex flex-wrap gap-2">
+  {tags.map(tag => <a class="rounded-full bg-muted/8 border border-border-subtle px-2.5 py-0.5 text-xs text-muted">{tag}</a>)}
+</footer>
+```
+
+### Responsive patterns
+
+**Sidebar + main content (source page with filter sidebar):**
+
+```tsx
+<div class="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8">
+  <aside>{/* sidebar filters */}</aside>
+  <main>{/* item feed/grid */}</main>
+</div>
+```
+
+**Responsive grid (cards):**
+
+```tsx
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  {/* card items */}
+</div>
+```
+
+**Table of contents hidden on smaller screens:**
+
+```tsx
+<div class="max-xl:hidden">
+  <TableOfContents headings={headings} />
+</div>
+```
+
+### SVG icons
+
+Import SVG icon components from `../../components/icons`. All icons default to 16x16 with `currentColor` fill/stroke:
+
+| Icon | Name | Category |
+|---|---|---|
+| `IconSun` | Sun (light mode) | Theme |
+| `IconMoon` | Moon (dark mode) | Theme |
+| `IconMonitor` | Monitor (auto mode) | Theme |
+| `IconGitHub` | GitHub logo | Social |
+| `IconTwitter` | X / Twitter logo | Social |
+| `IconRSS` | RSS feed | Social |
+| `IconHamburger` | Menu / hamburger | Navigation |
+| `IconExternalLink` | External link arrow | Navigation |
+| `IconChevronLeft` | Left chevron | Navigation |
+| `IconChevronDown` | Down chevron | Navigation |
+| `IconLogout` | Logout / sign out | Navigation |
+| `IconKey` | API key | Content |
+| `IconSettings` | Settings gear | Content |
+| `IconList` | Bulleted list | Content |
+| `IconTag` | Tag label | Content |
+| `IconEmptyInbox` | Empty inbox (48x48) | Empty states |
+
+Usage: `<IconSun class="w-4 h-4" />` or `<IconSun size={18} />`
+
+### Dark mode
+
+Dark mode is handled automatically by CSS custom properties — tokens switch values based on `prefers-color-scheme` and `[data-theme]`. **Never hardcode hex colors in JSX.** Always use design tokens (`text-text`, `text-muted`, `bg-surface`, `border-border-subtle`, etc.) or CSS custom properties (`var(--color-*)`). If you use tokens correctly, dark mode works with zero extra effort.
+
+### Theme customization
+
+Source owners can set 5 customizable accent colors via settings (e.g., `source_color_primary`, `source_color_secondary`, `source_color_text`, `source_color_muted`, `source_color_border`). The theme engine (`web/src/lib/theme.ts`) generates `--tw-*` CSS custom properties that override the defaults in `@theme {}`. All tokens adapt automatically to light/dark mode via `prefers-color-scheme` and `[data-theme]`.
 
 ---
 
@@ -265,52 +416,15 @@ The route handler sets `Vary: HX-Request` so browsers cache the full page and HT
 
 ---
 
-## Theme Variables
+## Type Color Tokens
 
-Templates use [Pico CSS v2](https://picocss.com/) variables and custom `--app-*` tokens. Never hardcode colors.
-
-### Pico CSS variables (most commonly used)
-
-| Variable | Usage |
+| CSS variable | Maps to |
 |---|---|
-| `--pico-color` | Primary text color |
-| `--pico-muted-color` | Secondary/muted text |
-| `--pico-primary` | Primary accent color |
-| `--pico-card-background-color` | Card/surface background |
-| `--pico-background-color` | Page background |
-| `--pico-muted-border-color` | Borders, dividers |
-| `--pico-border-radius` | Default border radius |
-| `--pico-spacing` | Base spacing unit |
-| `--pico-transition` | Default transition timing |
-
-### App semantic tokens
-
-| Variable | Usage |
-|---|---|
-| `--app-success` | Success state (green) |
-| `--app-success-bg` | Success background tint |
-| `--app-success-border` | Success border tint |
-| `--app-error` | Error state (red) |
-| `--app-error-bg` | Error background tint |
-| `--app-error-border` | Error border tint |
-| `--app-info` | Info state (purple) |
-| `--app-info-bg` | Info background tint |
-| `--app-info-border` | Info border tint |
-| `--app-warning` | Warning state (amber) |
-| `--app-warning-bg` | Warning background tint |
-| `--app-warning-border` | Warning border tint |
-
-### Type color tokens
-
-| Variable | Maps to |
-|---|---|
-| `--app-type-insight` | Purple |
-| `--app-type-decision` | Blue |
-| `--app-type-solution` | Green |
-| `--app-type-core` | Yellow |
-| `--app-type-default` | Gray |
-
-All tokens adapt automatically to light/dark mode via `prefers-color-scheme` and `[data-theme]`.
+| `--color-type-insight` | Purple |
+| `--color-type-decision` | Blue |
+| `--color-type-solution` | Green |
+| `--color-type-core` | Yellow |
+| `--color-type-default` | Gray |
 
 ---
 
@@ -426,11 +540,10 @@ Always use vocabulary for user-facing text:
 
 ### Files (all in `web/src/templates/<name>/`)
 
-- [ ] `index.ts` — Template export with vocabulary, meta, and styles
+- [ ] `index.ts` — Template export with vocabulary, meta, and `styles: ''`
 - [ ] `source-page.tsx` — Feed/list/grid view
 - [ ] `item-post.tsx` — Individual item detail page
 - [ ] `layout.tsx` — Layout wrapper (usually delegates to `PublicLayout`)
-- [ ] `styles.css` — Scoped CSS with `<name>-*` prefix
 
 ### Template config (`templates/src/config.ts`)
 
@@ -473,12 +586,23 @@ Always use vocabulary for user-facing text:
 - [ ] Table of contents (optional, based on `source_show_toc` setting)
 - [ ] Reading time (optional, based on `source_show_reading_time` setting)
 
-### CSS requirements
+### Styling requirements
 
-- [ ] All classes prefixed with `<template-name>-`
-- [ ] Uses Pico CSS / `--app-*` variables only (no hardcoded colors)
-- [ ] Responsive breakpoints for mobile
-- [ ] Dark mode works automatically (via CSS variables)
+- [ ] Uses Tailwind utility classes only (no hardcoded hex colors)
+- [ ] Uses design tokens: `bg-surface`, `bg-surface-raised`, `bg-bg-page`, `text-text`, `text-muted`, `text-primary`, `border-border`, `border-border-subtle`
+- [ ] Cards use `rounded-xl border border-border-subtle shadow-card` (not `border-border`)
+- [ ] Card hover uses `hover:shadow-card-hover transition-shadow`
+- [ ] Shadows use token names: `shadow-card`, `shadow-card-hover`, `shadow-xs`, `shadow-sm`, `shadow-md`, `shadow-lg`
+- [ ] Empty states use `.empty-state` pattern with `.empty-state-icon`, `.empty-state-title`, `.empty-state-description`
+- [ ] Tag pills use `rounded-full bg-muted/8 border border-border-subtle px-2.5 py-0.5 text-xs`
+- [ ] Article titles use `text-3xl sm:text-4xl font-bold tracking-tight leading-tight`
+- [ ] Tags footer uses `mt-10 pt-6 border-t border-border-subtle`
+- [ ] Responsive: grid collapses on mobile, sidebar stacks on `lg:`, ToC hidden via `max-xl:hidden`
+- [ ] Sidebar layout uses `grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8`
+- [ ] Touch targets: minimum 44px height for interactive elements (links, buttons, chips)
+- [ ] Dark mode works automatically via CSS custom properties (no hardcoded colors, no `dark:` overrides needed)
+- [ ] No separate `styles.css` file created — all styling via Tailwind utilities in JSX
+- [ ] `styles: ''` in template export (always empty string)
 
 ---
 
@@ -488,12 +612,10 @@ Always use vocabulary for user-facing text:
 
 Used by the `blog` template. Items stacked vertically, optionally grouped by timeline.
 
-```css
-.news-feed {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
+```tsx
+<div class="flex flex-col gap-6">
+  {/* item cards */}
+</div>
 ```
 
 Key components: `<FeedResults>` (shared), `<ItemCard>` (shared), `<FilterBar>` (shared sidebar).
@@ -502,12 +624,10 @@ Key components: `<FeedResults>` (shared), `<ItemCard>` (shared), `<FilterBar>` (
 
 Used by the `shop` template. Responsive multi-column grid.
 
-```css
-.shop-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
-}
+```tsx
+<div class="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
+  {/* card items */}
+</div>
 ```
 
 Best for visual content or items that benefit from scanning.
@@ -516,22 +636,21 @@ Best for visual content or items that benefit from scanning.
 
 Hero item at top, smaller cards below.
 
-```css
-.mag-hero { grid-column: 1 / -1; }
-.mag-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1rem;
-}
+```tsx
+<div class="col-span-full">{/* hero item */}</div>
+<div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+  {/* smaller cards */}
+</div>
 ```
 
 ### Table/list
 
 Compact rows, good for reference content.
 
-```css
-.ref-table { width: 100%; border-collapse: collapse; }
-.ref-row { border-bottom: 1px solid var(--pico-muted-border-color); padding: 0.75rem 0; }
+```tsx
+<table class="w-full border-collapse">
+  <tr class="border-b border-border py-3">{/* row content */}</tr>
+</table>
 ```
 
 ---
@@ -591,11 +710,15 @@ Templates read configuration from the `settings` map. Key settings:
 
 | Mistake | Symptom | Fix |
 |---------|---------|-----|
-| Missing wrangler CSS rule | CSS not loading; `styles` field is empty or undefined | Add `{ type = "Text", globs = ["**/*.css"] }` to `[[rules]]` in `server/wrangler.toml` |
-| CSS imported as module instead of text | `styles` renders as `[object Object]` in the page | Ensure the wrangler `Text` rule is present; do not use CSS module syntax (`import styles from './styles.module.css'`) |
-| Template not registered | Template exists on disk but not available via `TEMPLATE` env var | Add import and entry to `TEMPLATES` record in `web/src/templates/registry.ts` |
-| CSS class collisions | Styles bleed between templates or override base styles | Prefix all CSS classes with `<template-name>-` (e.g., `.shop-grid`, `.blog-hero`) |
-| Hardcoded colors | Theme breaks in dark mode | Use Pico CSS variables (`--pico-*`) and app tokens (`--app-*`) only |
+| Forgot `pnpm css:build` | Tailwind CSS file missing or stale, unstyled pages | Run `pnpm css:build` before deploying, or use `pnpm css:watch` during development |
+| Created a separate `styles.css` file | Extra CSS file not loaded, styles missing | Delete it. All styling uses Tailwind utility classes in JSX. Set `styles: ''` in the template export |
+| Used `border-border` on cards | Borders too harsh, especially in dark mode | Use `border-border-subtle` for card borders and section separators. Reserve `border-border` for table rows and strong dividers |
+| Used raw `shadow-sm` on cards | Card elevation inconsistent across templates | Use `shadow-card` for card resting state and `shadow-card-hover` for hover. `shadow-sm`/`shadow-md` are for buttons and dropdowns |
+| No `.empty-state` pattern | Empty states look inconsistent, no icon, poor alignment | Use `.empty-state` container with `.empty-state-icon`, `.empty-state-title`, `.empty-state-description` classes |
+| Hardcoded hex colors | Theme breaks in dark mode, user color customization ignored | Use Tailwind design tokens (`text-text`, `text-muted`, `bg-surface`, `border-border-subtle`) or CSS vars (`var(--color-*)`) |
+| Forgot dark mode testing | Page looks fine in light mode but broken in dark | Never hardcode colors. Use CSS custom property tokens that switch automatically. Test both modes |
 | Missing HTMX anchors | Filter/search/pagination stops working | Include `#source-loading` and `#source-results` divs in `SourcePage` |
 | Forgetting vocabulary | UI shows hardcoded "signal" or "item" instead of domain term | Always use `vocabulary.item`, `vocabulary.itemPlural`, etc. for user-facing text |
 | Missing template config | MCP, llms.txt, JSON-LD, Atom feed use generic "item" language | Register a `TemplateConfig` in `templates/src/config.ts` with vocabulary, SEO hints, and MCP content |
+| Small touch targets | Buttons/links hard to tap on mobile | Ensure all interactive elements have at least 44px height (filter chips, feed tabs, pagination links) |
+| Article title too small | Post page title doesn't stand out from body text | Use `text-3xl sm:text-4xl font-bold tracking-tight leading-tight` for article titles |

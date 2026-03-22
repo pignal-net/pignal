@@ -45,18 +45,18 @@ export function WikiItemPost(props: ItemPostProps) {
     <WikiLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="wiki-post">
-        <div class="wiki-post-main">
+      <div class="max-w-[1100px] mx-auto px-4 pt-8 pb-16 grid grid-cols-1 xl:grid-cols-[1fr_200px] gap-12 items-start">
+        <div class="min-w-0 max-w-full">
           <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
           {/* Breadcrumb */}
-          <nav class="wiki-breadcrumb" aria-label="Breadcrumb">
-            <a href="/">{sourceTitle}</a>
-            <span class="wiki-breadcrumb-sep">/</span>
+          <nav class="flex items-center gap-1.5 text-sm text-muted mb-4 flex-wrap" aria-label="Breadcrumb">
+            <a href="/" class="text-primary no-underline hover:underline">{sourceTitle}</a>
+            <span class="text-muted opacity-50">/</span>
             {item.workspaceName && (
               <>
-                <a href={`/?workspace=${item.workspaceId}`}>{item.workspaceName}</a>
-                <span class="wiki-breadcrumb-sep">/</span>
+                <a href={`/?workspace=${item.workspaceId}`} class="text-primary no-underline hover:underline">{item.workspaceName}</a>
+                <span class="text-muted opacity-50">/</span>
               </>
             )}
             <span>{item.keySummary}</span>
@@ -68,7 +68,7 @@ export function WikiItemPost(props: ItemPostProps) {
                 <TypeBadge typeName={item.typeName} />
               </div>
               <h1>{item.keySummary}</h1>
-              <div class="wiki-post-meta">
+              <div class="post-meta flex items-center gap-2.5 flex-wrap text-sm text-muted">
                 {githubUrl ? (
                   <a href={githubUrl} target="_blank" rel="noopener" class="post-author">
                     {sourceAuthor}
@@ -87,11 +87,11 @@ export function WikiItemPost(props: ItemPostProps) {
                 )}
               </div>
             </header>
-            <div class="wiki-post-content content">
+            <div class="mt-8 content">
               {raw(renderedContent)}
             </div>
             {item.tags && item.tags.length > 0 && (
-              <footer class="wiki-post-tags">
+              <footer class="mt-10 pt-6 border-t border-border-subtle">
                 <div class="item-tags">
                   {item.tags.map((t) => (
                     <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
@@ -102,7 +102,11 @@ export function WikiItemPost(props: ItemPostProps) {
           </article>
         </div>
 
-        {showToc && <TableOfContents headings={headings} />}
+        {showToc && (
+          <div class="max-xl:hidden">
+            <TableOfContents headings={headings} />
+          </div>
+        )}
       </div>
     </WikiLayout>
   );

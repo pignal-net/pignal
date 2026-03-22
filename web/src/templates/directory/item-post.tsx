@@ -8,14 +8,14 @@ import { formatDate } from '../../lib/time';
 import { raw } from 'hono/html';
 import { DirectoryLayout } from './layout';
 
-function getStatusClass(label: string | null): string {
+function getStatusClasses(label: string | null): string {
   if (!label) return '';
   const lower = label.toLowerCase();
-  if (lower.includes('active') || lower.includes('recommended')) return 'directory-status-active';
-  if (lower.includes('new')) return 'directory-status-new';
-  if (lower.includes('archived') || lower.includes('inactive') || lower.includes('stale')) return 'directory-status-archived';
-  if (lower.includes('deprecated') || lower.includes('shutting')) return 'directory-status-deprecated';
-  return 'directory-status-active';
+  if (lower.includes('active') || lower.includes('recommended')) return 'bg-green-500/15 text-green-600';
+  if (lower.includes('new')) return 'bg-blue-500/15 text-blue-500';
+  if (lower.includes('archived') || lower.includes('inactive') || lower.includes('stale')) return 'bg-border/50 text-muted';
+  if (lower.includes('deprecated') || lower.includes('shutting')) return 'bg-red-500/15 text-red-600';
+  return 'bg-green-500/15 text-green-600';
 }
 
 export function DirectoryItemPost(props: ItemPostProps) {
@@ -46,28 +46,28 @@ export function DirectoryItemPost(props: ItemPostProps) {
     imageUrl: ogImage,
   });
 
-  const statusClass = getStatusClass(item.validationActionLabel);
+  const statusClasses = getStatusClasses(item.validationActionLabel);
 
   return (
     <DirectoryLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="directory-post">
+      <div class="max-w-3xl mx-auto px-4 pt-8 pb-16">
         <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
-        <article class="source-article">
-          <header class="directory-post-header">
+        <article class="min-w-0 max-w-full">
+          <header class="mb-6">
             <div class="source-category">
               <TypeBadge typeName={item.typeName} />
               {item.workspaceName && (
                 <a href={`/?workspace=${item.workspaceId}`} class="workspace-badge">{item.workspaceName}</a>
               )}
               {item.validationActionLabel && (
-                <span class={`directory-status-badge ${statusClass}`}>{item.validationActionLabel}</span>
+                <span class={`text-[0.68rem] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${statusClasses}`}>{item.validationActionLabel}</span>
               )}
             </div>
             <h1>{item.keySummary}</h1>
-            <div class="directory-post-meta">
+            <div class="post-meta">
               {githubUrl ? (
                 <a href={githubUrl} target="_blank" rel="noopener" class="post-author">
                   {sourceAuthor}
@@ -81,12 +81,12 @@ export function DirectoryItemPost(props: ItemPostProps) {
             </div>
           </header>
 
-          <div class="directory-post-content content">
+          <div class="content leading-relaxed">
             {raw(renderedContent)}
           </div>
 
           {item.tags && item.tags.length > 0 && (
-            <footer class="directory-post-tags">
+            <footer class="mt-10 pt-6 border-t border-border-subtle">
               <div class="item-tags">
                 {item.tags.map((t) => (
                   <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>

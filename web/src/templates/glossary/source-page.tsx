@@ -151,9 +151,9 @@ export function GlossarySourcePage(props: SourcePageProps) {
     <GlossaryLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="glossary-page">
-        {/* Search bar — prominent, centered */}
-        <div class="glossary-search">
+      <div class="max-w-[850px] mx-auto py-8 pb-16">
+        {/* Search bar -- prominent, centered */}
+        <div class="max-w-[600px] mx-auto mb-5 text-center">
           <input
             type="text"
             name="q"
@@ -166,29 +166,29 @@ export function GlossarySourcePage(props: SourcePageProps) {
             hx-push-url="true"
             hx-indicator={HX_INDICATOR}
             hx-vals={hxVals}
-            class="glossary-search-input"
+            class="w-full text-lg px-4 py-3 border-2 border-border rounded-lg bg-surface text-text transition-colors focus:border-primary focus:outline-none placeholder:text-muted"
           />
         </div>
 
         {/* Quick-jump alphabet bar */}
-        <nav class="glossary-alphabet" aria-label="Alphabetical navigation">
+        <nav class="flex flex-wrap justify-center gap-0.5 mb-5 py-2 border-b border-border-subtle" aria-label="Alphabetical navigation">
           {alphabet.map((letter) => {
             const hasItems = letterGroups.has(letter);
             return hasItems ? (
-              <a href={`#letter-${letter}`} class="glossary-alpha-link">{letter}</a>
+              <a href={`#letter-${letter}`} class="inline-flex items-center justify-center w-8 h-8 text-sm font-semibold no-underline text-primary rounded hover:bg-primary/10">{letter}</a>
             ) : (
-              <span class="glossary-alpha-link glossary-alpha-disabled">{letter}</span>
+              <span class="inline-flex items-center justify-center w-8 h-8 text-sm font-semibold text-muted opacity-40 cursor-default pointer-events-none">{letter}</span>
             );
           })}
         </nav>
 
         {/* Domain (type) filter chips */}
         {typesWithItems.length > 0 && (
-          <div class="glossary-filters">
+          <div class="flex flex-wrap gap-1.5 mb-4">
             {(() => {
               const url = buildFilterUrl({ workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} class={`glossary-chip ${!filters.typeId ? 'active' : ''}`} {...hxProps(url)}>
+                <a href={url} class={`inline-block px-3 py-1 text-[0.8rem] no-underline rounded-full border whitespace-nowrap transition-colors ${!filters.typeId ? 'bg-primary border-primary text-white' : 'border-border text-muted hover:border-primary hover:text-primary'}`} {...hxProps(url)}>
                   All ({counts.total})
                 </a>
               );
@@ -196,7 +196,7 @@ export function GlossarySourcePage(props: SourcePageProps) {
             {typesWithItems.map((type) => {
               const url = buildFilterUrl({ type: type.id, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} class={`glossary-chip ${filters.typeId === type.id ? 'active' : ''}`} {...hxProps(url)}>
+                <a href={url} class={`inline-block px-3 py-1 text-[0.8rem] no-underline rounded-full border whitespace-nowrap transition-colors ${filters.typeId === type.id ? 'bg-primary border-primary text-white' : 'border-border text-muted hover:border-primary hover:text-primary'}`} {...hxProps(url)}>
                   {type.icon ? `${type.icon} ` : ''}{type.name} ({counts.byType[type.id] ?? 0})
                 </a>
               );
@@ -206,7 +206,7 @@ export function GlossarySourcePage(props: SourcePageProps) {
 
         {/* Glossary (workspace) tabs */}
         {workspacesWithItems.length > 0 && (
-          <nav class="glossary-tabs">
+          <nav class="flex gap-0 border-b-2 border-border-subtle mb-4 overflow-x-auto">
             {workspacesWithItems.map((ws) => {
               const url = buildFilterUrl({
                 workspace: filters.workspaceId === ws.id ? undefined : ws.id,
@@ -215,7 +215,7 @@ export function GlossarySourcePage(props: SourcePageProps) {
                 sort: sortParam,
               });
               return (
-                <a href={url} class={`glossary-tab ${filters.workspaceId === ws.id ? 'active' : ''}`} {...hxProps(url)}>
+                <a href={url} class={`px-4 py-2 no-underline font-medium text-sm whitespace-nowrap -mb-0.5 border-b-2 transition-colors ${filters.workspaceId === ws.id ? 'text-primary border-primary' : 'text-muted border-transparent hover:text-text'}`} {...hxProps(url)}>
                   {ws.name}
                 </a>
               );
@@ -225,11 +225,11 @@ export function GlossarySourcePage(props: SourcePageProps) {
 
         {/* Active tag filter */}
         {filters.tag && (
-          <div class="glossary-active-tag">
+          <div class="mb-4">
             {(() => {
               const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} title="Clear tag filter" {...hxProps(url)}>
+                <a href={url} class="inline-block px-3 py-1 bg-primary/10 rounded-full text-sm text-primary no-underline" title="Clear tag filter" {...hxProps(url)}>
                   #{filters.tag} &times;
                 </a>
               );
@@ -238,8 +238,8 @@ export function GlossarySourcePage(props: SourcePageProps) {
         )}
 
         {/* Result count */}
-        <div class="glossary-header-bar">
-          <span class="glossary-result-count">
+        <div class="flex justify-between items-center mb-4">
+          <span class="text-sm text-muted">
             {pagination.total} {pagination.total === 1 ? vocabulary.item : vocabulary.itemPlural}
             {activeType && <> in {activeType.name}</>}
             {activeWorkspace && <> &middot; {activeWorkspace.name}</>}
@@ -251,24 +251,30 @@ export function GlossarySourcePage(props: SourcePageProps) {
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <p class="glossary-empty">No {vocabulary.itemPlural} found.</p>
+            <div class="empty-state">
+              <div class="empty-state-icon">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+              </div>
+              <p class="empty-state-title">{`No ${vocabulary.itemPlural} found`}</p>
+              <p class="empty-state-description">Try adjusting your filters or search query.</p>
+            </div>
           ) : (
             <>
-              <div class="glossary-term-list">
+              <div class="flex flex-col gap-6">
                 {sortedLetters.map((letter) => (
-                  <div class="glossary-letter-group" id={`letter-${letter}`}>
-                    <div class="glossary-letter-header">{letter}</div>
-                    <div class="glossary-terms">
+                  <div class="scroll-mt-4" id={`letter-${letter}`}>
+                    <div class="sticky top-0 z-[5] py-1.5 text-2xl font-extrabold text-muted bg-bg-page border-b-2 border-border-subtle mb-1">{letter}</div>
+                    <div class="flex flex-col">
                       {letterGroups.get(letter)!.map((item) => {
                         const termName = getTermName(item.keySummary);
                         const definition = getDefinition(item.content, 100);
                         return (
-                          <a href={`/item/${item.slug}`} class="glossary-term-row" {...hxProps(`/item/${item.slug}`)}>
-                            <div class="glossary-term-left">
-                              <span class="glossary-term-name">{termName}</span>
+                          <a href={`/item/${item.slug}`} class="flex items-start max-sm:flex-col gap-4 max-sm:gap-1 px-2 py-2.5 no-underline text-inherit border-b border-border-subtle transition-colors hover:bg-surface" {...hxProps(`/item/${item.slug}`)}>
+                            <div class="flex items-center gap-2 shrink-0 min-w-[180px] lg:min-w-[220px] max-sm:min-w-0">
+                              <span class="font-semibold text-text">{termName}</span>
                               <TypeBadge typeName={item.typeName} />
                             </div>
-                            <div class="glossary-term-def">{definition}</div>
+                            <div class="text-[0.9rem] text-muted leading-relaxed flex-1 max-sm:text-sm">{definition}</div>
                           </a>
                         );
                       })}

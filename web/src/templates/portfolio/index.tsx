@@ -8,7 +8,6 @@ import { TypeBadge } from '../../components/type-badge';
 import { Pagination } from '../../components/pagination';
 import { stripMarkdown } from '../../lib/markdown';
 import { formatDate } from '../../lib/time';
-import templateStyles from './styles.css';
 
 const config = getTemplateConfig('portfolio');
 
@@ -31,32 +30,35 @@ function PortfolioCardPartial({ item, vocabulary }: { item: Item; vocabulary: Te
   const icon = item.typeName ? item.typeName.charAt(0).toUpperCase() : '?';
 
   return (
-    <article class="portfolio-card">
-      <div class="portfolio-card-image">
+    <article class="bg-surface rounded-xl border border-border-subtle shadow-card overflow-hidden flex flex-col transition-all duration-300 hover:shadow-card-hover">
+      <div class="aspect-[4/3] bg-gradient-to-br from-primary/5 to-primary/15 flex items-center justify-center text-4xl text-primary opacity-50 relative overflow-hidden">
         <span>{icon}</span>
-        <div class="portfolio-card-badge">
+        <div class="absolute top-2.5 left-2.5 z-10">
           <TypeBadge typeName={item.typeName} />
         </div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-surface" />
       </div>
-      <div class="portfolio-card-body">
-        <h3><a href={detailUrl}>{item.keySummary}</a></h3>
-        <p class="portfolio-card-description">{preview}{item.content.length > 120 ? '...' : ''}</p>
+      <div class="px-4 pt-3 pb-4 flex-1 flex flex-col">
+        <h3 class="m-0 mb-1 text-base font-semibold leading-snug">
+          <a href={detailUrl} class="no-underline text-text hover:text-primary transition-colors">{item.keySummary}</a>
+        </h3>
+        <p class="text-[0.82rem] text-muted leading-relaxed m-0 mb-2 line-clamp-2 flex-1">{preview}{item.content.length > 120 ? '...' : ''}</p>
         {item.tags && item.tags.length > 0 && (
-          <div class="portfolio-card-tags">
+          <div class="flex gap-1 flex-wrap mt-auto pt-2">
             {item.tags.slice(0, 3).map((t) => {
               const tagUrl = `/?tag=${encodeURIComponent(t)}`;
               return (
-                <a href={tagUrl} class="item-tag" {...hxProps(tagUrl)}>#{t}</a>
+                <a href={tagUrl} class="item-tag text-[0.7rem] px-1.5 py-0.5" {...hxProps(tagUrl)}>#{t}</a>
               );
             })}
           </div>
         )}
       </div>
-      <div class="portfolio-card-footer">
+      <div class="flex items-center justify-between px-4 py-2 border-t border-border-subtle text-xs text-muted">
         <time datetime={item.vouchedAt || item.createdAt}>
           {formatDate(item.vouchedAt || item.createdAt)}
         </time>
-        <a href={detailUrl}>View {vocabulary.item} &rarr;</a>
+        <a href={detailUrl} class="text-primary no-underline font-semibold text-[0.8rem] hover:underline">View {vocabulary.item} &rarr;</a>
       </div>
     </article>
   );
@@ -64,12 +66,17 @@ function PortfolioCardPartial({ item, vocabulary }: { item: Item; vocabulary: Te
 
 function PortfolioPartialResults(props: PartialResultsProps) {
   if (props.items.length === 0) {
-    return <p class="portfolio-empty">No {props.vocabulary.itemPlural} found.</p>;
+    return (
+      <div class="empty-state">
+        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        <p>{`No ${props.vocabulary.itemPlural} found.`}</p>
+      </div>
+    );
   }
 
   return (
     <>
-      <div class="portfolio-grid">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {props.items.map((item) => (
           <PortfolioCardPartial item={item} vocabulary={props.vocabulary} />
         ))}
@@ -95,5 +102,5 @@ export const portfolioTemplate: Template = {
   seo: config.seo,
   profile: config.profile,
 
-  styles: templateStyles,
+  styles: '',
 };

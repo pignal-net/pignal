@@ -122,15 +122,16 @@ export function RunbookSourcePage(props: SourcePageProps) {
     <RunbookLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="runbook-page">
+      <div class="max-w-7xl mx-auto px-4 pt-8 pb-16 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
         {/* System sidebar */}
-        <aside class="runbook-sidebar">
-          <div class="runbook-sidebar-search">
+        <aside class="sticky top-6 text-sm max-h-[calc(100vh-3rem)] overflow-y-auto max-lg:static max-lg:max-h-none max-lg:flex max-lg:gap-4 max-lg:flex-wrap max-lg:border-b max-lg:border-border-subtle max-lg:pb-4 max-lg:mb-0 lg:bg-surface lg:rounded-xl lg:border lg:border-border-subtle lg:shadow-card lg:p-4">
+          <div class="mb-4 max-lg:mb-0 max-lg:w-full">
             <input
               type="text"
               name="q"
               placeholder={`Search ${vocabulary.itemPlural}...`}
               value={filters.q || ''}
+              class="w-full m-0 h-9 text-sm px-3 py-1"
               hx-get="/"
               hx-target={HX_TARGET}
               hx-swap={HX_SWAP}
@@ -143,16 +144,16 @@ export function RunbookSourcePage(props: SourcePageProps) {
 
           {/* Systems (types) */}
           {typesWithItems.length > 0 && (
-            <>
-              <div class="runbook-sidebar-title">{vocabulary.typePlural}</div>
-              <ul class="runbook-sidebar-list">
+            <div class="max-lg:mb-0">
+              <div class="text-[0.7rem] font-bold uppercase tracking-wider text-muted mb-2 px-2.5">{vocabulary.typePlural}</div>
+              <ul class="list-none p-0 m-0 mb-4 max-lg:flex max-lg:gap-1 max-lg:flex-wrap">
                 <li>
                   {(() => {
                     const url = buildFilterUrl({ workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                     return (
-                      <a href={url} class={`runbook-sidebar-link ${!filters.typeId ? 'active' : ''}`} {...hxProps(url)}>
+                      <a href={url} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-sm transition-colors ${!filters.typeId ? 'bg-primary/10 text-primary font-semibold' : 'text-text hover:bg-primary/8 hover:text-primary'}`} {...hxProps(url)}>
                         <span>All</span>
-                        <span class="runbook-sidebar-count">{counts.total}</span>
+                        <span class={`text-xs min-w-[1.2em] text-right ${!filters.typeId ? 'text-primary/80' : 'text-muted font-normal'}`}>{counts.total}</span>
                       </a>
                     );
                   })()}
@@ -161,47 +162,47 @@ export function RunbookSourcePage(props: SourcePageProps) {
                   const url = buildFilterUrl({ type: type.id, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                   return (
                     <li>
-                      <a href={url} class={`runbook-sidebar-link ${filters.typeId === type.id ? 'active' : ''}`} {...hxProps(url)}>
+                      <a href={url} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-sm transition-colors ${filters.typeId === type.id ? 'bg-primary/10 text-primary font-semibold' : 'text-text hover:bg-primary/8 hover:text-primary'}`} {...hxProps(url)}>
                         <span>{type.icon ? `${type.icon} ` : ''}{type.name}</span>
-                        <span class="runbook-sidebar-count">{counts.byType[type.id] ?? 0}</span>
+                        <span class={`text-xs min-w-[1.2em] text-right ${filters.typeId === type.id ? 'text-primary/80' : 'text-muted font-normal'}`}>{counts.byType[type.id] ?? 0}</span>
                       </a>
                     </li>
                   );
                 })}
               </ul>
-            </>
+            </div>
           )}
 
           {/* Playbooks (workspaces) */}
           {workspacesWithItems.length > 0 && (
-            <>
-              <hr class="runbook-sidebar-divider" />
-              <div class="runbook-sidebar-title">{vocabulary.workspacePlural}</div>
-              <ul class="runbook-sidebar-list">
+            <div class="max-lg:mb-0">
+              <hr class="border-0 border-t border-border-subtle my-3 max-lg:hidden" />
+              <div class="text-[0.7rem] font-bold uppercase tracking-wider text-muted mb-2 px-2.5">{vocabulary.workspacePlural}</div>
+              <ul class="list-none p-0 m-0 mb-4 max-lg:flex max-lg:gap-1 max-lg:flex-wrap">
                 {workspacesWithItems.map((ws) => {
                   const url = buildFilterUrl({ workspace: filters.workspaceId === ws.id ? undefined : ws.id, type: filters.typeId, q: filters.q, sort: sortParam });
                   return (
                     <li>
-                      <a href={url} class={`runbook-sidebar-link ${filters.workspaceId === ws.id ? 'active' : ''}`} {...hxProps(url)}>
+                      <a href={url} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-sm transition-colors ${filters.workspaceId === ws.id ? 'bg-primary/10 text-primary font-semibold' : 'text-text hover:bg-primary/8 hover:text-primary'}`} {...hxProps(url)}>
                         <span>{ws.name}</span>
-                        <span class="runbook-sidebar-count">{counts.byWorkspace[ws.id] ?? 0}</span>
+                        <span class={`text-xs min-w-[1.2em] text-right ${filters.workspaceId === ws.id ? 'text-primary/80' : 'text-muted font-normal'}`}>{counts.byWorkspace[ws.id] ?? 0}</span>
                       </a>
                     </li>
                   );
                 })}
               </ul>
-            </>
+            </div>
           )}
         </aside>
 
         {/* Main content */}
         <div>
           {filters.tag && (
-            <div class="runbook-active-tag">
+            <div class="mb-3">
               {(() => {
                 const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                 return (
-                  <a href={url} title="Clear tag filter" {...hxProps(url)}>
+                  <a href={url} class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.8rem] font-medium no-underline bg-primary text-white" title="Clear tag filter" {...hxProps(url)}>
                     #{filters.tag} &times;
                   </a>
                 );
@@ -209,17 +210,17 @@ export function RunbookSourcePage(props: SourcePageProps) {
             </div>
           )}
 
-          <div class="runbook-header-bar">
-            <span class="runbook-result-count">
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-border-subtle">
+            <span class="text-sm text-muted">
               {pagination.total} {pagination.total === 1 ? vocabulary.item : vocabulary.itemPlural}
               {activeType && <> in {activeType.name}</>}
               {activeWorkspace && <> in {activeWorkspace.name}</>}
             </span>
-            <div class="runbook-sort">
-              <a href={newestUrl} class={`runbook-sort-tab ${filters.sort === 'newest' ? 'active' : ''}`} {...hxProps(newestUrl)}>
+            <div class="flex">
+              <a href={newestUrl} class={`text-sm px-3 py-1.5 no-underline transition-colors ${filters.sort === 'newest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(newestUrl)}>
                 Newest
               </a>
-              <a href={oldestUrl} class={`runbook-sort-tab ${filters.sort === 'oldest' ? 'active' : ''}`} {...hxProps(oldestUrl)}>
+              <a href={oldestUrl} class={`text-sm px-3 py-1.5 no-underline transition-colors ${filters.sort === 'oldest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(oldestUrl)}>
                 Oldest
               </a>
             </div>
@@ -230,20 +231,28 @@ export function RunbookSourcePage(props: SourcePageProps) {
           </div>
           <div id="source-results">
             {items.length === 0 ? (
-              <p class="runbook-empty">No {vocabulary.itemPlural} matching this filter.</p>
+              <div class="empty-state">
+                <div class="empty-state-icon">
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+                </div>
+                <p class="empty-state-title">{`No ${vocabulary.itemPlural} found`}</p>
+                <p class="empty-state-description">Try adjusting your filters or search query.</p>
+              </div>
             ) : (
               <>
-                <div class="runbook-procedure-list">
+                <div class="flex flex-col gap-2">
                   {groupNames.map((name) => (
                     <>
-                      <div class="runbook-group-header">{name}</div>
+                      <div class="text-sm font-bold text-muted uppercase tracking-wide py-2 mt-6 first:mt-0 mb-2 border-b border-border-subtle">{name}</div>
                       {grouped[name].map((item) => (
-                        <div class="runbook-card">
-                          <div class="runbook-card-body">
-                            <h3><a href={`/item/${item.slug}`}>{item.keySummary}</a></h3>
-                            <div class="runbook-card-meta">
-                              {item.typeName && <span class="runbook-system-badge">{item.typeName}</span>}
-                              {item.validationActionLabel && <span class="runbook-validation-badge">{item.validationActionLabel}</span>}
+                        <div class="flex items-center gap-3 px-4 py-3 border border-border-subtle shadow-card rounded-xl bg-surface transition-all border-l-[3px] border-l-transparent hover:shadow-card-hover hover:border-l-primary">
+                          <div class="flex-1 min-w-0">
+                            <h3 class="m-0 mb-0.5 text-[0.95rem] font-semibold leading-snug">
+                              <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary">{item.keySummary}</a>
+                            </h3>
+                            <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
+                              {item.typeName && <span class="text-[0.72rem] px-2 py-0.5 rounded-full bg-primary/12 text-primary font-medium whitespace-nowrap">{item.typeName}</span>}
+                              {item.validationActionLabel && <span class="text-[0.68rem] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap bg-green-500/15 text-green-600">{item.validationActionLabel}</span>}
                             </div>
                           </div>
                         </div>
@@ -252,14 +261,16 @@ export function RunbookSourcePage(props: SourcePageProps) {
                   ))}
                   {ungrouped.length > 0 && (
                     <>
-                      {groupNames.length > 0 && <div class="runbook-group-header">Uncategorized</div>}
+                      {groupNames.length > 0 && <div class="text-sm font-bold text-muted uppercase tracking-wide py-2 mt-6 mb-2 border-b border-border-subtle">Uncategorized</div>}
                       {ungrouped.map((item) => (
-                        <div class="runbook-card">
-                          <div class="runbook-card-body">
-                            <h3><a href={`/item/${item.slug}`}>{item.keySummary}</a></h3>
-                            <div class="runbook-card-meta">
-                              {item.typeName && <span class="runbook-system-badge">{item.typeName}</span>}
-                              {item.validationActionLabel && <span class="runbook-validation-badge">{item.validationActionLabel}</span>}
+                        <div class="flex items-center gap-3 px-4 py-3 border border-border-subtle shadow-card rounded-xl bg-surface transition-all border-l-[3px] border-l-transparent hover:shadow-card-hover hover:border-l-primary">
+                          <div class="flex-1 min-w-0">
+                            <h3 class="m-0 mb-0.5 text-[0.95rem] font-semibold leading-snug">
+                              <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary">{item.keySummary}</a>
+                            </h3>
+                            <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
+                              {item.typeName && <span class="text-[0.72rem] px-2 py-0.5 rounded-full bg-primary/12 text-primary font-medium whitespace-nowrap">{item.typeName}</span>}
+                              {item.validationActionLabel && <span class="text-[0.68rem] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap bg-green-500/15 text-green-600">{item.validationActionLabel}</span>}
                             </div>
                           </div>
                         </div>

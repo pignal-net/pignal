@@ -4,7 +4,6 @@ import { WritingSourcePage } from './source-page';
 import { WritingItemPost } from './item-post';
 import { WritingLayout } from './layout';
 import { FeedResults } from '../../components/item-feed';
-import templateStyles from './styles.css';
 
 const config = getTemplateConfig('writing');
 
@@ -36,5 +35,5 @@ export const writingTemplate: Template = {
 
   profile: config.profile,
 
-  styles: templateStyles,
+  styles: '',
 };

@@ -7,7 +7,7 @@ This document is the prompt context for AI-driven template generation. Read this
 Every template generates exactly 4 artifacts:
 
 1. **Config** in `templates/src/config.ts` — `TemplateProfile` + vocabulary, SEO, MCP instructions, schemaDescriptions
-2. **Visual JSX** in `web/src/templates/<name>/` — 5 files: `index.tsx`, `source-page.tsx`, `item-post.tsx`, `layout.tsx`, `styles.css`
+2. **Visual JSX** in `web/src/templates/<name>/` — 4 files: `index.tsx`, `source-page.tsx`, `item-post.tsx`, `layout.tsx`
 3. **Seed SQL** in `templates/seeds/<name>.sql` — types, actions, workspaces, settings, quality guidelines
 4. **Registry entry** in `web/src/templates/registry.ts`
 
@@ -142,12 +142,49 @@ Reference existing templates as starting points:
 - **directory** → categorized listing with alphabetical sections
 - **dashboard** → metrics/stats cards
 
-### CSS Conventions
-- Prefix ALL classes with `<template-name>-` (e.g., `wiki-sidebar`, `wiki-breadcrumb`)
-- Use Pico CSS variables for colors: `var(--pico-color)`, `var(--pico-primary)`, `var(--pico-muted-color)`
-- Use Pico CSS variables for borders: `var(--pico-muted-border-color)`
-- Use Pico CSS variables for backgrounds: `var(--pico-card-background-color)`
-- Responsive breakpoints: `600px` (mobile), `900px` (tablet)
+### Styling Conventions
+
+All templates use **Tailwind v4 utility classes only** — no separate CSS files. Every template sets `styles: ''`.
+
+**Design tokens (full list):**
+
+| Category | Tokens |
+|---|---|
+| Surface | `bg-surface`, `bg-surface-raised`, `bg-surface-hover`, `bg-bg`, `bg-bg-page` |
+| Text | `text-text`, `text-muted`, `text-primary` |
+| Border | `border-border`, `border-border-subtle` |
+| Shadow | `shadow-card`, `shadow-card-hover`, `shadow-xs`, `shadow-sm`, `shadow-md`, `shadow-lg` |
+| Semantic | `text-success`/`bg-success-bg`/`border-success-border`, `text-error`/`bg-error-bg`/`border-error-border`, `text-warning`/`bg-warning-bg`/`border-warning-border`, `text-info`/`bg-info-bg`/`border-info-border` |
+
+**CSS custom properties** (for inline styles): `var(--color-primary)`, `var(--color-muted)`, `var(--color-border)`, `var(--color-surface)`, `var(--color-text)`, `var(--color-bg-page)`, etc.
+
+**Component patterns:**
+
+- **Card**: `bg-surface rounded-xl border border-border-subtle shadow-card p-6`
+- **Card hover**: add `hover:shadow-card-hover transition-shadow`
+- **Empty state**: `.empty-state` container with `.empty-state-icon`, `.empty-state-title`, `.empty-state-description`
+- **Tag pill**: `rounded-full bg-muted/8 border border-border-subtle px-2.5 py-0.5 text-xs`
+- **Badge (tinted)**: `color-mix(in srgb, ${color} 15%, transparent)` background with colored text
+
+**Article typography:**
+
+- Title: `text-3xl sm:text-4xl font-bold tracking-tight leading-tight mb-4`
+- Content separator: `mt-8` (space only, no border)
+- Tags footer: `mt-10 pt-6 border-t border-border-subtle`
+
+**Responsive patterns:**
+
+- Sidebar layout: `grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8`
+- Card grid: `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6`
+- ToC hidden: `max-xl:hidden` wrapper
+- Breakpoints: `sm:` (640px), `md:` (768px), `lg:` (1024px), `xl:` (1280px)
+
+**Available SVG icons** (import from `../../components/icons`):
+`IconSun`, `IconMoon`, `IconMonitor`, `IconGitHub`, `IconTwitter`, `IconRSS`, `IconHamburger`, `IconExternalLink`, `IconChevronLeft`, `IconChevronDown`, `IconLogout`, `IconKey`, `IconSettings`, `IconList`, `IconTag`, `IconEmptyInbox`
+
+**Dark mode**: Handled automatically by CSS custom property tokens. Never hardcode hex colors — if you use tokens, dark mode works with zero extra effort.
+
+**Theme customization**: Source owners can customize 5 accent colors. The theme engine renders `--tw-*` CSS vars that override `@theme {}` defaults.
 
 ### Required HTMX Anchors
 Every template MUST include these elements for partial page updates:
@@ -162,11 +199,10 @@ hx-get={url} hx-target="#source-results" hx-swap="innerHTML" hx-push-url="true" 
 ### File Structure
 ```
 web/src/templates/<name>/
-├── index.tsx         # Template definition, exports Template object
+├── index.tsx         # Template definition, exports Template object (styles: '')
 ├── source-page.tsx   # Source page (feed/list/grid view)
 ├── item-post.tsx     # Individual item page (detail view)
-├── layout.tsx        # Layout wrapper (wraps PublicLayout)
-└── styles.css        # Template-scoped CSS
+└── layout.tsx        # Layout wrapper (wraps PublicLayout)
 ```
 
 ---
@@ -185,7 +221,7 @@ Before shipping a template, verify:
 - [ ] Seed SQL has settings with quality guidelines and validation limits
 - [ ] JSX source page includes `#source-loading` and `#source-results` divs
 - [ ] JSX source page includes HTMX attributes on all filter/sort links
-- [ ] CSS classes are prefixed with `<template-name>-`
+- [ ] Styling uses Tailwind utility classes (no hardcoded colors)
 - [ ] Registry entry added in `web/src/templates/registry.ts`
 - [ ] `pnpm check-all` passes with no errors
 - [ ] Template renders correctly at `http://localhost:8787` after `pnpm dev:server`

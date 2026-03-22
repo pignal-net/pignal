@@ -43,18 +43,18 @@ export function PortfolioItemPost(props: ItemPostProps) {
     <PortfolioLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="portfolio-showcase">
+      <div class="max-w-4xl mx-auto px-4 pt-8 pb-16">
         <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
         {/* Full-width hero image area */}
-        <div class="portfolio-showcase-hero">
-          <div class="portfolio-showcase-image">
+        <div class="mb-8">
+          <div class="aspect-video bg-gradient-to-br from-primary/5 to-primary/15 rounded-xl flex items-center justify-center text-7xl text-primary opacity-40 border border-border-subtle shadow-card mb-6">
             <span>{icon}</span>
           </div>
 
-          <h1 class="portfolio-showcase-title">{item.keySummary}</h1>
+          <h1 class="text-3xl sm:text-4xl font-bold leading-tight mb-4">{item.keySummary}</h1>
 
-          <div class="portfolio-showcase-meta">
+          <div class="post-meta">
             <TypeBadge typeName={item.typeName} />
             {item.workspaceName && (
               <a href={`/?workspace=${item.workspaceId}`} class="workspace-badge">{item.workspaceName}</a>
@@ -74,7 +74,7 @@ export function PortfolioItemPost(props: ItemPostProps) {
             )}
           </div>
 
-          <p class="portfolio-showcase-excerpt">{excerpt}{item.content.length > 300 ? '...' : ''}</p>
+          <p class="text-base text-muted leading-relaxed mb-6">{excerpt}{item.content.length > 300 ? '...' : ''}</p>
 
           {item.tags && item.tags.length > 0 && (
             <div class="item-tags">
@@ -86,7 +86,7 @@ export function PortfolioItemPost(props: ItemPostProps) {
         </div>
 
         {/* Full content below */}
-        <div class="portfolio-showcase-content content">
+        <div class="mt-8 content">
           {raw(renderedContent)}
         </div>
       </div>

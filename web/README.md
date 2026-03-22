@@ -6,9 +6,9 @@ Lightweight web interface: admin dashboard + SEO-optimized public source page wi
 
 - **Rendering** — Hono JSX (server-side, 0 KB client framework)
 - **Interactivity** — HTMX v2 (vendored, ~14 KB)
-- **Styling** — Pico CSS v2 (vendored, ~10 KB) + custom app.css
+- **Styling** — Tailwind v4 (built at deploy time via `pnpm css:build`)
 
-No bundler. No build step. Total client payload ~27 KB.
+Build step: `pnpm css:build` compiles `src/styles/input.css` → `src/static/tailwind.css`. Total client payload ~14 KB (HTMX) + compiled CSS.
 
 ## Pages
 

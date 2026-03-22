@@ -66,7 +66,7 @@ export function WritingSourcePage(props: SourcePageProps) {
     <WritingLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page writing-page">
+      <div class="max-w-[680px] mx-auto px-4 sm:px-6 py-8 w-full">
         {/* No FilterBar — pure reading experience */}
 
         <div id="source-loading" class="source-loading htmx-indicator">
@@ -74,25 +74,29 @@ export function WritingSourcePage(props: SourcePageProps) {
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <p class="empty-state">No {vocabulary.itemPlural} yet.</p>
+            <div class="empty-state">
+              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+              <p class="empty-state-title">No items found</p>
+              <p class="empty-state-description">No {vocabulary.itemPlural} yet.</p>
+            </div>
           ) : (
             <>
-              <div class="writing-list">
-                {items.map((item) => (
-                  <article class="writing-entry">
-                    <h2 class="writing-entry-title">
+              <div class="flex flex-col">
+                {items.map((item, index) => (
+                  <article class={`py-5 border-b border-border-subtle${index === 0 ? ' pt-0' : ''}`}>
+                    <h2 class="font-serif text-xl sm:text-[1.3rem] font-normal leading-snug mb-1">
                       {item.slug ? (
-                        <a href={`/item/${item.slug}`}>{item.keySummary}</a>
+                        <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary transition-colors">{item.keySummary}</a>
                       ) : (
                         item.keySummary
                       )}
                     </h2>
-                    <div class="writing-entry-meta">
+                    <div class="flex items-center gap-3 text-xs text-muted">
                       <time datetime={item.vouchedAt || item.createdAt}>
                         {formatDate(item.vouchedAt || item.createdAt)}
                       </time>
                       {showReadingTime && (
-                        <span class="writing-entry-reading">{readingTime(item.content)}</span>
+                        <span>{readingTime(item.content)}</span>
                       )}
                     </div>
                   </article>

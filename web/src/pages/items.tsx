@@ -126,6 +126,17 @@ export async function itemsPage(c: Context<{ Bindings: WebEnv; Variables: WebVar
       currentPath="/pignal/items"
       csrfToken={csrfToken}
     >
+      {/* Page header */}
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold tracking-tight">
+          Items{' '}
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+            {result.total}
+          </span>
+        </h1>
+        <p class="text-muted text-sm mt-1">Manage all your signals</p>
+      </div>
+
       <FilterBar
         types={types}
         activeTypeId={params.typeId || undefined}
@@ -146,21 +157,23 @@ export async function itemsPage(c: Context<{ Bindings: WebEnv; Variables: WebVar
         <span class="app-spinner" />
       </div>
 
-      <div id="item-list">
-        <FeedResults
-          items={items}
-          total={result.total}
-          limit={params.limit}
-          offset={params.offset}
-          paginationBase={baseUrl}
-          sort={params.sort}
-          basePath="/pignal/items"
-          tagBasePath="/pignal/items"
-          useSlug={false}
-          showVisibility={true}
-          emptyMessage="No items found."
-          htmxTarget="#item-list"
-        />
+      <div class="bg-surface rounded-xl border border-border-subtle shadow-card">
+        <div id="item-list" class="px-6">
+          <FeedResults
+            items={items}
+            total={result.total}
+            limit={params.limit}
+            offset={params.offset}
+            paginationBase={baseUrl}
+            sort={params.sort}
+            basePath="/pignal/items"
+            tagBasePath="/pignal/items"
+            useSlug={false}
+            showVisibility={true}
+            emptyMessage="No items found."
+            htmxTarget="#item-list"
+          />
+        </div>
       </div>
     </AppLayout>
   );

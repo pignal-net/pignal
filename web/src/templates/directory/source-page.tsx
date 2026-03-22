@@ -28,14 +28,14 @@ function hxProps(url: string) {
   };
 }
 
-function getStatusClass(label: string | null): string {
+function getStatusClasses(label: string | null): string {
   if (!label) return '';
   const lower = label.toLowerCase();
-  if (lower.includes('active') || lower.includes('recommended')) return 'directory-status-active';
-  if (lower.includes('new')) return 'directory-status-new';
-  if (lower.includes('archived') || lower.includes('inactive') || lower.includes('stale')) return 'directory-status-archived';
-  if (lower.includes('deprecated') || lower.includes('shutting')) return 'directory-status-deprecated';
-  return 'directory-status-active';
+  if (lower.includes('active') || lower.includes('recommended')) return 'bg-green-500/15 text-green-600';
+  if (lower.includes('new')) return 'bg-blue-500/15 text-blue-500';
+  if (lower.includes('archived') || lower.includes('inactive') || lower.includes('stale')) return 'bg-border/50 text-muted';
+  if (lower.includes('deprecated') || lower.includes('shutting')) return 'bg-red-500/15 text-red-600';
+  return 'bg-green-500/15 text-green-600';
 }
 
 export function DirectorySourcePage(props: SourcePageProps) {
@@ -130,14 +130,15 @@ export function DirectorySourcePage(props: SourcePageProps) {
     <DirectoryLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="directory-page">
+      <div class="max-w-5xl mx-auto px-4 pt-8 pb-16">
         {/* Search */}
-        <div class="directory-search">
+        <div class="mb-4 max-w-md">
           <input
             type="text"
             name="q"
             placeholder={`Search ${vocabulary.itemPlural}...`}
             value={filters.q || ''}
+            class="w-full m-0 h-10 text-sm px-3 py-1.5 rounded-lg border border-border bg-surface text-text"
             hx-get="/"
             hx-target={HX_TARGET}
             hx-swap={HX_SWAP}
@@ -150,11 +151,11 @@ export function DirectorySourcePage(props: SourcePageProps) {
 
         {/* Category filter chips */}
         {typesWithItems.length > 1 && (
-          <div class="directory-filters">
+          <div class="flex flex-wrap gap-2 mb-5">
             {(() => {
               const allUrl = buildFilterUrl({ workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={allUrl} class={`directory-chip ${!filters.typeId ? 'active' : ''}`} {...hxProps(allUrl)}>
+                <a href={allUrl} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${!filters.typeId ? 'bg-primary text-white border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(allUrl)}>
                   All {vocabulary.typePlural}
                 </a>
               );
@@ -162,9 +163,9 @@ export function DirectorySourcePage(props: SourcePageProps) {
             {typesWithItems.map((type) => {
               const url = buildFilterUrl({ type: filters.typeId === type.id ? undefined : type.id, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} class={`directory-chip ${filters.typeId === type.id ? 'active' : ''}`} {...hxProps(url)}>
+                <a href={url} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${filters.typeId === type.id ? 'bg-primary text-white border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(url)}>
                   {type.icon ? `${type.icon} ` : ''}{type.name}
-                  <span class="directory-chip-count">{counts.byType[type.id] ?? 0}</span>
+                  <span class="text-[0.72rem] opacity-70">{counts.byType[type.id] ?? 0}</span>
                 </a>
               );
             })}
@@ -173,11 +174,11 @@ export function DirectorySourcePage(props: SourcePageProps) {
 
         {/* Collection filter chips */}
         {workspacesWithItems.length > 0 && (
-          <div class="directory-filters">
+          <div class="flex flex-wrap gap-2 mb-5">
             {(() => {
               const allUrl = buildFilterUrl({ type: filters.typeId, q: filters.q, sort: sortParam });
               return (
-                <a href={allUrl} class={`directory-chip ${!filters.workspaceId ? 'active' : ''}`} {...hxProps(allUrl)}>
+                <a href={allUrl} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${!filters.workspaceId ? 'bg-primary text-white border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(allUrl)}>
                   All {vocabulary.workspacePlural}
                 </a>
               );
@@ -185,9 +186,9 @@ export function DirectorySourcePage(props: SourcePageProps) {
             {workspacesWithItems.map((ws) => {
               const url = buildFilterUrl({ workspace: filters.workspaceId === ws.id ? undefined : ws.id, type: filters.typeId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} class={`directory-chip ${filters.workspaceId === ws.id ? 'active' : ''}`} {...hxProps(url)}>
+                <a href={url} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${filters.workspaceId === ws.id ? 'bg-primary text-white border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(url)}>
                   {ws.name}
-                  <span class="directory-chip-count">{counts.byWorkspace[ws.id] ?? 0}</span>
+                  <span class="text-[0.72rem] opacity-70">{counts.byWorkspace[ws.id] ?? 0}</span>
                 </a>
               );
             })}
@@ -196,11 +197,11 @@ export function DirectorySourcePage(props: SourcePageProps) {
 
         {/* Active tag */}
         {filters.tag && (
-          <div class="directory-active-tag">
+          <div class="mb-3">
             {(() => {
               const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} title="Clear tag filter" {...hxProps(url)}>
+                <a href={url} title="Clear tag filter" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium no-underline bg-primary text-white" {...hxProps(url)}>
                   #{filters.tag} &times;
                 </a>
               );
@@ -209,17 +210,17 @@ export function DirectorySourcePage(props: SourcePageProps) {
         )}
 
         {/* Header bar */}
-        <div class="directory-header-bar">
-          <span class="directory-result-count">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-border-subtle">
+          <span class="text-sm text-muted">
             {pagination.total} {pagination.total === 1 ? vocabulary.item : vocabulary.itemPlural}
             {activeType && <> in {activeType.name}</>}
             {activeWorkspace && <> in {activeWorkspace.name}</>}
           </span>
-          <div class="directory-sort">
-            <a href={newestUrl} class={`directory-sort-tab ${filters.sort === 'newest' ? 'active' : ''}`} {...hxProps(newestUrl)}>
+          <div class="flex">
+            <a href={newestUrl} class={`text-[0.82rem] px-3 py-1 no-underline transition-colors ${filters.sort === 'newest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(newestUrl)}>
               Newest
             </a>
-            <a href={oldestUrl} class={`directory-sort-tab ${filters.sort === 'oldest' ? 'active' : ''}`} {...hxProps(oldestUrl)}>
+            <a href={oldestUrl} class={`text-[0.82rem] px-3 py-1 no-underline transition-colors ${filters.sort === 'oldest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(oldestUrl)}>
               A-Z
             </a>
           </div>
@@ -230,30 +231,33 @@ export function DirectorySourcePage(props: SourcePageProps) {
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <p class="directory-empty">No {vocabulary.itemPlural} found.</p>
+            <div class="empty-state">
+              <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              <p>{`No ${vocabulary.itemPlural} found.`}</p>
+            </div>
           ) : (
             <>
-              <div class="directory-resource-list">
+              <div class="flex flex-col">
                 {sortedLetters.map((letter) => (
                   <>
-                    <div class="directory-letter-header">{letter}</div>
+                    <div class="text-xl font-bold text-primary pt-2 pb-1 mt-6 first:mt-0 mb-3 border-b-2 border-primary">{letter}</div>
                     {grouped[letter].map((item) => {
                       const desc = stripMarkdown(item.content).slice(0, 140);
-                      const statusClass = getStatusClass(item.validationActionLabel);
+                      const statusClasses = getStatusClasses(item.validationActionLabel);
                       return (
-                        <div class="directory-card">
-                          <div class="directory-card-body">
-                            <div class="directory-card-title">
-                              <a href={`/item/${item.slug}`}>{item.keySummary}</a>
-                              {item.typeName && <span class="directory-category-badge">{item.typeName}</span>}
+                        <div class="flex items-start gap-3 py-3 border-b border-border-subtle transition-colors hover:bg-primary/[0.03] max-sm:flex-col max-sm:gap-1">
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+                              <a href={`/item/${item.slug}`} class="no-underline text-text font-semibold text-[0.95rem] hover:text-primary after:content-['\\2197'] after:text-xs after:ml-1 after:opacity-40">{item.keySummary}</a>
+                              {item.typeName && <span class="text-[0.7rem] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium whitespace-nowrap">{item.typeName}</span>}
                               {item.validationActionLabel && (
-                                <span class={`directory-status-badge ${statusClass}`}>{item.validationActionLabel}</span>
+                                <span class={`text-[0.68rem] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${statusClasses}`}>{item.validationActionLabel}</span>
                               )}
                             </div>
-                            {desc && <div class="directory-card-description">{desc}</div>}
+                            {desc && <div class="text-[0.82rem] text-muted leading-relaxed line-clamp-2">{desc}</div>}
                             {item.workspaceName && (
-                              <div class="directory-card-meta">
-                                <span class="directory-card-collection">{item.workspaceName}</span>
+                              <div class="flex items-center gap-2 mt-1 text-xs text-muted">
+                                <span class="text-[0.72rem]">{item.workspaceName}</span>
                               </div>
                             )}
                           </div>

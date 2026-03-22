@@ -42,17 +42,17 @@ export function BookshelfItemPost(props: ItemPostProps) {
     <BookshelfLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="bookshelf-detail">
+      <div class="max-w-3xl mx-auto px-4 pt-8 pb-16">
         <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
         {/* Hero: cover + info side by side */}
-        <div class="bookshelf-detail-hero">
-          <div class="bookshelf-detail-cover">
-            <span class="bookshelf-detail-cover-text">{item.keySummary}</span>
+        <div class="grid grid-cols-1 sm:grid-cols-[200px_1fr] max-sm:grid-cols-1 gap-8 max-sm:gap-4 mb-8 items-start">
+          <div class="aspect-[2/3] bg-gradient-to-br from-primary/12 to-primary/28 rounded-xl flex items-center justify-center border border-border-subtle max-sm:max-w-[180px]">
+            <span class="text-lg font-bold text-primary opacity-60 text-center px-6 leading-snug">{item.keySummary}</span>
           </div>
-          <div class="bookshelf-detail-info">
-            <h1>{item.keySummary}</h1>
-            <div class="bookshelf-detail-meta">
+          <div>
+            <h1 class="text-3xl sm:text-4xl font-bold leading-tight mb-4">{item.keySummary}</h1>
+            <div class="post-meta flex items-center gap-2.5 flex-wrap text-sm text-muted mb-4">
               <TypeBadge typeName={item.typeName} />
               {item.workspaceName && (
                 <a href={`/?workspace=${item.workspaceId}`} class="workspace-badge">{item.workspaceName}</a>
@@ -71,7 +71,7 @@ export function BookshelfItemPost(props: ItemPostProps) {
                 </span>
               )}
             </div>
-            <p class="bookshelf-detail-excerpt">{excerpt}{item.content.length > 300 ? '...' : ''}</p>
+            <p class="text-[0.95rem] text-muted leading-relaxed mb-4">{excerpt}{item.content.length > 300 ? '...' : ''}</p>
             {item.tags && item.tags.length > 0 && (
               <div class="item-tags">
                 {item.tags.map((t) => (
@@ -83,7 +83,7 @@ export function BookshelfItemPost(props: ItemPostProps) {
         </div>
 
         {/* Full review content */}
-        <div class="bookshelf-detail-content content">
+        <div class="mt-8 content">
           {raw(renderedContent)}
         </div>
       </div>

@@ -121,15 +121,16 @@ export function WikiSourcePage(props: SourcePageProps) {
     <WikiLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="wiki-page">
+      <div class="max-w-7xl mx-auto px-4 pt-8 pb-16 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 items-start">
         {/* Tree sidebar */}
-        <aside class="wiki-sidebar">
-          <div class="wiki-sidebar-search">
+        <aside class="sticky top-6 text-sm max-h-[calc(100vh-3rem)] overflow-y-auto max-lg:static max-lg:max-h-none max-lg:border-b max-lg:border-border-subtle max-lg:pb-4 max-lg:mb-0 lg:bg-surface lg:rounded-xl lg:border lg:border-border-subtle lg:shadow-card lg:p-4">
+          <div class="mb-4">
             <input
               type="text"
               name="q"
               placeholder={`Search ${vocabulary.itemPlural}...`}
               value={filters.q || ''}
+              class="w-full m-0 h-9 text-sm px-3 py-1"
               hx-get="/"
               hx-target={HX_TARGET}
               hx-swap={HX_SWAP}
@@ -144,9 +145,9 @@ export function WikiSourcePage(props: SourcePageProps) {
           {(() => {
             const url = buildFilterUrl({ q: filters.q, sort: sortParam });
             return (
-              <a href={url} class={`wiki-sidebar-all ${!filters.typeId && !filters.workspaceId ? 'active' : ''}`} {...hxProps(url)}>
+              <a href={url} class={`flex justify-between items-center px-2.5 py-2 rounded-lg no-underline text-sm font-semibold mb-2 transition-colors ${!filters.typeId && !filters.workspaceId ? 'bg-primary/10 text-primary' : 'text-text hover:bg-primary/8 hover:text-primary'}`} {...hxProps(url)}>
                 <span>All {vocabulary.itemPlural}</span>
-                <span class="wiki-sidebar-count">{counts.total}</span>
+                <span class={`text-xs font-normal ${!filters.typeId && !filters.workspaceId ? 'text-primary/80' : 'text-muted'}`}>{counts.total}</span>
               </a>
             );
           })()}
@@ -154,21 +155,21 @@ export function WikiSourcePage(props: SourcePageProps) {
           {/* Sections (workspaces) as collapsible tree nodes */}
           {workspacesWithItems.length > 0 && (
             <>
-              <hr class="wiki-sidebar-divider" />
+              <hr class="border-0 border-t border-border-subtle my-3" />
               {workspacesWithItems.map((ws) => {
                 const isActive = filters.workspaceId === ws.id;
                 const wsUrl = buildFilterUrl({ workspace: isActive ? undefined : ws.id, q: filters.q, sort: sortParam });
                 // Get types within this workspace
                 const wsTypes = typesWithItems.filter((t) => (counts.byWorkspaceType[ws.id]?.[t.id] ?? 0) > 0);
                 return (
-                  <details class="wiki-sidebar-section" open={isActive || undefined}>
-                    <summary>
+                  <details class="mb-1" open={isActive || undefined}>
+                    <summary class="flex justify-between items-center px-2.5 py-2 rounded-lg cursor-pointer text-xs font-semibold uppercase tracking-wide text-muted list-none transition-colors hover:bg-primary/8 hover:text-primary [&::-webkit-details-marker]:hidden before:content-['\25B6'] before:text-[0.55rem] before:mr-2 before:inline-block before:transition-transform [details[open]>&]:before:rotate-90">
                       <span>{ws.name}</span>
-                      <span class="wiki-sidebar-count">{counts.byWorkspace[ws.id] ?? 0}</span>
+                      <span class="text-[0.7rem] font-normal text-muted min-w-[1.2em] text-right">{counts.byWorkspace[ws.id] ?? 0}</span>
                     </summary>
-                    <ul class="wiki-sidebar-list">
+                    <ul class="list-none pl-2 mt-1 mb-2">
                       <li>
-                        <a href={wsUrl} class={`wiki-sidebar-link ${isActive && !filters.typeId ? 'active' : ''}`} {...hxProps(wsUrl)}>
+                        <a href={wsUrl} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-[0.82rem] border-l-2 transition-colors ${isActive && !filters.typeId ? 'bg-primary/10 text-primary font-semibold border-l-primary' : 'text-text border-l-transparent hover:bg-primary/8 hover:text-primary'}`} {...hxProps(wsUrl)}>
                           All in {ws.name}
                         </a>
                       </li>
@@ -176,7 +177,7 @@ export function WikiSourcePage(props: SourcePageProps) {
                         const typeUrl = buildFilterUrl({ workspace: ws.id, type: type.id, q: filters.q, sort: sortParam });
                         return (
                           <li>
-                            <a href={typeUrl} class={`wiki-sidebar-link ${filters.workspaceId === ws.id && filters.typeId === type.id ? 'active' : ''}`} {...hxProps(typeUrl)}>
+                            <a href={typeUrl} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-[0.82rem] border-l-2 transition-colors ${filters.workspaceId === ws.id && filters.typeId === type.id ? 'bg-primary/10 text-primary font-semibold border-l-primary' : 'text-text border-l-transparent hover:bg-primary/8 hover:text-primary'}`} {...hxProps(typeUrl)}>
                               {type.icon ? `${type.icon} ` : ''}{type.name}
                             </a>
                           </li>
@@ -192,19 +193,19 @@ export function WikiSourcePage(props: SourcePageProps) {
           {/* Topics (types) standalone section */}
           {typesWithItems.length > 0 && (
             <>
-              <hr class="wiki-sidebar-divider" />
-              <details class="wiki-sidebar-section" open>
-                <summary>
+              <hr class="border-0 border-t border-border-subtle my-3" />
+              <details class="mb-1" open>
+                <summary class="flex justify-between items-center px-2.5 py-2 rounded-lg cursor-pointer text-xs font-semibold uppercase tracking-wide text-muted list-none transition-colors hover:bg-primary/8 hover:text-primary [&::-webkit-details-marker]:hidden before:content-['\25B6'] before:text-[0.55rem] before:mr-2 before:inline-block before:transition-transform [details[open]>&]:before:rotate-90">
                   <span>By {vocabulary.type}</span>
                 </summary>
-                <ul class="wiki-sidebar-list">
+                <ul class="list-none pl-2 mt-1 mb-2">
                   {typesWithItems.map((type) => {
                     const typeUrl = buildFilterUrl({ type: filters.typeId === type.id ? undefined : type.id, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                     return (
                       <li>
-                        <a href={typeUrl} class={`wiki-sidebar-link ${filters.typeId === type.id && !filters.workspaceId ? 'active' : ''}`} {...hxProps(typeUrl)}>
+                        <a href={typeUrl} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-[0.82rem] border-l-2 transition-colors ${filters.typeId === type.id && !filters.workspaceId ? 'bg-primary/10 text-primary font-semibold border-l-primary' : 'text-text border-l-transparent hover:bg-primary/8 hover:text-primary'}`} {...hxProps(typeUrl)}>
                           <span>{type.icon ? `${type.icon} ` : ''}{type.name}</span>
-                          <span class="wiki-sidebar-count">{counts.byType[type.id] ?? 0}</span>
+                          <span class={`text-xs font-normal min-w-[1.2em] text-right ${filters.typeId === type.id && !filters.workspaceId ? 'text-primary/80' : 'text-muted'}`}>{counts.byType[type.id] ?? 0}</span>
                         </a>
                       </li>
                     );
@@ -219,11 +220,11 @@ export function WikiSourcePage(props: SourcePageProps) {
         <div>
           {/* Active tag pill */}
           {filters.tag && (
-            <div class="wiki-active-tag">
+            <div class="mb-3">
               {(() => {
                 const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                 return (
-                  <a href={url} title="Clear tag filter" {...hxProps(url)}>
+                  <a href={url} class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.8rem] font-medium no-underline bg-primary text-white" title="Clear tag filter" {...hxProps(url)}>
                     #{filters.tag} &times;
                   </a>
                 );
@@ -232,17 +233,17 @@ export function WikiSourcePage(props: SourcePageProps) {
           )}
 
           {/* Header bar */}
-          <div class="wiki-header-bar">
-            <span class="wiki-result-count">
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-border-subtle">
+            <span class="text-sm text-muted">
               {pagination.total} {pagination.total === 1 ? vocabulary.item : vocabulary.itemPlural}
               {activeType && <> in {activeType.name}</>}
               {activeWorkspace && <> in {activeWorkspace.name}</>}
             </span>
-            <div class="wiki-sort">
-              <a href={newestUrl} class={`wiki-sort-tab ${filters.sort === 'newest' ? 'active' : ''}`} {...hxProps(newestUrl)}>
+            <div class="flex">
+              <a href={newestUrl} class={`text-sm px-3 py-1.5 no-underline transition-colors ${filters.sort === 'newest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(newestUrl)}>
                 Newest
               </a>
-              <a href={oldestUrl} class={`wiki-sort-tab ${filters.sort === 'oldest' ? 'active' : ''}`} {...hxProps(oldestUrl)}>
+              <a href={oldestUrl} class={`text-sm px-3 py-1.5 no-underline transition-colors ${filters.sort === 'oldest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(oldestUrl)}>
                 A-Z
               </a>
             </div>
@@ -253,23 +254,29 @@ export function WikiSourcePage(props: SourcePageProps) {
           </div>
           <div id="source-results">
             {items.length === 0 ? (
-              <p class="wiki-empty">No {vocabulary.itemPlural} matching this filter.</p>
+              <div class="empty-state">
+                <div class="empty-state-icon">
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+                </div>
+                <p class="empty-state-title">{`No ${vocabulary.itemPlural} found`}</p>
+                <p class="empty-state-description">Try adjusting your filters or search query.</p>
+              </div>
             ) : (
               <>
-                <div class="wiki-article-list">
+                <div class="flex flex-col">
                   {sortedLetters.map((letter) => (
                     <>
-                      <div class="wiki-letter-header">{letter}</div>
+                      <div class="text-lg font-bold text-primary pt-2 pb-1 mt-5 first:mt-0 border-b-2 border-primary mb-2">{letter}</div>
                       {grouped[letter].map((item) => {
                         const desc = stripMarkdown(item.content).slice(0, 100);
                         return (
-                          <div class="wiki-article-row">
-                            <div class="wiki-article-title">
-                              <a href={`/item/${item.slug}`}>{item.keySummary}</a>
-                              {desc && <div class="wiki-article-description">{desc}</div>}
+                          <div class="flex items-baseline max-sm:flex-col gap-3 max-sm:gap-1 py-2.5 border-b border-border-subtle transition-colors hover:bg-primary/4">
+                            <div class="flex-1 min-w-0">
+                              <a href={`/item/${item.slug}`} class="no-underline text-text font-medium text-[0.95rem] hover:text-primary">{item.keySummary}</a>
+                              {desc && <div class="text-sm text-muted mt-0.5 line-clamp-1">{desc}</div>}
                             </div>
-                            <div class="wiki-article-meta">
-                              {item.typeName && <span class="wiki-article-topic">{item.typeName}</span>}
+                            <div class="flex items-center gap-2 shrink-0 text-xs text-muted max-sm:order-first">
+                              {item.typeName && <span class="text-[0.72rem] px-2 py-0.5 rounded-full bg-primary/12 text-primary font-medium whitespace-nowrap">{item.typeName}</span>}
                               {item.workspaceName && <span>{item.workspaceName}</span>}
                             </div>
                           </div>

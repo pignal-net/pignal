@@ -43,17 +43,17 @@ export function ShopItemPost(props: ItemPostProps) {
     <ShopLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="shop-product">
+      <div class="max-w-3xl mx-auto px-4 pt-8 pb-16">
         <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
         {/* Hero section: image + info side by side */}
-        <div class="shop-product-hero">
-          <div class="shop-product-image">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 items-start">
+          <div class="aspect-square bg-gradient-to-br from-primary/5 to-primary/15 rounded-xl flex items-center justify-center text-6xl text-primary opacity-50 border border-border-subtle shadow-card">
             <span>{icon}</span>
           </div>
-          <div class="shop-product-info">
-            <h1>{item.keySummary}</h1>
-            <div class="shop-product-meta">
+          <div>
+            <h1 class="text-3xl sm:text-4xl font-bold leading-tight mb-4">{item.keySummary}</h1>
+            <div class="post-meta">
               <TypeBadge typeName={item.typeName} />
               {item.workspaceName && (
                 <a href={`/?workspace=${item.workspaceId}`} class="workspace-badge">{item.workspaceName}</a>
@@ -72,7 +72,7 @@ export function ShopItemPost(props: ItemPostProps) {
                 </span>
               )}
             </div>
-            <p class="shop-product-excerpt">{excerpt}{item.content.length > 300 ? '...' : ''}</p>
+            <p class="text-[0.95rem] text-muted leading-relaxed mb-4">{excerpt}{item.content.length > 300 ? '...' : ''}</p>
             {item.tags && item.tags.length > 0 && (
               <div class="item-tags">
                 {item.tags.map((t) => (
@@ -84,7 +84,7 @@ export function ShopItemPost(props: ItemPostProps) {
         </div>
 
         {/* Full content below */}
-        <div class="shop-product-content content">
+        <div class="mt-8 content">
           {raw(renderedContent)}
         </div>
       </div>

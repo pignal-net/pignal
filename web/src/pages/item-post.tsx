@@ -42,7 +42,7 @@ export async function itemPostPage(c: Context<{ Bindings: WebEnv; Variables: Web
 
   if (!row) {
     c.status(404);
-    return c.html(<p class="empty-state">Post not found.</p>);
+    return c.html(<p class="text-center text-muted py-12">Post not found.</p>);
   }
 
   const item = toItem(row);

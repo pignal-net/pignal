@@ -40,13 +40,13 @@ export function MenuItemPost(props: ItemPostProps) {
     <MenuLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="menu-detail">
+      <div class="max-w-2xl mx-auto py-4">
         <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
-        <article class="menu-detail-article">
-          <header class="menu-detail-header">
-            <h1 class="menu-detail-title">{item.keySummary}</h1>
-            <div class="menu-detail-meta">
+        <article class="mt-4">
+          <header class="mb-6 pb-4 border-b border-border-subtle">
+            <h1 class="text-3xl sm:text-4xl m-0 leading-tight mb-4">{item.keySummary}</h1>
+            <div class="flex items-center gap-2 flex-wrap text-sm text-muted">
               <TypeBadge typeName={item.typeName} />
               {item.workspaceName && (
                 <a href={`/?workspace=${item.workspaceId}`} class="workspace-badge">{item.workspaceName}</a>
@@ -64,12 +64,12 @@ export function MenuItemPost(props: ItemPostProps) {
             </div>
           </header>
 
-          <div class="menu-detail-content content">
+          <div class="content leading-relaxed">
             {raw(renderedContent)}
           </div>
 
           {item.tags && item.tags.length > 0 && (
-            <footer class="menu-detail-footer">
+            <footer class="mt-10 pt-6 border-t border-border-subtle">
               <div class="item-tags">
                 {item.tags.map((t) => (
                   <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>

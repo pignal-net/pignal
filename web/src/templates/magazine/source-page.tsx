@@ -35,23 +35,23 @@ function MagazineHeroCard({ item }: { item: Item }) {
   const itemUrl = `/item/${item.slug}`;
 
   return (
-    <div class="magazine-hero">
-      <div class="magazine-hero-image">
-        <span class="magazine-section-badge">{item.typeName}</span>
+    <div class="relative bg-surface rounded-2xl border border-border-subtle shadow-card overflow-hidden mb-8 transition-shadow duration-200 hover:shadow-card-hover">
+      <div class="w-full h-56 sm:h-72 bg-gradient-to-br from-primary/10 to-primary/25 flex items-center justify-center">
+        <span class="inline-block px-5 py-2 rounded-full text-base font-semibold uppercase tracking-wide text-white bg-primary no-underline">{item.typeName}</span>
       </div>
-      <div class="magazine-hero-body">
-        <h2>
-          <a href={itemUrl} {...hxProps(itemUrl)}>{item.keySummary}</a>
+      <div class="p-6 sm:px-8 sm:pb-8">
+        <h2 class="m-0 mb-3 text-xl sm:text-2xl leading-tight tracking-tight">
+          <a href={itemUrl} class="no-underline text-text hover:text-primary" {...hxProps(itemUrl)}>{item.keySummary}</a>
         </h2>
-        {excerpt && <p class="magazine-hero-excerpt">{excerpt}</p>}
-        <div class="magazine-hero-meta">
-          <span class="magazine-time">{relativeTime(dateStr)}</span>
-          <span class="magazine-meta-sep">/</span>
-          <span class="magazine-reading-time">{readingTime(item.content)}</span>
+        {excerpt && <p class="text-base text-muted leading-relaxed m-0 mb-4 line-clamp-3">{excerpt}</p>}
+        <div class="flex items-center gap-3 flex-wrap text-sm text-muted">
+          <span class="whitespace-nowrap">{relativeTime(dateStr)}</span>
+          <span class="opacity-40">/</span>
+          <span class="whitespace-nowrap">{readingTime(item.content)}</span>
           {item.workspaceName && (
             <>
-              <span class="magazine-meta-sep">/</span>
-              <a href={`/?workspace=${item.workspaceId}`} {...hxProps(`/?workspace=${item.workspaceId}`)}>{item.workspaceName}</a>
+              <span class="opacity-40">/</span>
+              <a href={`/?workspace=${item.workspaceId}`} class="text-muted hover:text-primary no-underline" {...hxProps(`/?workspace=${item.workspaceId}`)}>{item.workspaceName}</a>
             </>
           )}
         </div>
@@ -67,24 +67,24 @@ function MagazineCard({ item }: { item: Item }) {
   const typeUrl = `/?type=${item.typeId}`;
 
   return (
-    <div class="magazine-card">
-      <div class="magazine-card-image">
-        <a href={typeUrl} class="magazine-section-badge" {...hxProps(typeUrl)}>{item.typeName}</a>
+    <div class="bg-surface rounded-xl border border-border-subtle shadow-card overflow-hidden flex flex-col transition-all duration-200 hover:shadow-card-hover">
+      <div class="w-full h-28 bg-gradient-to-br from-primary/10 to-primary/25 flex items-center justify-start pl-4">
+        <a href={typeUrl} class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide text-white bg-primary no-underline hover:opacity-90" {...hxProps(typeUrl)}>{item.typeName}</a>
       </div>
-      <div class="magazine-card-body">
-        <h3>
-          <a href={itemUrl} {...hxProps(itemUrl)}>{item.keySummary}</a>
+      <div class="p-4 flex-1 flex flex-col">
+        <h3 class="m-0 mb-2 text-base leading-snug font-semibold">
+          <a href={itemUrl} class="no-underline text-text hover:text-primary" {...hxProps(itemUrl)}>{item.keySummary}</a>
         </h3>
-        {excerpt && <p class="magazine-card-excerpt">{excerpt}</p>}
-        <div class="magazine-card-meta">
-          <span class="magazine-time">{relativeTime(dateStr)}</span>
-          <span class="magazine-meta-sep">/</span>
-          <span class="magazine-reading-time">{readingTime(item.content)}</span>
+        {excerpt && <p class="text-sm text-muted m-0 mb-3 leading-relaxed line-clamp-2 flex-1">{excerpt}</p>}
+        <div class="flex items-center gap-2 flex-wrap text-xs text-muted mt-auto">
+          <span class="whitespace-nowrap tabular-nums">{relativeTime(dateStr)}</span>
+          <span class="opacity-40">/</span>
+          <span class="whitespace-nowrap">{readingTime(item.content)}</span>
         </div>
         {item.tags && item.tags.length > 0 && (
-          <div class="magazine-card-tags">
+          <div class="flex flex-wrap gap-1.5 mt-2">
             {item.tags.slice(0, 3).map((t) => (
-              <a href={`/?tag=${encodeURIComponent(t)}`} class="magazine-tag" {...hxProps(`/?tag=${encodeURIComponent(t)}`)}>#{t}</a>
+              <a href={`/?tag=${encodeURIComponent(t)}`} class="text-[0.72rem] px-2 py-0.5 rounded-full bg-muted/8 border border-border-subtle text-muted no-underline hover:text-primary" {...hxProps(`/?tag=${encodeURIComponent(t)}`)}>#{t}</a>
             ))}
           </div>
         )}
@@ -172,11 +172,11 @@ export function MagazineSourcePage(props: SourcePageProps) {
 
         {/* Active tag filter chip */}
         {filters.tag && (
-          <div class="magazine-active-tag">
+          <div class="mb-4">
             {(() => {
               const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} title="Clear tag filter" {...hxProps(url)}>
+                <a href={url} title="Clear tag filter" class="inline-block px-3 py-1 rounded-full bg-primary text-white no-underline text-sm hover:opacity-85" {...hxProps(url)}>
                   #{filters.tag} &times;
                 </a>
               );
@@ -185,17 +185,17 @@ export function MagazineSourcePage(props: SourcePageProps) {
         )}
 
         {/* Header bar with count and sort */}
-        <div class="magazine-header-bar">
-          <span class="magazine-result-count">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+          <span class="text-sm text-muted">
             {pagination.total} {pagination.total === 1 ? vocabulary.item : vocabulary.itemPlural}
             {activeType && <> in {activeType.name}</>}
             {activeWorkspace && <> in {activeWorkspace.name}</>}
           </span>
-          <div class="magazine-sort">
-            <a href={newestUrl} class={`magazine-sort-tab ${filters.sort === 'newest' ? 'active' : ''}`} {...hxProps(newestUrl)}>
+          <div class="flex gap-1">
+            <a href={newestUrl} class={`px-3 py-1 rounded text-[0.8rem] no-underline transition-colors ${filters.sort === 'newest' ? 'bg-primary text-white' : 'text-muted hover:bg-border/50 hover:text-text'}`} {...hxProps(newestUrl)}>
               Newest
             </a>
-            <a href={oldestUrl} class={`magazine-sort-tab ${filters.sort === 'oldest' ? 'active' : ''}`} {...hxProps(oldestUrl)}>
+            <a href={oldestUrl} class={`px-3 py-1 rounded text-[0.8rem] no-underline transition-colors ${filters.sort === 'oldest' ? 'bg-primary text-white' : 'text-muted hover:bg-border/50 hover:text-text'}`} {...hxProps(oldestUrl)}>
               Oldest
             </a>
           </div>
@@ -206,7 +206,10 @@ export function MagazineSourcePage(props: SourcePageProps) {
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <p class="magazine-empty">No {vocabulary.itemPlural} matching this filter.</p>
+            <div class="empty-state">
+              <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              <p>{`No ${vocabulary.itemPlural} matching this filter.`}</p>
+            </div>
           ) : (
             <>
               {/* Hero: first item */}
@@ -214,7 +217,7 @@ export function MagazineSourcePage(props: SourcePageProps) {
 
               {/* Grid: remaining items */}
               {gridItems.length > 0 && (
-                <div class="magazine-grid">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {gridItems.map((item) => (
                     <MagazineCard item={item} />
                   ))}

@@ -4,7 +4,8 @@
  * Usage: pnpm template:create <name>
  *
  * Creates a complete template folder at web/src/templates/<name>/ and
- * registers it in the template registry.
+ * registers it in the template registry. Templates use Tailwind v4 utility
+ * classes — no separate styles.css files.
  */
 
 import fs from 'node:fs';
@@ -61,7 +62,6 @@ import { ${pascal}SourcePage } from './source-page';
 import { ${pascal}ItemPost } from './item-post';
 import { ${pascal}Layout } from './layout';
 import { FeedResults } from '../../components/item-feed';
-import templateStyles from './styles.css';
 
 const config = getTemplateConfig('${name}');
 
@@ -93,7 +93,7 @@ export const ${exportName}: Template = {
 
   profile: config.profile,
 
-  styles: templateStyles,
+  styles: '',
 };
 `;
 
@@ -171,16 +171,15 @@ export function ${pascal}SourcePage(props: SourcePageProps) {
 
   // TODO: Customize the layout below. The default uses the shared FilterBar + FeedResults
   // components which include all HTMX attributes for smooth partial-page updates.
-  // If you build custom filter/sort/tag links, every <a> MUST include HTMX attributes:
-  //   hx-get={url} hx-target="#source-results" hx-swap="innerHTML"
-  //   hx-push-url="true" hx-indicator="#source-loading"
-  // See TEMPLATE_GUIDE.md for the hxProps() helper pattern.
+  // Styling uses Tailwind v4 utility classes — see web/src/styles/input.css for design tokens.
+  // Available color utilities: text-text, text-muted, text-primary, bg-surface, bg-bg-page,
+  // bg-surface-raised, border-border, text-success, text-error, shadow-sm, shadow-md, etc.
 
   return (
     <${pascal}Layout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--feed">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-12 w-full flex flex-col">
         <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
 
         <div id="source-loading" class="source-loading htmx-indicator">
@@ -253,23 +252,23 @@ export function ${pascal}ItemPost(props: ItemPostProps) {
     <${pascal}Layout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--post">
-        <main class="source-main">
+      <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_200px] gap-10 items-start max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-12 w-full">
+        <main class="min-w-0 max-w-full break-words">
           <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
           {/* TODO: Customize the article layout for your template. */}
-          <article class="source-article">
+          <article class="min-w-0 max-w-full">
             <header>
-              <div class="source-category">
+              <div class="mb-3">
                 <TypeBadge typeName={item.typeName} />
                 {item.workspaceName && (
-                  <a href={\`/?workspace=\${item.workspaceId}\`} class="workspace-badge">{item.workspaceName}</a>
+                  <a href={\`/?workspace=\${item.workspaceId}\`} class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[0.7rem] font-medium text-muted/70 bg-muted/15 no-underline hover:text-primary transition-colors">{item.workspaceName}</a>
                 )}
               </div>
-              <h1>{item.keySummary}</h1>
-              <div class="post-meta">
+              <h1 class="text-2xl sm:text-3xl font-bold tracking-tight mb-3">{item.keySummary}</h1>
+              <div class="flex items-center gap-2.5 flex-wrap text-sm text-muted">
                 {githubUrl ? (
-                  <a href={githubUrl} target="_blank" rel="noopener" class="post-author">
+                  <a href={githubUrl} target="_blank" rel="noopener" class="font-medium text-muted hover:text-primary transition-colors">
                     {sourceAuthor}
                   </a>
                 ) : (
@@ -280,20 +279,20 @@ export function ${pascal}ItemPost(props: ItemPostProps) {
                 </time>
                 {showReadingTime && <span>{readingTime(item.content)}</span>}
                 {item.validationActionLabel && (
-                  <span class="validation-badge">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-success/80 bg-success-bg">
                     {item.validationActionLabel} by {sourceAuthor}
                   </span>
                 )}
               </div>
             </header>
-            <div class="content">
+            <div class="content mt-6 pt-6 border-t border-border">
               {raw(renderedContent)}
             </div>
             {item.tags && item.tags.length > 0 && (
-              <footer class="item-tags-footer">
-                <div class="item-tags">
+              <footer class="mt-6 pt-3 border-t border-border">
+                <div class="flex items-center gap-1.5 flex-wrap">
                   {item.tags.map((t) => (
-                    <a href={\`/?tag=\${encodeURIComponent(t)}\`} class="item-tag">#{t}</a>
+                    <a href={\`/?tag=\${encodeURIComponent(t)}\`} class="inline-block px-2 py-0.5 rounded text-xs font-medium text-muted/70 bg-border no-underline whitespace-nowrap hover:text-primary hover:bg-primary-focus transition-colors">#{t}</a>
                   ))}
                 </div>
               </footer>
@@ -301,7 +300,11 @@ export function ${pascal}ItemPost(props: ItemPostProps) {
           </article>
         </main>
 
-        {showToc && <TableOfContents headings={headings} />}
+        {showToc && (
+          <div class="max-xl:hidden">
+            <TableOfContents headings={headings} />
+          </div>
+        )}
       </div>
     </${pascal}Layout>
   );
@@ -310,18 +313,14 @@ export function ${pascal}ItemPost(props: ItemPostProps) {
 
 const layoutTsx = `import type { LayoutProps } from '@pignal/templates';
 import { PublicLayout } from '../../components/public-layout';
-import templateStyles from './styles.css';
 
 // TODO: If your template needs a custom header/footer or extra wrapping elements,
 // add them here around the {children}. Otherwise the default PublicLayout works out of the box.
 export function ${pascal}Layout({ title, head, sourceTitle, sourceUrl, settings, children }: LayoutProps) {
-  const styleTag = templateStyles ? \`<style>\${templateStyles}</style>\` : '';
-  const headWithStyles = (head || '') + styleTag;
-
   return (
     <PublicLayout
       title={title}
-      head={headWithStyles}
+      head={head || ''}
       sourceTitle={sourceTitle}
       sourceUrl={sourceUrl}
       settings={settings}
@@ -329,101 +328,6 @@ export function ${pascal}Layout({ title, head, sourceTitle, sourceUrl, settings,
       {children}
     </PublicLayout>
   );
-}
-`;
-
-const stylesCss = `/* ${pascal} template styles */
-/* All classes are prefixed with "${name}-" to avoid collisions. */
-
-/* TODO: Customize layout — feed, grid, magazine, etc. */
-.${name}-feed {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 1rem 0;
-}
-
-.${name}-card {
-  border: 1px solid var(--pico-muted-border-color);
-  border-radius: 0.5rem;
-  overflow: hidden;
-  background: var(--pico-card-background-color);
-  transition: box-shadow 0.2s ease;
-}
-
-.${name}-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.${name}-card-body {
-  padding: 1rem;
-}
-
-.${name}-card-body h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
-  line-height: 1.4;
-}
-
-.${name}-card-body h3 a {
-  text-decoration: none;
-  color: var(--pico-color);
-}
-
-.${name}-card-body h3 a:hover {
-  color: var(--pico-primary);
-}
-
-.${name}-card-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.5rem;
-  font-size: 0.8rem;
-  color: var(--pico-muted-color);
-}
-
-.${name}-card-description {
-  font-size: 0.85rem;
-  color: var(--pico-muted-color);
-  margin: 0 0 0.75rem;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.${name}-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-top: 1px solid var(--pico-muted-border-color);
-  font-size: 0.85rem;
-}
-
-.${name}-card-footer a {
-  color: var(--pico-primary);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.${name}-card-footer a:hover {
-  text-decoration: underline;
-}
-
-.${name}-empty {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--pico-muted-color);
-}
-
-@media (max-width: 600px) {
-  .${name}-feed {
-    gap: 1rem;
-  }
 }
 `;
 
@@ -437,7 +341,6 @@ fs.writeFileSync(path.join(templateDir, 'index.tsx'), indexTs);
 fs.writeFileSync(path.join(templateDir, 'source-page.tsx'), sourcePageTsx);
 fs.writeFileSync(path.join(templateDir, 'item-post.tsx'), itemPostTsx);
 fs.writeFileSync(path.join(templateDir, 'layout.tsx'), layoutTsx);
-fs.writeFileSync(path.join(templateDir, 'styles.css'), stylesCss);
 
 // ---------------------------------------------------------------------------
 // Auto-register in registry.ts
@@ -481,20 +384,18 @@ Files created:
     source-page.tsx   Source page (feed/list view)
     item-post.tsx     Item post page (detail view)
     layout.tsx        Layout wrapper (uses PublicLayout)
-    styles.css        Template-scoped CSS (${name}-* prefix)
 
 Registry updated:
   ${registryPath}
 
 Next steps:
   1. Add a TemplateConfig in templates/src/config.ts with vocabulary, SEO, and MCP content
-  2. Customize the card component in source-page.tsx
+  2. Customize the card component in source-page.tsx (use Tailwind utility classes)
   3. Adjust the article layout in item-post.tsx
-  4. Add your styles to styles.css (use ${name}-* prefix)
-  5. (Optional) Add a custom header/footer in layout.tsx
-  6. (Optional) Add seed data in templates/seeds/${name}.sql
-  7. Set TEMPLATE = "${name}" under [vars] in server/wrangler.toml
-  8. Run \`pnpm dev:server\` and preview at http://localhost:8787
+  4. (Optional) Add a custom header/footer in layout.tsx
+  5. (Optional) Add seed data in templates/seeds/${name}.sql
+  6. Set TEMPLATE = "${name}" under [vars] in server/wrangler.toml
+  7. Run \`pnpm css:build && pnpm dev:server\` and preview at http://localhost:8787
 
 See templates/TEMPLATE_GUIDE.md for full documentation.
 `);

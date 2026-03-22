@@ -12,9 +12,8 @@ import { csrfMiddleware } from './middleware/csrf';
 import { clearSessionCookie } from './lib/cookie';
 
 // Static assets (imported as raw text)
-import picoCSS from './static/pico.min.css';
+import tailwindCSS from './static/tailwind.css';
 import htmxJS from './static/htmx.min.js';
-import appCSS from './static/app.css';
 import appJS from './static/app.js';
 import { logoSVG } from './lib/static-versions';
 import logoPng from './static/logo.png';
@@ -92,20 +91,15 @@ export function createWebRoutes(config: WebRouteConfig) {
   });
 
   // Static assets (no auth, immutable cache)
-  router.get('/static/pico.min.css', (c) => {
+  router.get('/static/tailwind.css', (c) => {
     c.header('Content-Type', 'text/css');
     c.header('Cache-Control', 'public, max-age=31536000, immutable');
-    return c.body(picoCSS);
+    return c.body(tailwindCSS);
   });
   router.get('/static/htmx.min.js', (c) => {
     c.header('Content-Type', 'application/javascript');
     c.header('Cache-Control', 'public, max-age=31536000, immutable');
     return c.body(htmxJS);
-  });
-  router.get('/static/app.css', (c) => {
-    c.header('Content-Type', 'text/css');
-    c.header('Cache-Control', 'public, max-age=31536000, immutable');
-    return c.body(appCSS);
   });
   router.get('/static/app.js', (c) => {
     c.header('Content-Type', 'application/javascript');

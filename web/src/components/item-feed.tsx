@@ -41,33 +41,48 @@ export function ItemCard({
     : relativeTime(item.createdAt);
 
   return (
-    <article class="source-card">
-      <div class="source-card-header">
-        {isPinned && <span class="pin-indicator" title="Pinned">📌</span>}
+    <article class="py-6 border-b border-border-subtle last:border-b-0">
+      {/* Title */}
+      <h2 class="mb-2 text-lg font-semibold leading-snug">
+        <a href={detailUrl} class="text-text no-underline hover:text-primary transition-colors">{item.keySummary}</a>
+      </h2>
+
+      {/* Meta row */}
+      <div class="flex items-center gap-2.5 mb-3 text-xs text-muted flex-wrap">
+        {isPinned && <span class="text-xs text-muted italic">pinned</span>}
         <TypeBadge typeName={item.typeName} />
         {showVisibility && <VisibilityBadge visibility={item.visibility} />}
         {item.workspaceName && (
-          <span class="workspace-badge">{item.workspaceName}</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-muted/70 bg-muted/10 no-underline hover:text-primary hover:bg-primary-focus transition-colors">
+            {item.workspaceName}
+          </span>
         )}
         <time datetime={item.vouchedAt || item.createdAt}>{dateStr}</time>
         {item.validationActionLabel && (
-          <span class="validation-badge">{item.validationActionLabel}</span>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-success/80 bg-success-bg">
+            &#10003; {item.validationActionLabel}
+          </span>
         )}
       </div>
-      <h2><a href={detailUrl}>{item.keySummary}</a></h2>
-      <p class="source-card-preview">
+
+      {/* Preview */}
+      <p class="text-sm text-muted leading-relaxed line-clamp-2 mb-3">
         {stripMarkdown(item.content).slice(0, 200)}{item.content.length > 200 ? '...' : ''}
       </p>
-      {item.tags && item.tags.length > 0 && (
-        <div class="item-tags">
-          {item.tags.map((t) => (
-            <a href={`${tagBasePath}?${tagParam}=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
-          ))}
-        </div>
-      )}
-      <div class="source-card-footer">
+
+      {/* Footer: tags + reading time */}
+      <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
+        {item.tags && item.tags.length > 0 && (
+          item.tags.map((t) => (
+            <a
+              href={`${tagBasePath}?${tagParam}=${encodeURIComponent(t)}`}
+              class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium text-muted/70 bg-muted/8 border border-border-subtle no-underline whitespace-nowrap hover:text-primary hover:bg-primary-focus transition-colors"
+            >
+              #{t}
+            </a>
+          ))
+        )}
         {showReadingTime && <span>{readingTime(item.content)}</span>}
-        <a href={detailUrl}>Read more &rarr;</a>
       </div>
     </article>
   );
@@ -182,7 +197,15 @@ export function FeedResults({
   htmxTarget,
 }: FeedResultsProps) {
   if (items.length === 0) {
-    return <p class="empty-state">{emptyMessage}</p>;
+    return (
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
+        </div>
+        <p class="empty-state-title">No items found</p>
+        <p class="empty-state-description">{emptyMessage}</p>
+      </div>
+    );
   }
 
   const pinned = items.filter((i) => !!i.pinnedAt);
@@ -192,7 +215,7 @@ export function FeedResults({
   return (
     <>
       {pinned.length > 0 && (
-        <div class="timeline-group timeline-group--pinned">
+        <div>
           {pinned.map((item) => (
             <ItemCard
               item={item} basePath={basePath} tagBasePath={tagBasePath}
@@ -203,9 +226,11 @@ export function FeedResults({
           ))}
         </div>
       )}
-      {groups.map((group) => (
-        <div class="timeline-group">
-          <h3 class="timeline-heading">{group.label}</h3>
+      {groups.map((group, idx) => (
+        <div class={idx === 0 && pinned.length === 0 ? '' : 'mt-8'}>
+          <h3 class={`text-xs font-bold uppercase tracking-wide text-muted mb-2 ${idx > 0 || pinned.length > 0 ? 'border-t border-border-subtle pt-6' : ''}`}>
+            {group.label}
+          </h3>
           {group.items.map((item) => (
             <ItemCard
               item={item} basePath={basePath} tagBasePath={tagBasePath}

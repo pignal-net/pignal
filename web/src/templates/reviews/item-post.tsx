@@ -31,11 +31,11 @@ function StarDisplay({ score, max }: { score: number; max: number }) {
   const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
 
   return (
-    <span class="reviews-stars reviews-stars--large" title={`${score}/${max}`}>
+    <span class="inline-flex items-center gap-px text-primary text-xl tracking-wider" title={`${score}/${max}`}>
       {'★'.repeat(fullStars)}
-      {hasHalf && <span class="reviews-star-half">★</span>}
+      {hasHalf && <span class="opacity-40">★</span>}
       {'☆'.repeat(Math.max(0, emptyStars))}
-      <span class="reviews-score-text">{score}/{max}</span>
+      <span class="text-sm text-muted ml-1.5">{score}/{max}</span>
     </span>
   );
 }
@@ -77,27 +77,27 @@ export function ReviewsItemPost(props: ItemPostProps) {
     <ReviewsLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--post">
-        <main class="source-main">
+      <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_200px] gap-12 items-start max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
+        <main class="min-w-0 max-w-full break-words">
           <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
-          <article class="source-article reviews-article">
+          <article class="source-article min-w-0 max-w-full">
             <header>
-              <div class="source-category">
+              <div class="mb-4">
                 <TypeBadge typeName={item.typeName} />
                 {item.workspaceName && (
-                  <a href={`/?workspace=${item.workspaceId}`} class="workspace-badge">{item.workspaceName}</a>
+                  <a href={`/?workspace=${item.workspaceId}`} class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary ml-2">{item.workspaceName}</a>
                 )}
               </div>
-              <h1>{item.keySummary}</h1>
+              <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight mb-4">{item.keySummary}</h1>
               {rating && (
-                <div class="reviews-rating-block">
+                <div class="my-2 mb-3">
                   <StarDisplay score={rating.score} max={rating.max} />
                 </div>
               )}
-              <div class="post-meta">
+              <div class="flex items-center gap-2.5 flex-wrap text-sm text-muted">
                 {githubUrl ? (
-                  <a href={githubUrl} target="_blank" rel="noopener" class="post-author">
+                  <a href={githubUrl} target="_blank" rel="noopener" class="font-medium text-text hover:text-primary transition-colors">
                     {sourceAuthor}
                   </a>
                 ) : (
@@ -108,20 +108,20 @@ export function ReviewsItemPost(props: ItemPostProps) {
                 </time>
                 {showReadingTime && <span>{readingTime(item.content)}</span>}
                 {item.validationActionLabel && (
-                  <span class="validation-badge">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-success/80 bg-success/10">
                     {item.validationActionLabel} by {sourceAuthor}
                   </span>
                 )}
               </div>
             </header>
-            <div class="content reviews-content">
+            <div class="content mt-8">
               {raw(renderedContent)}
             </div>
             {item.tags && item.tags.length > 0 && (
-              <footer class="item-tags-footer">
-                <div class="item-tags">
+              <footer class="mt-10 pt-6 border-t border-border-subtle">
+                <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag text-sm text-primary hover:underline">#{t}</a>
                   ))}
                 </div>
               </footer>
@@ -129,7 +129,7 @@ export function ReviewsItemPost(props: ItemPostProps) {
           </article>
         </main>
 
-        {showToc && <TableOfContents headings={headings} />}
+        {showToc && <div class="max-xl:hidden"><TableOfContents headings={headings} /></div>}
       </div>
     </ReviewsLayout>
   );

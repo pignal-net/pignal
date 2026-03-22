@@ -34,20 +34,20 @@ export function FlashCard({ item, vocabulary }: { item: Item; vocabulary: Templa
   const backPreview = stripMarkdown(item.content).slice(0, 120);
 
   return (
-    <article class="flashcards-card">
-      <div class="flashcards-card-inner">
+    <article class="[perspective:800px] aspect-square">
+      <div class="relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] cursor-pointer hover:[transform:rotateY(180deg)]">
         {/* Front: question/prompt */}
-        <div class="flashcards-card-front">
-          <div class="flashcards-card-deck">
+        <div class="absolute inset-0 [backface-visibility:hidden] border border-border-subtle shadow-card rounded-xl overflow-hidden bg-surface flex flex-col items-center justify-center p-4 text-center z-[2]">
+          <div class="absolute top-2 left-2">
             <TypeBadge typeName={item.typeName} />
           </div>
-          <span class="flashcards-card-front-text">{item.keySummary}</span>
-          <span class="flashcards-card-hint">hover to reveal</span>
+          <span class="text-sm font-semibold leading-snug text-text line-clamp-5 max-w-full">{item.keySummary}</span>
+          <span class="absolute bottom-2 text-[0.65rem] text-muted opacity-60">hover to reveal</span>
         </div>
         {/* Back: answer preview */}
-        <div class="flashcards-card-back">
-          <span class="flashcards-card-back-text">{backPreview}{item.content.length > 120 ? '...' : ''}</span>
-          <a href={detailUrl} class="flashcards-card-back-link">Full {vocabulary.item} &rarr;</a>
+        <div class="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] border border-border rounded-xl overflow-hidden bg-primary/[0.04] flex flex-col items-center justify-center p-4 text-center">
+          <span class="text-[0.8rem] leading-relaxed text-muted line-clamp-6 max-w-full">{backPreview}{item.content.length > 120 ? '...' : ''}</span>
+          <a href={detailUrl} class="absolute bottom-2.5 text-xs text-primary no-underline font-semibold hover:underline">Full {vocabulary.item} &rarr;</a>
         </div>
       </div>
     </article>
@@ -139,15 +139,16 @@ export function FlashcardsSourcePage(props: SourcePageProps) {
     <FlashcardsLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="flashcards-page">
+      <div class="max-w-7xl mx-auto px-4 pt-8 pb-16 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
         {/* Sidebar: decks + subjects */}
-        <aside class="flashcards-sidebar">
-          <div class="flashcards-search">
+        <aside class="lg:sticky lg:top-6 text-sm max-lg:flex max-lg:gap-4 max-lg:flex-wrap max-lg:border-b max-lg:border-border-subtle max-lg:pb-4">
+          <div class="mb-4 max-lg:w-full">
             <input
               type="text"
               name="q"
               placeholder={`Search ${vocabulary.itemPlural}...`}
               value={filters.q || ''}
+              class="w-full m-0 h-9 text-sm px-3 py-1 rounded-lg border border-border bg-surface text-text"
               hx-get="/"
               hx-target={HX_TARGET}
               hx-swap="innerHTML"
@@ -159,16 +160,16 @@ export function FlashcardsSourcePage(props: SourcePageProps) {
           </div>
 
           {typesWithItems.length > 0 && (
-            <div class="flashcards-sidebar-section">
-              <div class="flashcards-sidebar-title">{vocabulary.typePlural}</div>
-              <ul class="flashcards-sidebar-list">
+            <div class="mb-6 max-lg:mb-0">
+              <div class="text-[0.7rem] font-bold uppercase tracking-wider text-muted mb-2">{vocabulary.typePlural}</div>
+              <ul class="list-none p-0 m-0 max-lg:flex max-lg:gap-1 max-lg:flex-wrap">
                 <li>
                   {(() => {
                     const url = buildFilterUrl({ workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                     return (
-                      <a href={url} class={`flashcards-sidebar-link ${!filters.typeId ? 'active' : ''}`} {...hxProps(url)}>
+                      <a href={url} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-sm transition-colors ${!filters.typeId ? 'bg-primary/10 text-primary font-semibold' : 'text-text hover:bg-primary/5 hover:text-primary'}`} {...hxProps(url)}>
                         <span>All</span>
-                        <span class="flashcards-sidebar-count">{counts.total}</span>
+                        <span class={`text-xs min-w-[1.2em] text-right ${!filters.typeId ? 'text-primary/60' : 'text-muted'}`}>{counts.total}</span>
                       </a>
                     );
                   })()}
@@ -177,9 +178,9 @@ export function FlashcardsSourcePage(props: SourcePageProps) {
                   const url = buildFilterUrl({ type: type.id, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                   return (
                     <li>
-                      <a href={url} class={`flashcards-sidebar-link ${filters.typeId === type.id ? 'active' : ''}`} {...hxProps(url)}>
+                      <a href={url} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-sm transition-colors ${filters.typeId === type.id ? 'bg-primary/10 text-primary font-semibold' : 'text-text hover:bg-primary/5 hover:text-primary'}`} {...hxProps(url)}>
                         <span>{type.icon ? `${type.icon} ` : ''}{type.name}</span>
-                        <span class="flashcards-sidebar-count">{counts.byType[type.id] ?? 0}</span>
+                        <span class={`text-xs min-w-[1.2em] text-right ${filters.typeId === type.id ? 'text-primary/60' : 'text-muted'}`}>{counts.byType[type.id] ?? 0}</span>
                       </a>
                     </li>
                   );
@@ -189,16 +190,16 @@ export function FlashcardsSourcePage(props: SourcePageProps) {
           )}
 
           {workspacesWithItems.length > 0 && (
-            <div class="flashcards-sidebar-section">
-              <div class="flashcards-sidebar-title">{vocabulary.workspacePlural}</div>
-              <ul class="flashcards-sidebar-list">
+            <div class="mb-6 max-lg:mb-0">
+              <div class="text-[0.7rem] font-bold uppercase tracking-wider text-muted mb-2">{vocabulary.workspacePlural}</div>
+              <ul class="list-none p-0 m-0 max-lg:flex max-lg:gap-1 max-lg:flex-wrap">
                 {workspacesWithItems.map((ws) => {
                   const url = buildFilterUrl({ workspace: filters.workspaceId === ws.id ? undefined : ws.id, type: filters.typeId, q: filters.q, sort: sortParam });
                   return (
                     <li>
-                      <a href={url} class={`flashcards-sidebar-link ${filters.workspaceId === ws.id ? 'active' : ''}`} {...hxProps(url)}>
+                      <a href={url} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-sm transition-colors ${filters.workspaceId === ws.id ? 'bg-primary/10 text-primary font-semibold' : 'text-text hover:bg-primary/5 hover:text-primary'}`} {...hxProps(url)}>
                         <span>{ws.name}</span>
-                        <span class="flashcards-sidebar-count">{counts.byWorkspace[ws.id] ?? 0}</span>
+                        <span class={`text-xs min-w-[1.2em] text-right ${filters.workspaceId === ws.id ? 'text-primary/60' : 'text-muted'}`}>{counts.byWorkspace[ws.id] ?? 0}</span>
                       </a>
                     </li>
                   );
@@ -211,11 +212,11 @@ export function FlashcardsSourcePage(props: SourcePageProps) {
         {/* Main content area */}
         <div>
           {filters.tag && (
-            <div class="flashcards-active-tag">
+            <div class="mb-3">
               {(() => {
                 const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                 return (
-                  <a href={url} title="Clear tag filter" {...hxProps(url)}>
+                  <a href={url} title="Clear tag filter" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium no-underline bg-primary text-white" {...hxProps(url)}>
                     #{filters.tag} &times;
                   </a>
                 );
@@ -223,17 +224,17 @@ export function FlashcardsSourcePage(props: SourcePageProps) {
             </div>
           )}
 
-          <div class="flashcards-header-bar">
-            <span class="flashcards-result-count">
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-border-subtle">
+            <span class="text-sm text-muted">
               {pagination.total} {pagination.total === 1 ? vocabulary.item : vocabulary.itemPlural}
               {activeType && <> in {activeType.name}</>}
               {activeWorkspace && <> in {activeWorkspace.name}</>}
             </span>
-            <div class="flashcards-sort">
-              <a href={newestUrl} class={`flashcards-sort-tab ${filters.sort === 'newest' ? 'active' : ''}`} {...hxProps(newestUrl)}>
+            <div class="flex">
+              <a href={newestUrl} class={`text-[0.82rem] px-3 py-1 no-underline transition-colors ${filters.sort === 'newest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(newestUrl)}>
                 Newest
               </a>
-              <a href={oldestUrl} class={`flashcards-sort-tab ${filters.sort === 'oldest' ? 'active' : ''}`} {...hxProps(oldestUrl)}>
+              <a href={oldestUrl} class={`text-[0.82rem] px-3 py-1 no-underline transition-colors ${filters.sort === 'oldest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(oldestUrl)}>
                 Oldest
               </a>
             </div>
@@ -244,10 +245,13 @@ export function FlashcardsSourcePage(props: SourcePageProps) {
           </div>
           <div id="source-results">
             {items.length === 0 ? (
-              <p class="flashcards-empty">No {vocabulary.itemPlural} found.</p>
+              <div class="empty-state">
+                <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                <p>{`No ${vocabulary.itemPlural} found.`}</p>
+              </div>
             ) : (
               <>
-                <div class="flashcards-grid">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
                   {items.map((item) => (
                     <FlashCard item={item} vocabulary={vocabulary} />
                   ))}

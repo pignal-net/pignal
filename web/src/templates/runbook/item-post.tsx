@@ -50,25 +50,25 @@ export function RunbookItemPost(props: ItemPostProps) {
     <RunbookLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="runbook-post">
-        <div class="runbook-post-main">
+      <div class="max-w-[1100px] mx-auto px-4 pt-8 pb-16 grid grid-cols-1 lg:grid-cols-[1fr_200px] gap-12 items-start">
+        <div class="min-w-0 max-w-full">
           <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
           {/* Breadcrumb */}
-          <nav class="runbook-breadcrumb" aria-label="Breadcrumb">
-            <a href="/">{sourceTitle}</a>
-            <span class="runbook-breadcrumb-sep">/</span>
+          <nav class="flex items-center gap-1.5 text-sm text-muted mb-4 flex-wrap" aria-label="Breadcrumb">
+            <a href="/" class="text-primary no-underline hover:underline">{sourceTitle}</a>
+            <span class="text-muted opacity-50">/</span>
             {item.typeName && (
               <>
-                <a href={`/?type=${item.typeId}`}>{item.typeName}</a>
-                <span class="runbook-breadcrumb-sep">/</span>
+                <a href={`/?type=${item.typeId}`} class="text-primary no-underline hover:underline">{item.typeName}</a>
+                <span class="text-muted opacity-50">/</span>
               </>
             )}
             <span>{item.keySummary}</span>
           </nav>
 
           <article class="source-article">
-            <header class="runbook-post-header">
+            <header>
               <div class="source-category">
                 <TypeBadge typeName={item.typeName} />
                 {item.workspaceName && (
@@ -76,7 +76,7 @@ export function RunbookItemPost(props: ItemPostProps) {
                 )}
               </div>
               <h1>{item.keySummary}</h1>
-              <div class="runbook-post-meta">
+              <div class="post-meta flex items-center gap-2.5 flex-wrap text-sm text-muted">
                 {githubUrl ? (
                   <a href={githubUrl} target="_blank" rel="noopener" class="post-author">
                     {sourceAuthor}
@@ -98,18 +98,18 @@ export function RunbookItemPost(props: ItemPostProps) {
 
             {/* Prerequisites callout if detected */}
             {hasPrerequisites && (
-              <div class="runbook-prerequisites">
-                <div class="runbook-prerequisites-title">Prerequisites</div>
-                <div>Check the prerequisites section below before proceeding.</div>
+              <div class="p-4 mb-6 rounded-lg bg-primary/6 border border-primary/20">
+                <div class="text-sm font-bold uppercase tracking-wide text-primary mb-2">Prerequisites</div>
+                <div class="text-sm">Check the prerequisites section below before proceeding.</div>
               </div>
             )}
 
-            <div class="runbook-post-content content">
+            <div class="mt-8 content">
               {raw(renderedContent)}
             </div>
 
             {item.tags && item.tags.length > 0 && (
-              <footer class="runbook-post-tags">
+              <footer class="mt-10 pt-6 border-t border-border-subtle">
                 <div class="item-tags">
                   {item.tags.map((t) => (
                     <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
@@ -121,7 +121,9 @@ export function RunbookItemPost(props: ItemPostProps) {
         </div>
 
         {/* Always-visible ToC */}
-        <TableOfContents headings={headings} />
+        <div class="max-xl:hidden">
+          <TableOfContents headings={headings} />
+        </div>
       </div>
     </RunbookLayout>
   );

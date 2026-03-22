@@ -41,15 +41,15 @@ export function FlashcardsItemPost(props: ItemPostProps) {
     <FlashcardsLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="flashcards-detail">
+      <div class="max-w-2xl mx-auto px-4 pt-8 pb-16">
         <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
-        <div class="flashcards-detail-card">
+        <div class="mb-8">
           {/* Front: question/prompt */}
-          <div class="flashcards-detail-front">
-            <div class="flashcards-detail-front-label">Front</div>
-            <h1>{item.keySummary}</h1>
-            <div class="flashcards-detail-meta">
+          <div class="p-8 sm:p-10 border border-border-subtle shadow-card rounded-xl bg-surface text-center mb-4">
+            <div class="text-xs uppercase tracking-wider text-muted mb-2">Front</div>
+            <h1 class="text-3xl sm:text-4xl font-bold leading-tight mb-4">{item.keySummary}</h1>
+            <div class="flex items-center gap-2.5 flex-wrap text-sm text-muted mb-4 justify-center">
               <TypeBadge typeName={item.typeName} />
               {item.workspaceName && (
                 <a href={`/?workspace=${item.workspaceId}`} class="workspace-badge">{item.workspaceName}</a>
@@ -71,8 +71,8 @@ export function FlashcardsItemPost(props: ItemPostProps) {
           </div>
 
           {/* Back: answer/content */}
-          <div class="flashcards-detail-back">
-            <div class="flashcards-detail-back-label">Back</div>
+          <div class="p-8 sm:p-10 border border-border-subtle shadow-card rounded-xl bg-primary/[0.04]">
+            <div class="text-xs uppercase tracking-wider text-muted mb-3">Back</div>
             <div class="content">
               {raw(renderedContent)}
             </div>

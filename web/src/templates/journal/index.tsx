@@ -4,7 +4,6 @@ import { JournalSourcePage } from './source-page';
 import { JournalItemPost } from './item-post';
 import { JournalLayout } from './layout';
 import { FeedResults } from '../../components/item-feed';
-import templateStyles from './styles.css';
 
 const config = getTemplateConfig('journal');
 
@@ -36,5 +35,5 @@ export const journalTemplate: Template = {
 
   profile: config.profile,
 
-  styles: templateStyles,
+  styles: '',
 };

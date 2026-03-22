@@ -10,6 +10,8 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "css:build": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./src/static/tailwind.css --minify",
+    "css:watch": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./src/static/tailwind.css --watch",
     "type-check": "tsc --noEmit",
     "check-all": "pnpm type-check"
   },
@@ -22,7 +24,9 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241112.0",
+    "@tailwindcss/cli": "^4.2.2",
     "@types/marked": "^6.0.0",
+    "tailwindcss": "^4.2.2",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
   }

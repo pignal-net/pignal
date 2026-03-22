@@ -5,7 +5,6 @@ import { AwesomeListItemPost } from './item-post';
 import { AwesomeListLayout } from './layout';
 import { Pagination } from '../../components/pagination';
 import { stripMarkdown } from '../../lib/markdown';
-import templateStyles from './styles.css';
 
 const config = getTemplateConfig('awesome-list');
 
@@ -14,28 +13,29 @@ const config = getTemplateConfig('awesome-list');
  */
 function AwesomeListPartialResults(props: PartialResultsProps) {
   if (props.items.length === 0) {
-    return <p class="empty-state">No {config.vocabulary.vouched} {config.vocabulary.itemPlural} matching this filter.</p>;
+    return <p class="text-center py-12 text-muted">No {config.vocabulary.vouched} {config.vocabulary.itemPlural} matching this filter.</p>;
   }
 
   return (
     <>
-      <ul class="awesome-list-items">
-        {props.items.map((item) => {
+      <ul class="list-none p-0 m-0">
+        {props.items.map((item, index) => {
           const desc = stripMarkdown(item.content).slice(0, 120);
+          const isLast = index === props.items.length - 1;
           return (
-            <li class="awesome-list-item">
+            <li class={`py-1.5 md:py-2 leading-relaxed ${!isLast ? 'border-b border-dotted border-border' : ''}`}>
               {item.slug ? (
-                <a href={`/item/${item.slug}`} class="awesome-list-item-title">{item.keySummary}</a>
+                <a href={`/item/${item.slug}`} class="font-medium text-primary text-sm no-underline hover:underline">{item.keySummary}</a>
               ) : (
-                <span class="awesome-list-item-title">{item.keySummary}</span>
+                <span class="font-medium text-primary text-sm">{item.keySummary}</span>
               )}
               {desc && (
-                <span class="awesome-list-item-desc"> — {desc}{item.content.length > 120 ? '...' : ''}</span>
+                <span class="text-sm text-muted"> — {desc}{item.content.length > 120 ? '...' : ''}</span>
               )}
               {item.tags && item.tags.length > 0 && (
-                <span class="awesome-list-item-tags">
+                <span class="inline-flex gap-1 ml-1.5">
                   {item.tags.slice(0, 3).map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="text-[0.7rem] text-muted hover:text-primary transition-colors">#{t}</a>
                   ))}
                 </span>
               )}
@@ -64,5 +64,5 @@ export const awesomelistTemplate: Template = {
 
   profile: config.profile,
 
-  styles: templateStyles,
+  styles: '',
 };

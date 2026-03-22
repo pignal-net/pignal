@@ -1,6 +1,6 @@
 import type { Child } from 'hono/jsx';
 import { raw } from 'hono/html';
-import { PICO_CSS_URL, APP_CSS_URL } from '../lib/static-versions';
+import { TAILWIND_CSS_URL } from '../lib/static-versions';
 
 interface LayoutProps {
   title: string;
@@ -8,18 +8,24 @@ interface LayoutProps {
   children: Child;
 }
 
+/**
+ * Inline script to set data-theme before first paint, preventing FOUC.
+ * Reads from localStorage (matching app.js behavior) and defaults to 'auto'.
+ */
+const THEME_INIT_SCRIPT = `<script>!function(){try{var t=localStorage.getItem('pignal-theme');'light'===t||'dark'===t?document.documentElement.setAttribute('data-theme',t):document.documentElement.removeAttribute('data-theme')}catch(e){}}()</script>`;
+
 export function Layout({ title, head, children }: LayoutProps) {
   return (
     <>
       {raw('<!DOCTYPE html>')}
-      <html lang="en" data-theme="light">
+      <html lang="en">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" type="image/png" href="/favicon.ico" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="stylesheet" href={PICO_CSS_URL} />
-        <link rel="stylesheet" href={APP_CSS_URL} />
+        <link rel="stylesheet" href={TAILWIND_CSS_URL} />
+        {raw(THEME_INIT_SCRIPT)}
         {head ? raw(head) : <title>{title}</title>}
       </head>
       <body class="site">
