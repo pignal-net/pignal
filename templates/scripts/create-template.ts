@@ -101,7 +101,7 @@ const sourcePageTsx = `import type { SourcePageProps } from '@pignal/templates';
 import { FilterBar } from '../../components/type-sidebar';
 import { FeedResults } from '../../components/item-feed';
 import { JsonLd } from '../../components/json-ld';
-import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr } from '../../lib/seo';
+import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { ${pascal}Layout } from './layout';
 
 export function ${pascal}SourcePage(props: SourcePageProps) {
@@ -130,11 +130,7 @@ export function ${pascal}SourcePage(props: SourcePageProps) {
   else if (activeWorkspace) pageTitle = \`\${activeWorkspace.name} | \${sourceTitle}\`;
   else if (filters.tag) pageTitle = \`#\${filters.tag} | \${sourceTitle}\`;
 
-  const githubUrl = settings.source_social_github || '';
-  const githubUsername = githubUrl.replace(/\\/$/, '').split('/').pop() || '';
-  const ogImage = githubUsername
-    ? \`https://avatars.githubusercontent.com/\${githubUsername}?s=400\`
-    : \`\${sourceUrl}/og-image.png\`;
+  const ogImage = resolveOgImage(settings, sourceUrl);
 
   const jsonLd = buildSourceJsonLd(settings, sourceUrl);
   const metaTags = buildMetaTags({
@@ -210,7 +206,7 @@ import { TypeBadge } from '../../components/type-badge';
 import { TableOfContents } from '../../components/table-of-contents';
 import { SourceActionBar } from '../../components/source-action-bar';
 import { JsonLd } from '../../components/json-ld';
-import { buildSourcePostingJsonLd, buildMetaTags } from '../../lib/seo';
+import { buildSourcePostingJsonLd, buildMetaTags, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
 import { formatDate, readingTime } from '../../lib/time';
 import { raw } from 'hono/html';
@@ -231,11 +227,7 @@ export function ${pascal}ItemPost(props: ItemPostProps) {
   const showToc = settings.source_show_toc !== 'false';
   const showReadingTime = settings.source_show_reading_time !== 'false';
 
-  // Derive OG image
-  const githubUsername = githubUrl.replace(/\\/$/, '').split('/').pop() || '';
-  const ogImage = githubUsername
-    ? \`https://avatars.githubusercontent.com/\${githubUsername}?s=400\`
-    : \`\${sourceUrl}/og-image.png\`;
+  const ogImage = resolveOgImage(settings, sourceUrl);
 
   const description = stripMarkdown(item.content).slice(0, 160);
   const jsonLd = buildSourcePostingJsonLd(item, settings, sourceUrl, description);

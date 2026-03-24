@@ -129,6 +129,11 @@ const MCP_TOOL_PERMISSIONS: Record<string, string> = {
   create_type: 'manage_types',
   vouch_item: 'edit_item',
   batch_vouch_items: 'edit_item',
+  create_action: 'manage_actions',
+  update_action: 'manage_actions',
+  list_actions: 'manage_actions',
+  list_submissions: 'manage_actions',
+  manage_submission: 'manage_actions',
 };
 
 /**

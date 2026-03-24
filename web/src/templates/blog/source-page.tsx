@@ -2,7 +2,7 @@ import type { SourcePageProps } from '@pignal/templates';
 import { FilterBar } from '../../components/type-sidebar';
 import { FeedResults } from '../../components/item-feed';
 import { JsonLd } from '../../components/json-ld';
-import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr } from '../../lib/seo';
+import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { BlogLayout } from './layout';
 
 export function BlogSourcePage(props: SourcePageProps) {
@@ -19,7 +19,6 @@ export function BlogSourcePage(props: SourcePageProps) {
   } = props;
 
   const showReadingTime = settings.source_show_reading_time !== 'false';
-  const cardStyle = settings.source_card_style;
   const sourceTitle = settings.source_title || 'My Pignal';
   const sourceDescription = settings.source_description || 'A self-hosted content platform powered by Cloudflare';
 
@@ -32,12 +31,7 @@ export function BlogSourcePage(props: SourcePageProps) {
   else if (activeWorkspace) pageTitle = `${activeWorkspace.name} | ${sourceTitle}`;
   else if (filters.tag) pageTitle = `#${filters.tag} | ${sourceTitle}`;
 
-  // Derive OG image: prefer GitHub avatar (direct URL, no redirect), fall back to branded PNG
-  const githubUrl = settings.source_social_github || '';
-  const githubUsername = githubUrl.replace(/\/$/, '').split('/').pop() || '';
-  const ogImage = githubUsername
-    ? `https://avatars.githubusercontent.com/${githubUsername}?s=400`
-    : `${sourceUrl}/og-image.png`;
+  const ogImage = resolveOgImage(settings, sourceUrl);
 
   const jsonLd = buildSourceJsonLd(settings, sourceUrl, props.seo);
   const metaTags = buildMetaTags({
@@ -77,7 +71,7 @@ export function BlogSourcePage(props: SourcePageProps) {
     <BlogLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class={`max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col${cardStyle === 'grid' ? ' source-page--grid-cards' : ''}`}>
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col">
         {!filters.typeId && !filters.workspaceId && !filters.tag && !filters.q && pagination.offset === 0 && (
           <div class="mb-10">
             <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-2">{sourceTitle}</h1>

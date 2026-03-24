@@ -1,7 +1,7 @@
 import type { SourcePageProps } from '@pignal/templates';
 import { Pagination } from '../../components/pagination';
 import { JsonLd } from '../../components/json-ld';
-import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr } from '../../lib/seo';
+import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
 import { WikiLayout } from './layout';
 
@@ -53,11 +53,7 @@ export function WikiSourcePage(props: SourcePageProps) {
   else if (activeWorkspace) pageTitle = `${activeWorkspace.name} | ${sourceTitle}`;
   else if (filters.tag) pageTitle = `#${filters.tag} | ${sourceTitle}`;
 
-  const githubUrl = settings.source_social_github || '';
-  const githubUsername = githubUrl.replace(/\/$/, '').split('/').pop() || '';
-  const ogImage = githubUsername
-    ? `https://avatars.githubusercontent.com/${githubUsername}?s=400`
-    : `${sourceUrl}/og-image.png`;
+  const ogImage = resolveOgImage(settings, sourceUrl);
 
   const jsonLd = buildSourceJsonLd(settings, sourceUrl, props.seo);
   const metaTags = buildMetaTags({

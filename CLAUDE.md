@@ -59,11 +59,11 @@ D1 migrations live in `server/migrations/`. Seed SQL files live in `templates/se
 ```
 @pignal/db          Schema + types (no business logic)
   ↑
-@pignal/core        ItemStore, route factories, validation, MCP tools (GENERIC)
+@pignal/core        ItemStore, ActionStore, route factories, validation, MCP tools, directives, webhooks, events (GENERIC)
   ↑
 @pignal/templates   Template configs, vocabulary, SEO, MCP config, schema overrides, seed SQL
   ↑
-@pignal/web         Hono JSX SSR admin dashboard + template-driven source page
+@pignal/web         Hono JSX SSR admin dashboard + template-driven source page + directive rendering + analytics
   ↑
 @pignal/server      Deployable Worker: REST + MCP + Web, D1 storage, token auth
 ```
@@ -71,20 +71,23 @@ D1 migrations live in `server/migrations/`. Seed SQL files live in `templates/se
 ### Data Flow
 
 ```
-Request → Worker → Auth Middleware → Store Middleware → Route Handler → ItemStore → D1
+Request → Worker → Auth Middleware → Store Middleware → Route Handler → ItemStore/ActionStore → D1
+                                                                     → EventBus → Webhook Dispatcher → External URL
+Public pages: Request → Source Page/Item Post → renderContentWithDirectives → DirectiveRegistry → HTML
+Form submit:  POST /form/:slug → ActionStore.submitForm → D1 + EventBus → Webhook
 ```
 
-Every request creates an `ItemStore` from D1 via middleware. The store contains all business logic.
+Every request creates an `ItemStore` and `ActionStore` from D1 via middleware. An `EventBus` connects stores to webhook delivery.
 
 ### Key Packages
 
 | Package | Path | What It Does |
 |---------|------|-------------|
-| `@pignal/db` | `db/` | Drizzle ORM schemas (`schema.ts`: items, item_types, type_actions, workspaces, settings) and TypeScript types (`ItemStoreRpc`, `ItemWithMeta`, `ListParams`, etc.). Items have a `tags` column (JSON text array). |
-| `@pignal/core` | `core/` | `ItemStore` (pure business logic accepting any Drizzle SQLite DB), route factories (`createItemRoutes`, `createTypeRoutes`, etc.), Zod validation schemas, MCP tool operations, federation (`/.well-known/pignal` handler). Template-agnostic. |
+| `@pignal/db` | `db/` | Drizzle ORM schemas (`schema.ts`: items, item_types, type_actions, workspaces, settings, site_actions, submissions, page_views) and TypeScript types (`ItemStoreRpc`, `ActionStoreRpc`, `ItemWithMeta`, etc.). |
+| `@pignal/core` | `core/` | `ItemStore` + `ActionStore` (pure business logic), route factories, Zod validation, MCP tools (15 tools), `DirectiveRegistry`, `FieldTypeRegistry`, `EventBus`, webhook dispatcher, federation. Template-agnostic. |
 | `@pignal/templates` | `templates/` | Template configs (vocabulary, SEO hints, MCP instructions, schema descriptions), `Template` interface, prop types, seed SQL |
-| `@pignal/web` | `web/` | Admin dashboard + public source page via Hono JSX SSR. HTMX for interactivity. Tailwind v4 for styling. Template JSX components (blog, shop). HMAC session cookies, CSRF protection, CSP headers, safe markdown rendering |
-| `@pignal/server` | `server/` | Wires everything together. D1 storage via `storeMiddleware`, token auth, health endpoint, mounts route factories at `/api/*`, MCP at `/mcp`, public source page at `/`, admin UI at `/pignal`, `/.well-known/pignal` for federation |
+| `@pignal/web` | `web/` | Admin dashboard + public source page via Hono JSX SSR. HTMX for interactivity. Tailwind v4 for styling. Template JSX components. Content directive rendering. CTA blocks. Testimonials. Page view analytics middleware. |
+| `@pignal/server` | `server/` | Wires everything together. D1 storage, token auth, mounts route factories at `/api/*`, MCP at `/mcp`, public forms at `/form/*`, public source page at `/`, admin UI at `/pignal`, `/.well-known/pignal` for federation |
 
 ### Route Factory Pattern
 
@@ -97,7 +100,7 @@ type RouteFactoryConfig = {
 };
 ```
 
-The server creates an `ItemStore(drizzle(env.DB))` in middleware.
+The server creates `ItemStore` and `ActionStore` from `drizzle(env.DB)` in middleware, along with `EventBus` and `FieldTypeRegistry`.
 
 ### Two Auth Modes
 
@@ -125,30 +128,58 @@ The public source page (`/`) supports filtering by type (`?type=`), workspace (`
 
 Every instance serves `/.well-known/pignal` with owner info, capabilities, stats, and API endpoints for cross-instance discovery.
 
+### Site Actions (Forms & Lead Capture)
+
+A generic system for all form-like interactions: contact forms, newsletter signup, lead capture, booking requests, feedback. Two tables: `site_actions` (form definitions with JSON field array) and `submissions` (submitted data as JSON). Managed via REST API, admin dashboard, or MCP tools.
+
+### Content Directives
+
+Special tokens in markdown content (`{{name:param}}`) that get replaced with interactive components during rendering. Three built-in directives:
+- `{{action:slug}}` — Renders an inline form (from site_actions)
+- `{{cta:title="..." button="..." action="slug"}}` — Renders an inline CTA block
+- `{{testimonials}}` — Renders a testimonial card grid from vouched items
+
+Extensible via `DirectiveRegistry` — add new directive types by implementing `DirectiveHandler` and registering it.
+
+### Webhooks
+
+Fire-and-forget HTTP webhooks on business events. Configured via settings (`webhook_url`, `webhook_events`, `webhook_secret`). Events: `submission.created`, `item.published`. HMAC-SHA256 signed payloads with `X-Pignal-Signature` header. Uses `EventBus` — add new event types or listeners without modifying stores.
+
+### Page View Analytics
+
+Lightweight server-side view counting on public pages (`/`, `/item/:slug`). No cookies, no JS, no external deps. Tracks path, slug, referrer, and country (from `CF-IPCountry` header). Non-blocking via `waitUntil()`. Stored in `page_views` table.
+
 ## Key Source Locations
 
-- **ItemStore**: `core/src/store/item-store.ts` — All CRUD, search, stats, settings (60s cache), vouch/slug management
-- **Permissions**: `core/src/auth/permissions.ts` — Flat permission definitions (9 permissions: `save_item`, `list_items`, `edit_item`, `delete_item`, `validate_item`, `get_metadata`, `manage_types`, `manage_workspaces`, `manage_settings`) + `hasPermission`, `parsePermissions`, `validatePermissions`
-- **Route factories**: `core/src/routes/` — items, types, workspaces, stats, settings, public
-- **Validation schemas**: `core/src/validation/schemas.ts` — Zod schemas with hard limits + MCP tool schemas (includes `tags` array validation)
-- **MCP tools**: `core/src/mcp/tools.ts` — save_item, list_items, search_items, validate_item, get_metadata operations
+- **ItemStore**: `core/src/store/item-store.ts` — All item CRUD, search, stats, settings (60s cache), vouch/slug management, event emission
+- **ActionStore**: `core/src/store/action-store.ts` — Site actions (forms) CRUD, form submission with field validation, submission management, CSV export
+- **Permissions**: `core/src/auth/permissions.ts` — Flat permission definitions (10 permissions: `save_item`, `list_items`, `edit_item`, `delete_item`, `validate_item`, `get_metadata`, `manage_types`, `manage_workspaces`, `manage_settings`, `manage_actions`) + `hasPermission`, `parsePermissions`, `validatePermissions`
+- **Route factories**: `core/src/routes/` — items, types, workspaces, stats, settings, public, actions, submissions, forms
+- **Validation schemas**: `core/src/validation/schemas.ts` — Zod schemas with hard limits + MCP tool schemas for items and actions
+- **MCP tools**: `core/src/mcp/tools.ts` — 15 operations: save_item, list_items, search_items, validate_item, update_item, vouch_item, batch_vouch, create_workspace, create_type, get_metadata, create_action, update_action, list_actions, list_submissions, manage_submission
+- **DirectiveRegistry**: `core/src/directives/registry.ts` — `DirectiveRegistry` class, `DirectiveHandler` interface, `DirectiveParams`, `DirectiveContext` types. Extensible `{{name:param}}` system.
+- **FieldTypeRegistry**: `core/src/actions/field-types.ts` — `FieldTypeRegistry` class with 8 built-in field type handlers (text, email, textarea, select, url, tel, number, checkbox)
+- **EventBus**: `core/src/events/event-bus.ts` — Lightweight event system with wildcard support. Used by webhooks.
+- **Webhook dispatcher**: `core/src/webhooks/dispatcher.ts` — `createWebhookListener()` factory, HMAC-SHA256 signing, fire-and-forget delivery
 - **Template configs**: `templates/src/config.ts` — TemplateConfig, vocabulary, SEO hints, MCP config with schemaDescriptions
 - **Template types**: `templates/src/types.ts` — Template interface, SourcePageProps, ItemPostProps, LayoutProps
 - **Template seeds**: `templates/seeds/` — blog.sql, shop.sql (seed data per template)
 - **Federation**: `core/src/federation/` — `well-known.ts` (handler), `types.ts` (WellKnownResponse, etc.)
-- **DB schema**: `db/src/schema.ts` — 5 tables (items, item_types, type_actions, workspaces, settings) + api_keys. Items include `tags` (JSON text array).
-- **TypeScript types**: `db/src/types.ts` — `ItemStoreRpc` interface, all data types (`ItemWithMeta`, `ItemSelect`, etc.)
-- **Web templates**: `web/src/templates/` — Template JSX components: `registry.ts` (lookup), `blog/` (default), `shop/` (grid catalog). All styling via Tailwind utility classes. Types/config in `@pignal/templates`.
-- **Design tokens / input CSS**: `web/src/styles/input.css` — `@theme` block (colors, shadows, radii, typography), dark mode overrides, base layer styles, `@layer components` classes. Built to `web/src/static/tailwind.css` via `pnpm css:build`.
-- **SVG icons**: `web/src/components/icons.tsx` — 16 shared inline SVG icon components (IconSun, IconMoon, IconMonitor, IconGitHub, IconTwitter, IconRSS, IconHamburger, IconExternalLink, IconChevronLeft, IconChevronDown, IconLogout, IconKey, IconSettings, IconList, IconTag, IconEmptyInbox).
-- **Theme engine**: `web/src/lib/theme.ts` — Generates `--tw-*` CSS custom properties from source settings for per-source color customization. Exports `buildThemeCss`, `buildThemeStyleTag`, `THEME_TOKENS`.
-- **Web pages**: `web/src/pages/` — Hono JSX components (dashboard at `/pignal`, items, source-page at `/` with type/workspace/tag filtering, item-post at `/item/:slug`, settings, api-keys)
-- **Web middleware**: `web/src/middleware/` — session (protects `/pignal/*`), CSRF, security headers
-- **Server entry**: `server/src/index.ts` — Hono app, mounts all routes
-- **Store middleware**: `server/src/middleware/store.ts` — Creates ItemStore from D1
+- **DB schema**: `db/src/schema.ts` — 8 tables (items, item_types, type_actions, workspaces, settings, api_keys, site_actions, submissions, page_views)
+- **TypeScript types**: `db/src/types.ts` — `ItemStoreRpc`, `ActionStoreRpc` interfaces, all data types
+- **Web templates**: `web/src/templates/` — Template JSX components: `registry.ts` (lookup), `blog/` (default), `shop/` (grid catalog). All styling via Tailwind utility classes.
+- **Web directives**: `web/src/lib/directives.ts` — Directive rendering (action forms, CTAs, testimonials) + `renderContentWithDirectives()`
+- **Web components (business)**: `web/src/components/action-form.tsx` (dynamic form renderer), `cta-block.tsx` (HeroCta, PostCta, StickyCta, InlineCta), `testimonials.tsx` (testimonial card grid)
+- **Design tokens / input CSS**: `web/src/styles/input.css` — `@theme` block, dark mode, base layer, `@layer components` classes
+- **SVG icons**: `web/src/components/icons.tsx` — Shared inline SVG icon components
+- **Theme engine**: `web/src/lib/theme.ts` — CSS custom property generation from source settings
+- **Web pages**: `web/src/pages/` — dashboard, items, source-page, item-post, settings, api-keys, actions (form management), submissions (lead management)
+- **Web middleware**: `web/src/middleware/` — session, CSRF, security headers, analytics (page view tracking)
+- **Server entry**: `server/src/index.ts` — Hono app, mounts all routes including `/api/actions`, `/api/submissions`, `/form/*`
+- **Store middleware**: `server/src/middleware/store.ts` — Creates ItemStore, ActionStore, EventBus, FieldTypeRegistry from D1
 - **Permission middleware**: `server/src/middleware/permission-auth.ts` — `requirePermission`, `requireByMethod`, `resolveItemPermission`, `mcpPermissionCheck`
 - **Token auth**: `server/src/middleware/token-auth.ts` — Bearer token validation (SERVER_TOKEN → admin, API keys → flat permissions)
-- **MCP agent**: `server/src/mcp/agent.ts` — `SelfHostedMcpAgent` with 10 registered tools, applies template `schemaDescriptions`
+- **MCP agent**: `server/src/mcp/agent.ts` — `SelfHostedMcpAgent` with 15 registered tools, applies template `schemaDescriptions`
 
 ## Template System
 
@@ -454,6 +485,45 @@ Print media hides navigation, filters, TOC, back-to-top, theme toggle, and foote
 ### The `TEMPLATE` Environment Variable
 
 The active template is set via the `TEMPLATE` env var in `wrangler.toml` under `[vars]` (defaults to `blog`). When changed and redeployed, the public source page renders using the new template's components, vocabulary, and styles.
+
+## URL Structure
+
+| Path | Auth | Description |
+|------|------|-------------|
+| `/` | No | Public source page (template-driven) |
+| `/item/:slug` | No | Public item post page |
+| `/item/:slug.md` | No | Raw markdown of item |
+| `/s/:token` | No | Unlisted item (share token) |
+| `/form/:slug` | No | Public form submission (GET: definition, POST: submit) |
+| `/feed.xml` | No | Atom RSS feed |
+| `/sitemap.xml` | No | Sitemap |
+| `/llms.txt` | No | LLM-readable summary |
+| `/.well-known/pignal` | No | Federation discovery |
+| `/api/items` | Bearer | Item CRUD |
+| `/api/types` | Bearer | Type management |
+| `/api/workspaces` | Bearer | Workspace management |
+| `/api/settings` | Bearer | Settings management |
+| `/api/actions` | Bearer | Site action (form) management |
+| `/api/submissions` | Bearer | Submission management |
+| `/api/public/items` | No | Public item list (JSON) |
+| `/mcp` | Bearer | MCP endpoint (SSE) |
+| `/pignal` | Session | Admin dashboard |
+| `/pignal/items` | Session | Item management |
+| `/pignal/actions` | Session | Form management |
+| `/pignal/submissions` | Session | Submission management |
+| `/pignal/settings` | Session | Settings (including CTA, webhooks) |
+
+## Extensibility Points
+
+| Extension | Pattern | How to Add |
+|-----------|---------|------------|
+| New directive | `DirectiveHandler` + registry | Implement handler, call `registry.register()` |
+| New form field type | `FieldTypeHandler` + registry | Implement handler, call `fieldTypes.register()` |
+| New event listener | `EventBus.on()` | Add listener (e.g., email on submission) |
+| New webhook event | `EventBus` | Emit from store, webhook listener auto-fires |
+| New MCP tool | `manifest.ts` + `tools.ts` | Follow existing tool pattern |
+| New permission | `VALID_PERMISSIONS` array | Add to array, enforce in middleware |
+| New settings | `ALLOWED_SETTINGS_KEYS` | Add key (additive only, never remove) |
 
 ## Code Conventions
 

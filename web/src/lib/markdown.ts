@@ -123,6 +123,7 @@ export function renderMarkdown(content: string, preNormalized = false): string {
  */
 export function stripMarkdown(content: string): string {
   return content
+    .replace(/\{\{[^}]*\}\}/g, '') // strip directive syntax ({{action:slug}}, {{cta:...}}, etc.)
     .replace(/#{1,6}\s/g, '')
     .replace(/\*\*(.+?)\*\*/g, '$1')
     .replace(/\*(.+?)\*/g, '$1')

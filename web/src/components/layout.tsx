@@ -5,6 +5,7 @@ import { TAILWIND_CSS_URL } from '../lib/static-versions';
 interface LayoutProps {
   title: string;
   head?: string;
+  faviconUrl?: string;
   children: Child;
 }
 
@@ -14,7 +15,7 @@ interface LayoutProps {
  */
 const THEME_INIT_SCRIPT = `<script>!function(){try{var t=localStorage.getItem('pignal-theme');'light'===t||'dark'===t?document.documentElement.setAttribute('data-theme',t):document.documentElement.removeAttribute('data-theme')}catch(e){}}()</script>`;
 
-export function Layout({ title, head, children }: LayoutProps) {
+export function Layout({ title, head, faviconUrl, children }: LayoutProps) {
   return (
     <>
       {raw('<!DOCTYPE html>')}
@@ -22,8 +23,13 @@ export function Layout({ title, head, children }: LayoutProps) {
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" type="image/png" href="/favicon.ico" />
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        {faviconUrl
+          ? <link rel="icon" href={faviconUrl} />
+          : <>
+              <link rel="icon" type="image/png" href="/favicon.ico" />
+              <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+            </>
+        }
         <link rel="stylesheet" href={TAILWIND_CSS_URL} />
         {raw(THEME_INIT_SCRIPT)}
         {head ? raw(head) : <title>{title}</title>}

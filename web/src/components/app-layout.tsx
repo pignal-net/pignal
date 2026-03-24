@@ -16,6 +16,8 @@ const ALL_NAV = [
   { href: '/pignal/items', label: 'Items' },
   { href: '/pignal/types', label: 'Types' },
   { href: '/pignal/workspaces', label: 'Workspaces' },
+  { href: '/pignal/actions', label: 'Actions' },
+  { href: '/pignal/submissions', label: 'Submissions' },
   { href: '/pignal/api-keys', label: 'API Keys' },
   { href: '/pignal/settings', label: 'Settings' },
 ];
@@ -157,6 +159,13 @@ export function AppLayout({
             </a>
           </div>
         </footer>
+
+        {/* Reusable form dialog */}
+        <div id="app-dialog" class="confirm-overlay">
+          <div class="app-dialog-panel">
+            <div id="app-dialog-content"></div>
+          </div>
+        </div>
 
         <script src={HTMX_JS_URL}></script>
         <script src={APP_JS_URL}></script>

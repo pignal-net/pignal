@@ -1,9 +1,9 @@
 import type { ItemPostProps } from '@pignal/templates';
 import { TypeBadge } from '../../components/type-badge';
-import { TableOfContents } from '../../components/table-of-contents';
+
 import { SourceActionBar } from '../../components/source-action-bar';
 import { JsonLd } from '../../components/json-ld';
-import { buildSourcePostingJsonLd, buildMetaTags } from '../../lib/seo';
+import { buildSourcePostingJsonLd, buildMetaTags, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
 import { formatDate, readingTime } from '../../lib/time';
 import { raw } from 'hono/html';
@@ -14,7 +14,7 @@ export function WikiItemPost(props: ItemPostProps) {
     item,
     settings,
     renderedContent,
-    headings,
+    headings: _headings,
     sourceUrl,
     sourceAuthor,
     githubUrl,
@@ -22,13 +22,9 @@ export function WikiItemPost(props: ItemPostProps) {
   } = props;
 
   const sourceTitle = settings.source_title || 'My Knowledge Base';
-  const showToc = settings.source_show_toc !== 'false';
   const showReadingTime = settings.source_show_reading_time !== 'false';
 
-  const githubUsername = githubUrl.replace(/\/$/, '').split('/').pop() || '';
-  const ogImage = githubUsername
-    ? `https://avatars.githubusercontent.com/${githubUsername}?s=400`
-    : `${sourceUrl}/og-image.png`;
+  const ogImage = resolveOgImage(settings, sourceUrl);
 
   const description = stripMarkdown(item.content).slice(0, 160);
   const jsonLd = buildSourcePostingJsonLd(item, settings, sourceUrl, description, props.seo);
@@ -45,7 +41,7 @@ export function WikiItemPost(props: ItemPostProps) {
     <WikiLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="max-w-[1100px] mx-auto px-4 pt-8 pb-16 grid grid-cols-1 xl:grid-cols-[1fr_200px] gap-12 items-start">
+      <div class="max-w-4xl mx-auto px-4 pt-8 pb-16">
         <div class="min-w-0 max-w-full">
           <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
 
@@ -101,12 +97,6 @@ export function WikiItemPost(props: ItemPostProps) {
             )}
           </article>
         </div>
-
-        {showToc && (
-          <div class="max-xl:hidden">
-            <TableOfContents headings={headings} />
-          </div>
-        )}
       </div>
     </WikiLayout>
   );

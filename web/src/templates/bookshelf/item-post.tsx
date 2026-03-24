@@ -2,7 +2,7 @@ import type { ItemPostProps } from '@pignal/templates';
 import { TypeBadge } from '../../components/type-badge';
 import { SourceActionBar } from '../../components/source-action-bar';
 import { JsonLd } from '../../components/json-ld';
-import { buildSourcePostingJsonLd, buildMetaTags } from '../../lib/seo';
+import { buildSourcePostingJsonLd, buildMetaTags, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
 import { formatDate } from '../../lib/time';
 import { raw } from 'hono/html';
@@ -21,10 +21,7 @@ export function BookshelfItemPost(props: ItemPostProps) {
 
   const sourceTitle = settings.source_title || `My ${vocabulary.itemPlural.charAt(0).toUpperCase() + vocabulary.itemPlural.slice(1)}`;
 
-  const githubUsername = githubUrl.replace(/\/$/, '').split('/').pop() || '';
-  const ogImage = githubUsername
-    ? `https://avatars.githubusercontent.com/${githubUsername}?s=400`
-    : `${sourceUrl}/og-image.png`;
+  const ogImage = resolveOgImage(settings, sourceUrl);
 
   const description = stripMarkdown(item.content).slice(0, 160);
   const excerpt = stripMarkdown(item.content).slice(0, 300);

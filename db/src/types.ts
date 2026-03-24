@@ -5,9 +5,22 @@ import type {
   WorkspaceSelect,
   SettingSelect,
   ApiKeySelect,
+  SiteActionSelect,
+  SubmissionSelect,
+  PageViewSelect,
 } from './schema';
 
-export type { ItemSelect, ItemTypeSelect, TypeActionSelect, WorkspaceSelect, SettingSelect, ApiKeySelect };
+export type {
+  ItemSelect,
+  ItemTypeSelect,
+  TypeActionSelect,
+  WorkspaceSelect,
+  SettingSelect,
+  ApiKeySelect,
+  SiteActionSelect,
+  SubmissionSelect,
+  PageViewSelect,
+};
 
 export interface ApiKeyInfo {
   id: string;
@@ -196,4 +209,101 @@ export interface ItemStoreRpc {
   listPublic(params?: ListParams): Promise<{ items: ItemWithMeta[]; total: number }>;
   listPublicCounts(params?: { tag?: string; q?: string }): Promise<{ total: number; byType: Record<string, number>; byWorkspace: Record<string, number>; byWorkspaceType: Record<string, Record<string, number>> }>;
   listCounts(params?: { tag?: string; q?: string; isArchived?: boolean }): Promise<{ total: number; byType: Record<string, number>; byWorkspace: Record<string, number>; byWorkspaceType: Record<string, Record<string, number>> }>;
+}
+
+// --- Site Actions types ---
+
+/** Supported form field types. Extensible via FieldTypeRegistry. */
+export type SiteActionFieldType = 'text' | 'email' | 'textarea' | 'select' | 'url' | 'tel' | 'number' | 'checkbox';
+
+/** A single field definition within a site action form. */
+export interface SiteActionField {
+  name: string;
+  type: SiteActionFieldType;
+  label: string;
+  required?: boolean;
+  placeholder?: string;
+  maxLength?: number;
+  options?: { value: string; label: string }[];
+}
+
+/** Per-action settings stored as JSON in the settings column. */
+export interface SiteActionSettings {
+  success_message?: string;
+  redirect_url?: string;
+  require_honeypot?: boolean;
+  webhook_url?: string;
+  rate_limit_per_hour?: number;
+}
+
+export type SiteActionStatus = 'active' | 'paused' | 'archived';
+export type SubmissionStatus = 'new' | 'read' | 'replied' | 'archived' | 'spam';
+
+export interface CreateActionParams {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  fields: SiteActionField[];
+  settings?: SiteActionSettings;
+}
+
+export interface UpdateActionParams {
+  name?: string;
+  slug?: string;
+  description?: string | null;
+  fields?: SiteActionField[];
+  settings?: SiteActionSettings;
+  status?: SiteActionStatus;
+}
+
+export interface ListSubmissionsParams {
+  actionId?: string;
+  status?: SubmissionStatus;
+  limit?: number;
+  offset?: number;
+}
+
+export interface SubmissionMeta {
+  ipHash?: string;
+  referrer?: string;
+}
+
+export interface SubmissionWithAction {
+  id: string;
+  actionId: string;
+  actionName: string;
+  actionSlug: string;
+  data: Record<string, string>;
+  status: string;
+  ipHash: string | null;
+  referrer: string | null;
+  createdAt: string;
+}
+
+export interface ActionStats {
+  totalActions: number;
+  totalSubmissions: number;
+  byAction: Record<string, number>;
+  byStatus: Record<string, number>;
+}
+
+/** Interface for site action + submission operations. Implemented by ActionStore. */
+export interface ActionStoreRpc {
+  // Site Actions CRUD
+  listActions(params?: { status?: SiteActionStatus }): Promise<SiteActionSelect[]>;
+  getAction(id: string): Promise<SiteActionSelect | null>;
+  getActionBySlug(slug: string): Promise<SiteActionSelect | null>;
+  createAction(params: CreateActionParams): Promise<SiteActionSelect>;
+  updateAction(id: string, params: UpdateActionParams): Promise<SiteActionSelect | null>;
+  deleteAction(id: string): Promise<boolean>;
+
+  // Submissions
+  submitForm(actionSlug: string, data: Record<string, string>, meta: SubmissionMeta): Promise<SubmissionSelect>;
+  listSubmissions(params: ListSubmissionsParams): Promise<{ submissions: SubmissionWithAction[]; total: number }>;
+  getSubmission(id: string): Promise<SubmissionWithAction | null>;
+  updateSubmissionStatus(id: string, status: SubmissionStatus): Promise<boolean>;
+  deleteSubmission(id: string): Promise<boolean>;
+  exportSubmissions(actionId: string, format: 'json' | 'csv'): Promise<string>;
+  submissionStats(): Promise<ActionStats>;
 }

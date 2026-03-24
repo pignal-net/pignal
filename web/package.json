@@ -19,6 +19,7 @@
     "@pignal/core": "workspace:*",
     "@pignal/db": "workspace:*",
     "@pignal/templates": "workspace:*",
+    "drizzle-orm": "^0.45.1",
     "hono": "^4.6.0",
     "marked": "^15.0.0"
   },

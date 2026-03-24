@@ -107,34 +107,59 @@ export const ALLOWED_SETTINGS_KEYS = new Set([
   'owner_name',
   'source_title',
   'source_description',
-  'source_url',
   'source_logo_text',
   // Social
   'source_social_github',
   'source_social_twitter',
   'source_social_linkedin',
+  'source_social_mastodon',
+  'source_social_youtube',
+  'source_social_website',
   // Display
   'source_posts_per_page',
   'source_show_toc',
   'source_show_reading_time',
-  'source_card_style',
   'source_code_theme',
   'source_custom_footer',
   // Customization (admin-only: allows arbitrary CSS/HTML)
   'source_custom_css',
   'source_custom_head',
-  // Theme colors
-  'source_color_primary',
-  'source_color_secondary',
-  'source_color_background',
-  'source_color_text',
-  'source_color_muted',
+  // Theme
+  'source_color_accent',
+  // Branding
+  'source_favicon_url',
+  'source_logo_url',
+  'source_og_image_url',
+  'source_font_heading',
+  'source_font_body',
   // Content quality
   'quality_guidelines',
   'validation_limits',
   'max_actions_per_type',
-  // Template
-  'source_template',
+  // CTA settings
+  'cta_hero_enabled',
+  'cta_hero_title',
+  'cta_hero_description',
+  'cta_hero_button_text',
+  'cta_hero_button_url',
+  'cta_hero_action_slug',
+  'cta_post_enabled',
+  'cta_post_title',
+  'cta_post_description',
+  'cta_post_button_text',
+  'cta_post_button_url',
+  'cta_post_action_slug',
+  'cta_sticky_enabled',
+  'cta_sticky_text',
+  'cta_sticky_button_text',
+  'cta_sticky_button_url',
+  'cta_sticky_action_slug',
+  // Webhooks
+  'webhook_url',
+  'webhook_events',
+  'webhook_secret',
+  // Testimonials
+  'testimonial_type_name',
 ]);
 
 export const updateSettingSchema = z.object({
@@ -363,6 +388,90 @@ export const batchVouchItemsToolSchema = z.object({
     .describe('Array of items to vouch (max 50 per batch).'),
 });
 
+// --- Site Action schemas ---
+
+export const siteActionFieldSchema = z.object({
+  name: z.string().min(1).max(50).regex(/^[a-z0-9_]+$/),
+  type: z.enum(['text', 'email', 'textarea', 'select', 'url', 'tel', 'number', 'checkbox']),
+  label: z.string().min(1).max(100),
+  required: z.boolean().optional().default(false),
+  placeholder: z.string().max(200).optional(),
+  maxLength: z.number().int().min(1).max(10000).optional(),
+  options: z.array(z.object({ value: z.string().min(1), label: z.string().min(1) })).optional(),
+});
+
+export const siteActionSettingsSchema = z.object({
+  success_message: z.string().max(500).optional(),
+  redirect_url: z.string().url().max(2000).optional(),
+  require_honeypot: z.boolean().optional(),
+  webhook_url: z.string().url().max(2000).optional(),
+  rate_limit_per_hour: z.number().int().min(1).max(1000).optional(),
+});
+
+export const createSiteActionSchema = z.object({
+  name: z.string().min(1).max(100),
+  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
+  description: z.string().max(500).optional(),
+  fields: z.array(siteActionFieldSchema).min(1).max(20),
+  settings: siteActionSettingsSchema.optional(),
+});
+
+export const updateSiteActionSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/).optional(),
+  description: z.string().max(500).nullable().optional(),
+  fields: z.array(siteActionFieldSchema).min(1).max(20).optional(),
+  settings: siteActionSettingsSchema.optional(),
+  status: z.enum(['active', 'paused', 'archived']).optional(),
+});
+
+export const listSubmissionsQuerySchema = z.object({
+  actionId: z.string().optional(),
+  status: z.enum(['new', 'read', 'replied', 'archived', 'spam']).optional(),
+  limit: z.coerce.number().min(1).max(100).optional().default(50),
+  offset: z.coerce.number().min(0).optional().default(0),
+});
+
+export const updateSubmissionStatusSchema = z.object({
+  status: z.enum(['new', 'read', 'replied', 'archived', 'spam']),
+});
+
+// --- MCP tool schemas for Site Actions ---
+
+export const createActionToolSchema = z.object({
+  name: z.string().min(1).max(100).describe('Display name for the form (e.g., "Contact Form", "Newsletter Signup").'),
+  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/).describe('URL-safe identifier. Use in content as {{action:slug}} to embed the form inline.'),
+  description: z.string().max(500).optional().describe('Optional description shown above the form.'),
+  fields: z.array(siteActionFieldSchema).min(1).max(20).describe('Form field definitions. Each field has name, type, label, and optional validation.'),
+  settings: siteActionSettingsSchema.optional().describe('Optional settings: success_message, redirect_url, webhook_url, require_honeypot.'),
+});
+
+export const updateActionToolSchema = z.object({
+  actionId: z.string().describe('ID of the action to update (from list_actions).'),
+  name: z.string().min(1).max(100).optional().describe('Updated display name.'),
+  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/).optional().describe('Updated slug.'),
+  description: z.string().max(500).nullable().optional().describe('Updated description, or null to clear.'),
+  fields: z.array(siteActionFieldSchema).min(1).max(20).optional().describe('Updated field definitions (replaces all fields).'),
+  settings: siteActionSettingsSchema.optional().describe('Updated settings (merged with existing).'),
+  status: z.enum(['active', 'paused', 'archived']).optional().describe('Updated status.'),
+});
+
+export const listActionsToolSchema = z.object({
+  status: z.enum(['active', 'paused', 'archived']).optional().describe('Filter by status. Omit to list all.'),
+});
+
+export const listSubmissionsToolSchema = z.object({
+  actionId: z.string().optional().describe('Filter by action ID. Omit to list all submissions.'),
+  status: z.enum(['new', 'read', 'replied', 'archived', 'spam']).optional().describe('Filter by submission status.'),
+  limit: z.number().min(1).max(50).optional().default(20).describe('Number of results.'),
+  offset: z.number().min(0).optional().default(0).describe('Pagination offset.'),
+});
+
+export const manageSubmissionToolSchema = z.object({
+  submissionId: z.string().describe('ID of the submission to update.'),
+  status: z.enum(['new', 'read', 'replied', 'archived', 'spam']).describe('New status for the submission.'),
+});
+
 export type SaveItemToolInput = z.infer<typeof saveItemToolSchema>;
 export type ListItemsToolInput = z.infer<typeof listItemsToolSchema>;
 export type SearchItemsToolInput = z.infer<typeof searchItemsToolSchema>;
@@ -372,3 +481,10 @@ export type CreateWorkspaceToolInput = z.infer<typeof createWorkspaceToolSchema>
 export type CreateTypeToolInput = z.infer<typeof createTypeToolSchema>;
 export type VouchItemToolInput = z.infer<typeof vouchItemToolSchema>;
 export type BatchVouchItemsToolInput = z.infer<typeof batchVouchItemsToolSchema>;
+export type CreateSiteActionInput = z.infer<typeof createSiteActionSchema>;
+export type UpdateSiteActionInput = z.infer<typeof updateSiteActionSchema>;
+export type CreateActionToolInput = z.infer<typeof createActionToolSchema>;
+export type UpdateActionToolInput = z.infer<typeof updateActionToolSchema>;
+export type ListActionsToolInput = z.infer<typeof listActionsToolSchema>;
+export type ListSubmissionsToolInput = z.infer<typeof listSubmissionsToolSchema>;
+export type ManageSubmissionToolInput = z.infer<typeof manageSubmissionToolSchema>;

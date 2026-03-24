@@ -5,7 +5,7 @@ import type { WebEnv } from '../types';
 import { AppLayout } from '../components/app-layout';
 import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
-import { THEME_TOKENS, THEME_SETTING_KEYS, isValidHexColor } from '../lib/theme';
+import { FONT_OPTIONS, isValidHexColor } from '../lib/theme';
 import { raw } from 'hono/html';
 
 type WebVars = { store: ItemStoreRpc };
@@ -15,21 +15,24 @@ type WebVars = { store: ItemStoreRpc };
 const DEFAULTS: Record<string, string> = {
   owner_name: 'Pignal',
   source_posts_per_page: '20',
-  source_show_toc: 'true',
   source_show_reading_time: 'true',
-  source_card_style: 'list',
   source_code_theme: 'default',
   source_logo_text: '',
+  source_logo_url: '',
+  source_favicon_url: '',
+  source_og_image_url: '',
+  source_font_heading: '',
+  source_font_body: '',
   source_social_github: '',
   source_social_twitter: '',
+  source_social_linkedin: '',
+  source_social_mastodon: '',
+  source_social_youtube: '',
+  source_social_website: '',
   source_custom_footer: '',
   source_custom_css: '',
   source_custom_head: '',
-  source_color_primary: '',
-  source_color_secondary: '',
-  source_color_background: '',
-  source_color_text: '',
-  source_color_muted: '',
+  source_color_accent: '',
   max_actions_per_type: '3',
 };
 
@@ -55,39 +58,52 @@ interface FieldConfig {
 
 const CATEGORIES = [
   {
-    title: 'Profile',
-    slug: 'profile',
-    description: 'Your identity, branding, and social links',
+    title: 'Identity',
+    slug: 'identity',
+    description: 'Your name and site metadata',
+    keys: ['owner_name', 'source_title', 'source_description'],
+  },
+  {
+    title: 'Branding',
+    slug: 'branding',
+    description: 'Logo, favicon, fonts, and Open Graph image',
     keys: [
-      'owner_name',
-      'source_social_github',
-      'source_social_twitter',
       'source_logo_text',
-      'source_custom_footer',
+      'source_logo_url',
+      'source_favicon_url',
+      'source_og_image_url',
+      'source_font_heading',
+      'source_font_body',
     ],
   },
   {
-    title: 'Source Page',
-    slug: 'source-page',
-    description: 'Public source page metadata',
-    keys: ['source_title', 'source_description'],
+    title: 'Social Links',
+    slug: 'social',
+    description: 'Social profiles shown in the navigation bar',
+    keys: [
+      'source_social_github',
+      'source_social_twitter',
+      'source_social_linkedin',
+      'source_social_mastodon',
+      'source_social_youtube',
+      'source_social_website',
+    ],
   },
   {
-    title: 'Source Theme',
-    slug: 'source-theme',
-    description: 'Color palette for your source page. Dark mode variants are generated automatically.',
-    keys: THEME_SETTING_KEYS,
+    title: 'Theme',
+    slug: 'theme',
+    description: 'Brand color for links, buttons, and accents. Dark mode is generated automatically.',
+    keys: ['source_color_accent'],
   },
   {
-    title: 'Source Layout',
-    slug: 'source-layout',
+    title: 'Layout',
+    slug: 'layout',
     description: 'Display preferences and content rendering',
     keys: [
       'source_posts_per_page',
-      'source_show_toc',
       'source_show_reading_time',
-      'source_card_style',
       'source_code_theme',
+      'source_custom_footer',
     ],
   },
   {
@@ -97,9 +113,33 @@ const CATEGORIES = [
     keys: ['source_custom_css', 'source_custom_head'],
   },
   {
+    title: 'Call to Action',
+    slug: 'cta',
+    description: 'Configure CTA blocks on source and post pages to drive visitor engagement',
+    keys: [
+      'cta_hero_enabled',
+      'cta_hero_title',
+      'cta_hero_description',
+      'cta_hero_button_text',
+      'cta_hero_button_url',
+      'cta_hero_action_slug',
+      'cta_post_enabled',
+      'cta_post_title',
+      'cta_post_description',
+      'cta_post_button_text',
+      'cta_post_button_url',
+      'cta_post_action_slug',
+      'cta_sticky_enabled',
+      'cta_sticky_text',
+      'cta_sticky_button_text',
+      'cta_sticky_button_url',
+      'cta_sticky_action_slug',
+    ],
+  },
+  {
     title: 'Content Quality',
     slug: 'content-quality',
-    description: 'Validation rules and limits',
+    description: 'Validation rules and limits for MCP clients',
     keys: ['quality_guidelines', 'validation_limits', 'max_actions_per_type'],
   },
 ];
@@ -162,15 +202,6 @@ const FIELDS: Record<string, FieldConfig> = {
     min: 1,
     max: 100,
   },
-  source_show_toc: {
-    label: 'Show Table of Contents',
-    description: 'Display a sticky table of contents sidebar on source posts.',
-    type: 'select',
-    options: [
-      { value: 'true', label: 'Enabled' },
-      { value: 'false', label: 'Disabled' },
-    ],
-  },
   source_show_reading_time: {
     label: 'Show Reading Time',
     description: 'Display estimated reading time on posts and feed cards.',
@@ -178,15 +209,6 @@ const FIELDS: Record<string, FieldConfig> = {
     options: [
       { value: 'true', label: 'Enabled' },
       { value: 'false', label: 'Disabled' },
-    ],
-  },
-  source_card_style: {
-    label: 'Card Style',
-    description: 'Layout style for the source feed page.',
-    type: 'select',
-    options: [
-      { value: 'list', label: 'List — vertical list with separator lines' },
-      { value: 'grid', label: 'Grid — 2-column cards with borders' },
     ],
   },
   source_code_theme: {
@@ -233,17 +255,208 @@ const FIELDS: Record<string, FieldConfig> = {
     min: 1,
     max: 10,
   },
-};
-
-/* Register theme token fields from the single source of truth */
-for (const token of THEME_TOKENS) {
-  FIELDS[token.settingsKey] = {
-    label: token.label,
-    description: token.description,
+  source_logo_url: {
+    label: 'Logo Image URL',
+    description: 'URL to your logo image. Shown in the navigation bar. Leave empty for default.',
+    type: 'url',
+    placeholder: 'https://example.com/logo.png',
+    maxLength: 2000,
+  },
+  source_favicon_url: {
+    label: 'Favicon URL',
+    description: 'URL to your favicon. Leave empty for default pignal icon.',
+    type: 'url',
+    placeholder: 'https://example.com/favicon.ico',
+    maxLength: 2000,
+  },
+  source_og_image_url: {
+    label: 'Open Graph Image URL',
+    description: 'Default image used in social media previews. Leave empty to use GitHub avatar.',
+    type: 'url',
+    placeholder: 'https://example.com/og-image.png',
+    maxLength: 2000,
+  },
+  source_font_heading: {
+    label: 'Heading Font',
+    description: 'Font for headings. Loaded automatically from Google Fonts.',
+    type: 'select',
+    options: [
+      { value: '', label: 'System Default' },
+      ...Object.entries(FONT_OPTIONS).map(([id, f]) => ({ value: id, label: `${f.label} (${f.category})` })),
+    ],
+  },
+  source_font_body: {
+    label: 'Body Font',
+    description: 'Font for body text. Loaded automatically from Google Fonts.',
+    type: 'select',
+    options: [
+      { value: '', label: 'System Default' },
+      ...Object.entries(FONT_OPTIONS).map(([id, f]) => ({ value: id, label: `${f.label} (${f.category})` })),
+    ],
+  },
+  source_social_linkedin: {
+    label: 'LinkedIn URL',
+    description: 'LinkedIn profile link shown in the source nav bar.',
+    type: 'url',
+    placeholder: 'https://linkedin.com/in/username',
+    maxLength: 2000,
+  },
+  source_social_mastodon: {
+    label: 'Mastodon URL',
+    description: 'Mastodon/fediverse profile link shown in the source nav bar.',
+    type: 'url',
+    placeholder: 'https://mastodon.social/@username',
+    maxLength: 2000,
+  },
+  source_social_youtube: {
+    label: 'YouTube URL',
+    description: 'YouTube channel link shown in the source nav bar.',
+    type: 'url',
+    placeholder: 'https://youtube.com/@channel',
+    maxLength: 2000,
+  },
+  source_social_website: {
+    label: 'Website URL',
+    description: 'Personal website link shown in the source nav bar.',
+    type: 'url',
+    placeholder: 'https://example.com',
+    maxLength: 2000,
+  },
+  source_color_accent: {
+    label: 'Accent Color',
+    description: 'Brand color for links, buttons, and interactive elements. Leave empty for default blue (#1095C1).',
     type: 'color',
-    placeholder: token.placeholder,
-  };
-}
+    placeholder: '#1095C1',
+  },
+  // CTA Hero settings
+  cta_hero_enabled: {
+    label: 'Hero CTA Enabled',
+    description: 'Show a full-width banner CTA at the top of the source feed page.',
+    type: 'select',
+    options: [
+      { value: 'true', label: 'Enabled' },
+      { value: 'false', label: 'Disabled' },
+    ],
+  },
+  cta_hero_title: {
+    label: 'Hero CTA Title',
+    description: 'Heading text for the hero CTA banner.',
+    type: 'text',
+    placeholder: 'Subscribe to our newsletter',
+    maxLength: 200,
+  },
+  cta_hero_description: {
+    label: 'Hero CTA Description',
+    description: 'Optional subtext shown below the title.',
+    type: 'text',
+    placeholder: 'Get the latest posts delivered straight to your inbox.',
+    maxLength: 500,
+  },
+  cta_hero_button_text: {
+    label: 'Hero CTA Button Text',
+    description: 'Label for the CTA button.',
+    type: 'text',
+    placeholder: 'Subscribe',
+    maxLength: 100,
+  },
+  cta_hero_button_url: {
+    label: 'Hero CTA Button URL',
+    description: 'External link for the CTA button. Leave empty if using an action form.',
+    type: 'url',
+    placeholder: 'https://example.com/subscribe',
+    maxLength: 2000,
+  },
+  cta_hero_action_slug: {
+    label: 'Hero CTA Action Slug',
+    description: 'Slug of a site action form to load inline. Mutually exclusive with button URL.',
+    type: 'text',
+    placeholder: 'newsletter',
+    maxLength: 100,
+  },
+  // CTA Post settings
+  cta_post_enabled: {
+    label: 'Post CTA Enabled',
+    description: 'Show a CTA card after article content on item post pages.',
+    type: 'select',
+    options: [
+      { value: 'true', label: 'Enabled' },
+      { value: 'false', label: 'Disabled' },
+    ],
+  },
+  cta_post_title: {
+    label: 'Post CTA Title',
+    description: 'Heading text for the post CTA card.',
+    type: 'text',
+    placeholder: 'Enjoyed this post?',
+    maxLength: 200,
+  },
+  cta_post_description: {
+    label: 'Post CTA Description',
+    description: 'Optional subtext shown below the title.',
+    type: 'text',
+    placeholder: 'Share it with your friends or subscribe for more.',
+    maxLength: 500,
+  },
+  cta_post_button_text: {
+    label: 'Post CTA Button Text',
+    description: 'Label for the CTA button.',
+    type: 'text',
+    placeholder: 'Subscribe',
+    maxLength: 100,
+  },
+  cta_post_button_url: {
+    label: 'Post CTA Button URL',
+    description: 'External link for the CTA button. Leave empty if using an action form.',
+    type: 'url',
+    placeholder: 'https://example.com/subscribe',
+    maxLength: 2000,
+  },
+  cta_post_action_slug: {
+    label: 'Post CTA Action Slug',
+    description: 'Slug of a site action form to load inline. Mutually exclusive with button URL.',
+    type: 'text',
+    placeholder: 'newsletter',
+    maxLength: 100,
+  },
+  // CTA Sticky settings
+  cta_sticky_enabled: {
+    label: 'Sticky CTA Enabled',
+    description: 'Show a persistent CTA bar at the bottom of all public pages.',
+    type: 'select',
+    options: [
+      { value: 'true', label: 'Enabled' },
+      { value: 'false', label: 'Disabled' },
+    ],
+  },
+  cta_sticky_text: {
+    label: 'Sticky CTA Text',
+    description: 'Message shown in the sticky bottom bar.',
+    type: 'text',
+    placeholder: 'Stay up to date with our latest posts.',
+    maxLength: 200,
+  },
+  cta_sticky_button_text: {
+    label: 'Sticky CTA Button Text',
+    description: 'Label for the sticky CTA button.',
+    type: 'text',
+    placeholder: 'Subscribe',
+    maxLength: 100,
+  },
+  cta_sticky_button_url: {
+    label: 'Sticky CTA Button URL',
+    description: 'External link for the sticky CTA button. Leave empty if using an action form.',
+    type: 'url',
+    placeholder: 'https://example.com/subscribe',
+    maxLength: 2000,
+  },
+  cta_sticky_action_slug: {
+    label: 'Sticky CTA Action Slug',
+    description: 'Slug of a site action form to load inline. Mutually exclusive with button URL.',
+    type: 'text',
+    placeholder: 'newsletter',
+    maxLength: 100,
+  },
+};
 
 /** All known setting keys — used as an allowlist for writes. */
 const ALLOWED_KEYS = new Set(CATEGORIES.flatMap((cat) => cat.keys));
@@ -306,13 +519,22 @@ function SettingField({ settingKey, value }: {
   switch (config.type) {
     case 'select':
       inputElement = (
-        <select data-setting-key={settingKey} data-original={value}>
-          {config.options!.map((opt) => (
-            <option value={opt.value} selected={value === opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+        <div class="form-dropdown" data-setting-key={settingKey} data-original={value}>
+          <button type="button" class="form-dropdown-trigger" aria-haspopup="listbox">
+            <span class="form-dropdown-label">{config.options!.find(o => o.value === value)?.label ?? '-- Select --'}</span>
+          </button>
+          <ul role="listbox" class="form-dropdown-list">
+            {config.options!.map((opt) => (
+              <li>
+                <button type="button" data-value={opt.value} data-label={opt.label}
+                  aria-selected={value === opt.value ? 'true' : undefined}>
+                  {opt.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <input type="hidden" name={settingKey} value={value} />
+        </div>
       );
       break;
 

@@ -3,6 +3,15 @@ import type { TemplateSeoHints } from '@pignal/templates';
 import type { SettingsMap } from '@pignal/db';
 import { stripMarkdown } from './markdown';
 
+export function resolveOgImage(settings: SettingsMap, sourceUrl: string): string {
+  if (settings.source_og_image_url) return settings.source_og_image_url;
+  const githubUrl = settings.source_social_github || '';
+  const githubUsername = githubUrl.replace(/\/$/, '').split('/').pop() || '';
+  return githubUsername
+    ? `https://avatars.githubusercontent.com/${githubUsername}?s=400`
+    : `${sourceUrl}/og-image.png`;
+}
+
 function escapeJsonLd(str: string): string {
   return str.replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
 }
@@ -48,6 +57,11 @@ export function buildMetaTags(tags: MetaTags): string {
   return lines.join('\n    ');
 }
 
+/** Strip directive syntax from content for use in descriptions/meta tags. */
+export function stripDirectives(content: string): string {
+  return content.replace(/\{\{[^}]*\}\}/g, '').replace(/\n{3,}/g, '\n\n');
+}
+
 export function escapeHtmlAttr(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -63,7 +77,7 @@ export function buildSourcePostingJsonLd(
   description?: string,
   seoHints?: TemplateSeoHints
 ): string {
-  const desc = description ?? stripMarkdown(item.content).slice(0, 160);
+  const desc = description ?? stripMarkdown(stripDirectives(item.content)).slice(0, 160);
   const githubUrl = settings.source_social_github || '';
   const domain = new URL(origin).hostname;
   const authorName = settings.owner_name || settings.source_title || domain;

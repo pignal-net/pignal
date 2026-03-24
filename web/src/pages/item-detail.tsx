@@ -16,52 +16,10 @@ type WebVars = { store: ItemStoreRpc };
 
 /* --- Sidebar panel components (returned as HTMX partials) --- */
 
-function ValidationPanel({ id, actions, currentActionLabel, csrfToken }: {
+function ItemSidebar({ id, actions, currentActionLabel, visibility, shareToken, slug, sourceUrl, csrfToken, workspaceVisibility, workspaceName, isArchived, isPinned }: {
   id: string;
   actions: TypeActionSelect[];
   currentActionLabel: string | null;
-  csrfToken: string;
-}) {
-  return (
-    <div id="validation-section" class="bg-surface rounded-xl border border-border-subtle shadow-card border-l-4 border-l-success p-5 mb-4">
-      <h3 class="text-sm font-semibold text-text mb-3">Validation</h3>
-      <p class="text-sm mb-3">
-        {currentActionLabel
-          ? <strong class="text-success">{currentActionLabel}</strong>
-          : <em class="text-muted">Not validated</em>}
-      </p>
-      {actions.length > 0 && (
-        <div class="flex flex-wrap gap-2">
-          {actions.map((action) => (
-            <form method="post" action={`/pignal/items/${id}/validate`}
-              hx-post={`/pignal/items/${id}/validate`}
-              hx-target="#validation-section"
-              hx-swap="outerHTML">
-              <input type="hidden" name="_csrf" value={csrfToken} />
-              <input type="hidden" name="actionId" value={action.id} />
-              <button type="submit" class="outline text-xs px-4 py-2 rounded-lg">
-                {action.label}
-              </button>
-            </form>
-          ))}
-          <form method="post" action={`/pignal/items/${id}/validate`}
-            hx-post={`/pignal/items/${id}/validate`}
-            hx-target="#validation-section"
-            hx-swap="outerHTML">
-            <input type="hidden" name="_csrf" value={csrfToken} />
-            <input type="hidden" name="actionId" value="" />
-            <button type="submit" class="outline secondary text-xs px-4 py-2 rounded-lg">
-              Clear
-            </button>
-          </form>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function VisibilityPanel({ id, visibility, shareToken, slug, sourceUrl, csrfToken, workspaceVisibility, workspaceName }: {
-  id: string;
   visibility: string;
   shareToken: string | null;
   slug: string | null;
@@ -69,95 +27,107 @@ function VisibilityPanel({ id, visibility, shareToken, slug, sourceUrl, csrfToke
   csrfToken: string;
   workspaceVisibility: string | null;
   workspaceName: string | null;
-}) {
-  return (
-    <div id="visibility-section" class="bg-surface rounded-xl border border-border-subtle shadow-card border-l-4 border-l-info p-5 mb-4">
-      <h3 class="text-sm font-semibold text-text mb-3">Visibility</h3>
-      <form method="post" action={`/pignal/items/${id}/visibility`}
-        hx-post={`/pignal/items/${id}/visibility`}
-        hx-target="#visibility-section"
-        hx-swap="outerHTML">
-        <input type="hidden" name="_csrf" value={csrfToken} />
-        <select name="visibility">
-          <option value="private" selected={visibility === 'private'}>Private</option>
-          <option value="unlisted" selected={visibility === 'unlisted'}>Unlisted</option>
-          <option value="vouched" selected={visibility === 'vouched'}>Vouched</option>
-        </select>
-        <button type="submit" class="outline text-xs px-4 py-2 rounded-lg">Update</button>
-      </form>
-      {visibility === 'unlisted' && shareToken && (
-        <div class="mt-3 text-xs text-muted break-all">
-          Share: <code>{sourceUrl}/s/{shareToken}</code>
-        </div>
-      )}
-      {visibility === 'vouched' && slug && (
-        <div class="mt-3">
-          <div class="text-xs text-muted">
-            Source: <a href={`/item/${slug}`}>{sourceUrl}/item/{slug}</a>
-          </div>
-          {workspaceVisibility === 'private' && workspaceName && (
-            <div class="text-xs text-error mt-1">
-              Workspace "{workspaceName}" is private. Change it to public in <a href="/pignal/workspaces">Workspace Settings</a> so others can see this item.
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ActionsPanel({ id, isArchived, isPinned, csrfToken }: {
-  id: string;
   isArchived: boolean;
   isPinned: boolean;
-  csrfToken: string;
 }) {
+  // Build validation options for dropdown
+  const validationOptions = [
+    { value: '', label: 'Not validated' },
+    ...actions.map((a) => ({ value: a.id, label: a.label })),
+  ];
+  const currentValidationValue = actions.find((a) => a.label === currentActionLabel)?.id ?? '';
+
+  // Build visibility options
+  const visibilityOptions = [
+    { value: 'private', label: 'Private' },
+    { value: 'unlisted', label: 'Unlisted' },
+    { value: 'vouched', label: 'Vouched' },
+  ];
+
   return (
-    <div id="actions-section" class="bg-surface rounded-xl border border-border-subtle shadow-card p-5 mb-4">
-      <h3 class="text-sm font-semibold text-text mb-3">Actions</h3>
-      <div class="flex flex-col gap-2">
-        {!isPinned ? (
-          <form method="post" action={`/pignal/items/${id}/pin`}
-            hx-post={`/pignal/items/${id}/pin`}
-            hx-target="#actions-section"
-            hx-swap="outerHTML">
-            <input type="hidden" name="_csrf" value={csrfToken} />
-            <button type="submit" class="outline text-xs px-4 py-2 rounded-lg w-full justify-center">
-              Pin
-            </button>
-          </form>
-        ) : (
-          <form method="post" action={`/pignal/items/${id}/unpin`}
-            hx-post={`/pignal/items/${id}/unpin`}
-            hx-target="#actions-section"
-            hx-swap="outerHTML">
-            <input type="hidden" name="_csrf" value={csrfToken} />
-            <button type="submit" class="outline text-xs px-4 py-2 rounded-lg w-full justify-center">
-              Unpin
-            </button>
-          </form>
+    <div id="item-sidebar" class="bg-surface rounded-xl border border-border-subtle shadow-card p-5">
+      {/* Validation */}
+      <div class="mb-5">
+        <label class="text-xs font-semibold text-muted uppercase tracking-wide block mb-2">Validation</label>
+        <div class="form-dropdown form-dropdown-compact">
+          <button type="button" class="form-dropdown-trigger" aria-haspopup="listbox">
+            <span class="form-dropdown-label">{currentActionLabel ?? 'Not validated'}</span>
+          </button>
+          <ul role="listbox" class="form-dropdown-list">
+            {validationOptions.map((opt) => (
+              <li>
+                <a
+                  href="#"
+                  class="dropdown-item"
+                  aria-selected={opt.value === currentValidationValue ? 'true' : undefined}
+                  hx-post={`/pignal/items/${id}/validate`}
+                  hx-vals={JSON.stringify({ _csrf: csrfToken, actionId: opt.value })}
+                  hx-target="#item-sidebar"
+                  hx-swap="outerHTML"
+                >
+                  {opt.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Visibility */}
+      <div class="mb-5">
+        <label class="text-xs font-semibold text-muted uppercase tracking-wide block mb-2">Visibility</label>
+        <div class="form-dropdown form-dropdown-compact">
+          <button type="button" class="form-dropdown-trigger" aria-haspopup="listbox">
+            <span class="form-dropdown-label">{visibilityOptions.find((o) => o.value === visibility)?.label ?? 'Private'}</span>
+          </button>
+          <ul role="listbox" class="form-dropdown-list">
+            {visibilityOptions.map((opt) => (
+              <li>
+                <a
+                  href="#"
+                  class="dropdown-item"
+                  aria-selected={opt.value === visibility ? 'true' : undefined}
+                  hx-post={`/pignal/items/${id}/visibility`}
+                  hx-vals={JSON.stringify({ _csrf: csrfToken, visibility: opt.value })}
+                  hx-target="#item-sidebar"
+                  hx-swap="outerHTML"
+                >
+                  {opt.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {visibility === 'unlisted' && shareToken && (
+          <p class="mt-2 text-xs text-muted break-all">Share: <code>{sourceUrl}/s/{shareToken}</code></p>
         )}
-        {!isArchived ? (
-          <form method="post" action={`/pignal/items/${id}/archive`}
-            hx-post={`/pignal/items/${id}/archive`}
-            hx-target="#actions-section"
-            hx-swap="outerHTML">
-            <input type="hidden" name="_csrf" value={csrfToken} />
-            <button type="submit" class="secondary text-xs px-4 py-2 rounded-lg w-full justify-center">
-              Archive
-            </button>
-          </form>
-        ) : (
-          <form method="post" action={`/pignal/items/${id}/unarchive`}
-            hx-post={`/pignal/items/${id}/unarchive`}
-            hx-target="#actions-section"
-            hx-swap="outerHTML">
-            <input type="hidden" name="_csrf" value={csrfToken} />
-            <button type="submit" class="secondary text-xs px-4 py-2 rounded-lg w-full justify-center">
-              Unarchive
-            </button>
-          </form>
+        {visibility === 'vouched' && slug && (
+          <div class="mt-2">
+            <p class="text-xs text-muted">Public: <a href={`/item/${slug}`} class="text-primary hover:underline">{sourceUrl}/item/{slug}</a></p>
+            {workspaceVisibility === 'private' && workspaceName && (
+              <p class="text-xs text-error mt-1">Workspace "{workspaceName}" is private. <a href="/pignal/workspaces" class="underline">Change it</a> so others can see this item.</p>
+            )}
+          </div>
         )}
+      </div>
+
+      {/* Quick Actions */}
+      <div class="border-t border-border-subtle pt-4 flex flex-wrap gap-2">
+        <a href="#" class="outline btn-sm"
+          hx-post={`/pignal/items/${id}/${isPinned ? 'unpin' : 'pin'}`}
+          hx-vals={JSON.stringify({ _csrf: csrfToken })}
+          hx-target="#item-sidebar"
+          hx-swap="outerHTML">{isPinned ? 'Unpin' : 'Pin'}</a>
+        <a href="#" class="outline btn-sm"
+          hx-post={`/pignal/items/${id}/${isArchived ? 'unarchive' : 'archive'}`}
+          hx-vals={JSON.stringify({ _csrf: csrfToken })}
+          hx-target="#item-sidebar"
+          hx-swap="outerHTML">{isArchived ? 'Unarchive' : 'Archive'}</a>
+        <a href="#" class="outline btn-sm text-error"
+          hx-post={`/pignal/items/${id}/delete`}
+          hx-vals={JSON.stringify({ _csrf: csrfToken })}
+          hx-confirm="Delete this item permanently? This cannot be undone."
+          hx-swap="none">Delete</a>
       </div>
     </div>
   );
@@ -224,14 +194,10 @@ export async function itemDetailPage(c: Context<{ Bindings: WebEnv; Variables: W
 
         {/* Sidebar */}
         <aside class="w-full lg:w-72 shrink-0">
-          <ValidationPanel
+          <ItemSidebar
             id={id}
             actions={actions}
             currentActionLabel={item.validationActionLabel}
-            csrfToken={csrfToken}
-          />
-          <VisibilityPanel
-            id={id}
             visibility={item.visibility ?? 'private'}
             shareToken={item.shareToken}
             slug={item.slug}
@@ -239,12 +205,8 @@ export async function itemDetailPage(c: Context<{ Bindings: WebEnv; Variables: W
             csrfToken={csrfToken}
             workspaceVisibility={workspace?.visibility ?? null}
             workspaceName={item.workspaceName}
-          />
-          <ActionsPanel
-            id={id}
             isArchived={item.isArchived === 1}
             isPinned={!!item.pinnedAt}
-            csrfToken={csrfToken}
           />
         </aside>
       </div>
@@ -254,6 +216,35 @@ export async function itemDetailPage(c: Context<{ Bindings: WebEnv; Variables: W
 
 /* --- HTMX-aware POST handlers --- */
 
+/** Helper: re-render the full sidebar after any action. */
+async function renderSidebar(c: Context<{ Bindings: WebEnv; Variables: WebVars }>, id: string) {
+  const store = c.get('store');
+  const [item, types] = await Promise.all([store.get(id), store.listTypes()]);
+  if (!item) return c.text('Not found', 404);
+  const currentType = types.find((t) => t.id === item.typeId);
+  const typeActions = currentType?.actions ?? [];
+  const csrfToken = getCsrfToken(c);
+  const sourceUrl = new URL(c.req.url).origin;
+  const workspace = item.workspaceId ? await store.getWorkspace(item.workspaceId) : null;
+
+  return c.html(
+    <ItemSidebar
+      id={id}
+      actions={typeActions}
+      currentActionLabel={item.validationActionLabel}
+      visibility={item.visibility ?? 'private'}
+      shareToken={item.shareToken}
+      slug={item.slug}
+      sourceUrl={sourceUrl}
+      csrfToken={csrfToken}
+      workspaceVisibility={workspace?.visibility ?? null}
+      workspaceName={item.workspaceName}
+      isArchived={item.isArchived === 1}
+      isPinned={!!item.pinnedAt}
+    />
+  );
+}
+
 export async function validateHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
   const store = c.get('store');
@@ -262,72 +253,48 @@ export async function validateHandler(c: Context<{ Bindings: WebEnv; Variables: 
   await store.validate(id, actionId || null);
 
   if (isHtmxRequest(c)) {
-    const [item, types] = await Promise.all([store.get(id), store.listTypes()]);
-    const currentType = types.find((t) => t.id === item!.typeId);
-    const actions = currentType?.actions ?? [];
-    const csrfToken = getCsrfToken(c);
-
     c.header('HX-Trigger', toastTrigger(actionId ? 'Validation updated' : 'Validation cleared'));
-    return c.html(
-      <ValidationPanel
-        id={id}
-        actions={actions}
-        currentActionLabel={item!.validationActionLabel}
-        csrfToken={csrfToken}
-      />
-    );
+    return renderSidebar(c, id);
   }
   return c.redirect(`/pignal/items/${id}`);
 }
 
 export async function archiveHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
-  const store = c.get('store');
-  const item = await store.archive(id);
-
+  await c.get('store').archive(id);
   if (isHtmxRequest(c)) {
-    const csrfToken = getCsrfToken(c);
     c.header('HX-Trigger', toastTrigger('Item archived'));
-    return c.html(<ActionsPanel id={id} isArchived={true} isPinned={!!item?.pinnedAt} csrfToken={csrfToken} />);
+    return renderSidebar(c, id);
   }
   return c.redirect(`/pignal/items/${id}`);
 }
 
 export async function unarchiveHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
-  const store = c.get('store');
-  const item = await store.unarchive(id);
-
+  await c.get('store').unarchive(id);
   if (isHtmxRequest(c)) {
-    const csrfToken = getCsrfToken(c);
     c.header('HX-Trigger', toastTrigger('Item unarchived'));
-    return c.html(<ActionsPanel id={id} isArchived={false} isPinned={!!item?.pinnedAt} csrfToken={csrfToken} />);
+    return renderSidebar(c, id);
   }
   return c.redirect(`/pignal/items/${id}`);
 }
 
 export async function pinHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
-  const store = c.get('store');
-  const item = await store.pin(id);
-
+  await c.get('store').pin(id);
   if (isHtmxRequest(c)) {
-    const csrfToken = getCsrfToken(c);
     c.header('HX-Trigger', toastTrigger('Item pinned'));
-    return c.html(<ActionsPanel id={id} isArchived={item?.isArchived === 1} isPinned={true} csrfToken={csrfToken} />);
+    return renderSidebar(c, id);
   }
   return c.redirect(`/pignal/items/${id}`);
 }
 
 export async function unpinHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
-  const store = c.get('store');
-  const item = await store.unpin(id);
-
+  await c.get('store').unpin(id);
   if (isHtmxRequest(c)) {
-    const csrfToken = getCsrfToken(c);
     c.header('HX-Trigger', toastTrigger('Item unpinned'));
-    return c.html(<ActionsPanel id={id} isArchived={item?.isArchived === 1} isPinned={false} csrfToken={csrfToken} />);
+    return renderSidebar(c, id);
   }
   return c.redirect(`/pignal/items/${id}`);
 }
@@ -346,29 +313,11 @@ export async function visibilityHandler(c: Context<{ Bindings: WebEnv; Variables
     return c.text('Invalid visibility', 400);
   }
 
-  const visibility = rawVisibility as 'private' | 'unlisted' | 'vouched';
-
-  await store.vouch(id, { visibility });
+  await store.vouch(id, { visibility: rawVisibility as 'private' | 'unlisted' | 'vouched' });
 
   if (isHtmxRequest(c)) {
-    const item = await store.get(id);
-    const sourceUrl = new URL(c.req.url).origin;
-    const csrfToken = getCsrfToken(c);
-    const workspace = item!.workspaceId ? await store.getWorkspace(item!.workspaceId) : null;
-
     c.header('HX-Trigger', toastTrigger('Visibility updated'));
-    return c.html(
-      <VisibilityPanel
-        id={id}
-        visibility={item!.visibility ?? 'private'}
-        shareToken={item!.shareToken}
-        slug={item!.slug}
-        sourceUrl={sourceUrl}
-        csrfToken={csrfToken}
-        workspaceVisibility={workspace?.visibility ?? null}
-        workspaceName={item!.workspaceName}
-      />
-    );
+    return renderSidebar(c, id);
   }
   return c.redirect(`/pignal/items/${id}`);
 }

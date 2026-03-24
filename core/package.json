@@ -9,6 +9,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./store": "./src/store/item-store.ts",
+    "./store/action-store": "./src/store/action-store.ts",
     "./store/api-keys": "./src/store/api-keys.ts",
     "./auth/permissions": "./src/auth/permissions.ts",
     "./routes": "./src/routes/index.ts",
@@ -24,7 +25,11 @@
     "./federation/well-known": "./src/federation/well-known.ts",
     "./auth/timing-safe": "./src/auth/timing-safe.ts",
     "./config/rate-limits": "./src/config/rate-limits.ts",
-    "./middleware/rate-limit": "./src/middleware/rate-limit.ts"
+    "./middleware/rate-limit": "./src/middleware/rate-limit.ts",
+    "./directives/registry": "./src/directives/registry.ts",
+    "./actions/field-types": "./src/actions/field-types.ts",
+    "./events/event-bus": "./src/events/event-bus.ts",
+    "./webhooks/dispatcher": "./src/webhooks/dispatcher.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",

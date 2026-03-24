@@ -2,7 +2,7 @@ import type { SourcePageProps } from '@pignal/templates';
 import type { Item } from '@pignal/templates';
 import { Pagination } from '../../components/pagination';
 import { JsonLd } from '../../components/json-ld';
-import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr } from '../../lib/seo';
+import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
 import { formatDate } from '../../lib/time';
 import { ResumeLayout } from './layout';
@@ -95,9 +95,7 @@ export function ResumeSourcePage(props: SourcePageProps) {
 
   const githubUrl = settings.source_social_github || '';
   const githubUsername = githubUrl.replace(/\/$/, '').split('/').pop() || '';
-  const ogImage = githubUsername
-    ? `https://avatars.githubusercontent.com/${githubUsername}?s=400`
-    : `${sourceUrl}/og-image.png`;
+  const ogImage = resolveOgImage(settings, sourceUrl);
 
   const jsonLd = buildSourceJsonLd(settings, sourceUrl, props.seo);
   const metaTags = buildMetaTags({
@@ -172,8 +170,8 @@ export function ResumeSourcePage(props: SourcePageProps) {
           {settings.source_social_linkedin && (
             <a href={settings.source_social_linkedin} target="_blank" rel="noopener" class="text-primary no-underline inline-flex items-center gap-1 hover:underline">LinkedIn</a>
           )}
-          {settings.source_url && (
-            <a href={settings.source_url} target="_blank" rel="noopener" class="text-primary no-underline inline-flex items-center gap-1 hover:underline">Website</a>
+          {settings.source_social_website && (
+            <a href={settings.source_social_website} target="_blank" rel="noopener" class="text-primary no-underline inline-flex items-center gap-1 hover:underline">Website</a>
           )}
         </div>
 

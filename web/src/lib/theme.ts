@@ -3,6 +3,10 @@ import type { SettingsMap } from '@pignal/db';
 /* ----------------------------------------------------------------
    Theme engine — single source of truth for source color customization.
    Pure functions, no side effects.
+
+   One accent/brand color drives all theme overrides. Secondary, hover,
+   and focus colors are derived automatically for both light and dark
+   modes — guaranteeing proper contrast.
    ---------------------------------------------------------------- */
 
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
@@ -13,106 +17,37 @@ export function isValidHexColor(value: string): boolean {
 }
 
 /* ----------------------------------------------------------------
-   Token definitions
-   ---------------------------------------------------------------- */
-
-export interface ThemeColorToken {
-  settingsKey: string;
-  label: string;
-  description: string;
-  placeholder: string;
-  /** Generate CSS variable declarations for light mode. */
-  lightVars: (hex: string) => string;
-  /** Generate CSS variable declarations for dark mode. */
-  darkVars: (hex: string) => string;
-}
-
-export const THEME_TOKENS: ThemeColorToken[] = [
-  {
-    settingsKey: 'source_color_primary',
-    label: 'Primary Color',
-    description: 'Main accent color for links, buttons, and interactive elements. Leave empty for default blue.',
-    placeholder: '#1095C1',
-    lightVars: (c) => [
-      `--tw-primary:${c}`,
-      `--tw-primary-bg:${c}`,
-      `--tw-primary-hover:color-mix(in srgb,${c} 80%,black)`,
-      `--tw-primary-focus:color-mix(in srgb,${c} 25%,transparent)`,
-    ].join(';'),
-    darkVars: (c) => [
-      `--tw-primary:color-mix(in srgb,${c} 85%,white)`,
-      `--tw-primary-bg:${c}`,
-      `--tw-primary-hover:color-mix(in srgb,${c} 90%,white)`,
-      `--tw-primary-focus:color-mix(in srgb,${c} 25%,transparent)`,
-    ].join(';'),
-  },
-  {
-    settingsKey: 'source_color_secondary',
-    label: 'Secondary Color',
-    description: 'Used for secondary buttons and accents. Leave empty for default gray.',
-    placeholder: '#596B7C',
-    lightVars: (c) => [
-      `--tw-secondary:${c}`,
-      `--tw-secondary-hover:color-mix(in srgb,${c} 80%,black)`,
-    ].join(';'),
-    darkVars: (c) => [
-      `--tw-secondary:color-mix(in srgb,${c} 85%,white)`,
-      `--tw-secondary-hover:color-mix(in srgb,${c} 90%,white)`,
-    ].join(';'),
-  },
-  {
-    settingsKey: 'source_color_background',
-    label: 'Page Background',
-    description: 'Page background color. Leave empty for default.',
-    placeholder: '#FFFFFF',
-    lightVars: (c) => `--tw-bg:${c};--tw-bg-page:${c}`,
-    darkVars: (c) => `--tw-bg:color-mix(in srgb,${c} 15%,#0d1117);--tw-bg-page:color-mix(in srgb,${c} 10%,#010409)`,
-  },
-  {
-    settingsKey: 'source_color_text',
-    label: 'Text Color',
-    description: 'Main body text color. Leave empty for default.',
-    placeholder: '#373C44',
-    lightVars: (c) => `--tw-text:${c}`,
-    darkVars: (c) => `--tw-text:color-mix(in srgb,${c} 20%,#e6edf3)`,
-  },
-  {
-    settingsKey: 'source_color_muted',
-    label: 'Muted Text Color',
-    description: 'Secondary text, captions, and subtle borders. Leave empty for default.',
-    placeholder: '#646B79',
-    lightVars: (c) => `--tw-muted:${c};--tw-border:color-mix(in srgb,${c} 30%,transparent)`,
-    darkVars: (c) => `--tw-muted:color-mix(in srgb,${c} 70%,#8b949e);--tw-border:color-mix(in srgb,${c} 25%,transparent)`,
-  },
-];
-
-/** All theme setting keys, derived from token definitions. */
-export const THEME_SETTING_KEYS: string[] = THEME_TOKENS.map((t) => t.settingsKey);
-
-/* ----------------------------------------------------------------
    CSS builder
    ---------------------------------------------------------------- */
 
 /**
- * Build minified CSS from settings. Returns an empty string when no
- * theme colors are configured (= use defaults).
+ * Build minified CSS from a single accent color (`source_color_accent`).
+ * Only overrides `--tw-primary*` and `--tw-secondary*` — background,
+ * text, muted, surface, and border stay as the system defaults.
+ *
+ * Returns an empty string when no accent color is configured.
  */
 export function buildThemeCss(settings: SettingsMap): string {
-  const lightParts: string[] = [];
-  const darkParts: string[] = [];
+  const accent = settings.source_color_accent;
+  if (!accent || !isValidHexColor(accent)) return '';
 
-  for (const token of THEME_TOKENS) {
-    const hex = settings[token.settingsKey];
-    if (!hex || !isValidHexColor(hex)) continue;
+  const light = [
+    `--tw-primary:${accent}`,
+    `--tw-primary-bg:${accent}`,
+    `--tw-primary-hover:color-mix(in srgb,${accent} 80%,black)`,
+    `--tw-primary-focus:color-mix(in srgb,${accent} 25%,transparent)`,
+    `--tw-secondary:color-mix(in srgb,${accent} 40%,#596B7C)`,
+    `--tw-secondary-hover:color-mix(in srgb,${accent} 35%,#4a5a6a)`,
+  ].join(';');
 
-    lightParts.push(token.lightVars(hex));
-    darkParts.push(token.darkVars(hex));
-  }
-
-  if (lightParts.length === 0) return '';
-
-  const light = lightParts.join(';');
-  const dark = darkParts.join(';');
+  const dark = [
+    `--tw-primary:color-mix(in srgb,${accent} 85%,white)`,
+    `--tw-primary-bg:${accent}`,
+    `--tw-primary-hover:color-mix(in srgb,${accent} 90%,white)`,
+    `--tw-primary-focus:color-mix(in srgb,${accent} 25%,transparent)`,
+    `--tw-secondary:color-mix(in srgb,${accent} 40%,#8b949e)`,
+    `--tw-secondary-hover:color-mix(in srgb,${accent} 45%,#a0aab4)`,
+  ].join(';');
 
   return [
     `:root:not([data-theme="dark"]),[data-theme="light"]{${light}}`,
@@ -123,9 +58,71 @@ export function buildThemeCss(settings: SettingsMap): string {
 
 /**
  * Build a `<style>` tag with theme CSS, or an empty string if no
- * theme colors are configured.
+ * accent color is configured.
  */
 export function buildThemeStyleTag(settings: SettingsMap): string {
   const css = buildThemeCss(settings);
   return css ? `<style>${css}</style>` : '';
+}
+
+/* ----------------------------------------------------------------
+   Font system
+   ---------------------------------------------------------------- */
+
+export interface FontOption {
+  label: string;
+  family: string;
+  googleId: string;
+  weights: string;
+  category: 'sans-serif' | 'serif' | 'monospace';
+}
+
+export const FONT_OPTIONS: Record<string, FontOption> = {
+  inter:            { label: 'Inter',            family: '"Inter"',            googleId: 'Inter',            weights: '400;500;600;700', category: 'sans-serif' },
+  'source-sans':    { label: 'Source Sans 3',    family: '"Source Sans 3"',    googleId: 'Source+Sans+3',    weights: '400;500;600;700', category: 'sans-serif' },
+  'dm-sans':        { label: 'DM Sans',          family: '"DM Sans"',          googleId: 'DM+Sans',          weights: '400;500;600;700', category: 'sans-serif' },
+  'open-sans':      { label: 'Open Sans',        family: '"Open Sans"',        googleId: 'Open+Sans',        weights: '400;500;600;700', category: 'sans-serif' },
+  lora:             { label: 'Lora',             family: '"Lora"',             googleId: 'Lora',             weights: '400;500;600;700', category: 'serif' },
+  merriweather:     { label: 'Merriweather',     family: '"Merriweather"',     googleId: 'Merriweather',     weights: '400;700',         category: 'serif' },
+  'source-serif':   { label: 'Source Serif 4',   family: '"Source Serif 4"',   googleId: 'Source+Serif+4',   weights: '400;500;600;700', category: 'serif' },
+  playfair:         { label: 'Playfair Display', family: '"Playfair Display"', googleId: 'Playfair+Display', weights: '400;500;600;700', category: 'serif' },
+  'jetbrains-mono': { label: 'JetBrains Mono',   family: '"JetBrains Mono"',   googleId: 'JetBrains+Mono',   weights: '400;500;600;700', category: 'monospace' },
+  'fira-code':      { label: 'Fira Code',        family: '"Fira Code"',        googleId: 'Fira+Code',        weights: '400;500;600;700', category: 'monospace' },
+};
+
+/**
+ * Build Google Fonts link tags and CSS variable overrides for custom fonts.
+ * Returns an empty string when no fonts are selected.
+ */
+export function buildFontTags(settings: SettingsMap): string {
+  const headingFont = settings.source_font_heading;
+  const bodyFont = settings.source_font_body;
+
+  const families: string[] = [];
+  if (headingFont && FONT_OPTIONS[headingFont]) {
+    const f = FONT_OPTIONS[headingFont];
+    families.push(`family=${f.googleId}:wght@${f.weights}`);
+  }
+  if (bodyFont && FONT_OPTIONS[bodyFont] && bodyFont !== headingFont) {
+    const f = FONT_OPTIONS[bodyFont];
+    families.push(`family=${f.googleId}:wght@${f.weights}`);
+  }
+
+  if (families.length === 0) return '';
+
+  const linkTag = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?${families.join('&')}&display=swap" rel="stylesheet">`;
+
+  const vars: string[] = [];
+  if (headingFont && FONT_OPTIONS[headingFont]) {
+    const f = FONT_OPTIONS[headingFont];
+    vars.push(`--tw-font-heading:${f.family},${f.category}`);
+  }
+  if (bodyFont && FONT_OPTIONS[bodyFont]) {
+    const f = FONT_OPTIONS[bodyFont];
+    vars.push(`--tw-font-body:${f.family},${f.category}`);
+  }
+
+  const styleTag = vars.length > 0 ? `<style>:root{${vars.join(';')}}</style>` : '';
+
+  return linkTag + styleTag;
 }

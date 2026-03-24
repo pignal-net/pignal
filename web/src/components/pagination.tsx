@@ -4,6 +4,7 @@ interface PaginationProps {
   offset: number;
   baseUrl: string;
   htmxTarget?: string;
+  htmxIndicator?: string;
 }
 
 /**
@@ -27,7 +28,7 @@ function buildPageList(currentPage: number, totalPages: number): (number | '...'
   return pages;
 }
 
-export function Pagination({ total, limit, offset, baseUrl, htmxTarget }: PaginationProps) {
+export function Pagination({ total, limit, offset, baseUrl, htmxTarget, htmxIndicator }: PaginationProps) {
   const totalPages = Math.ceil(total / limit);
   const currentPage = Math.floor(offset / limit) + 1;
 
@@ -46,7 +47,7 @@ export function Pagination({ total, limit, offset, baseUrl, htmxTarget }: Pagina
           href={`${baseUrl}${separator}offset=${(currentPage - 2) * limit}`}
           class={linkClass}
           rel="prev"
-          {...(htmxTarget ? { 'hx-get': `${baseUrl}${separator}offset=${(currentPage - 2) * limit}`, 'hx-target': htmxTarget, 'hx-push-url': 'true' } : {})}
+          {...(htmxTarget ? { 'hx-get': `${baseUrl}${separator}offset=${(currentPage - 2) * limit}`, 'hx-target': htmxTarget, 'hx-push-url': 'true', ...(htmxIndicator ? { 'hx-indicator': htmxIndicator } : {}) } : {})}
         >
           Previous
         </a>
@@ -60,7 +61,7 @@ export function Pagination({ total, limit, offset, baseUrl, htmxTarget }: Pagina
           <a
             href={`${baseUrl}${separator}offset=${(page - 1) * limit}`}
             class={linkClass}
-            {...(htmxTarget ? { 'hx-get': `${baseUrl}${separator}offset=${(page - 1) * limit}`, 'hx-target': htmxTarget, 'hx-push-url': 'true' } : {})}
+            {...(htmxTarget ? { 'hx-get': `${baseUrl}${separator}offset=${(page - 1) * limit}`, 'hx-target': htmxTarget, 'hx-push-url': 'true', ...(htmxIndicator ? { 'hx-indicator': htmxIndicator } : {}) } : {})}
           >
             {page}
           </a>
@@ -71,7 +72,7 @@ export function Pagination({ total, limit, offset, baseUrl, htmxTarget }: Pagina
           href={`${baseUrl}${separator}offset=${currentPage * limit}`}
           class={linkClass}
           rel="next"
-          {...(htmxTarget ? { 'hx-get': `${baseUrl}${separator}offset=${currentPage * limit}`, 'hx-target': htmxTarget, 'hx-push-url': 'true' } : {})}
+          {...(htmxTarget ? { 'hx-get': `${baseUrl}${separator}offset=${currentPage * limit}`, 'hx-target': htmxTarget, 'hx-push-url': 'true', ...(htmxIndicator ? { 'hx-indicator': htmxIndicator } : {}) } : {})}
         >
           Next
         </a>

@@ -10,6 +10,9 @@ import {
   createStatsRoutes,
   createSettingsRoutes,
   createPublicRoutes,
+  createActionRoutes,
+  createSubmissionRoutes,
+  createFormRoutes,
 } from '@pignal/core/routes';
 import { ApiKeyStore } from '@pignal/core/store/api-keys';
 import { getDefaultToolManifest } from '@pignal/core/mcp/manifest';
@@ -131,6 +134,12 @@ app.use('/api/settings/*', tokenAuth, requireByMethod('get_metadata', 'manage_se
 app.use('/api/stats', tokenAuth, requirePermission('get_metadata'));
 app.use('/api/metadata', tokenAuth, requirePermission('get_metadata'));
 
+// Site Actions + Submissions (authenticated)
+app.use('/api/actions', tokenAuth, requireByMethod('get_metadata', 'manage_actions'));
+app.use('/api/actions/*', tokenAuth, requireByMethod('get_metadata', 'manage_actions'));
+app.use('/api/submissions', tokenAuth, requirePermission('manage_actions'));
+app.use('/api/submissions/*', tokenAuth, requirePermission('manage_actions'));
+
 // Mount REST API routes (authenticated — tokenAuth already applied above via use())
 const noAuthConfig = {
   getStore: (c: { get: (key: 'store') => Variables['store'] }) => c.get('store'),
@@ -140,6 +149,16 @@ app.route('/api/types', createTypeRoutes(noAuthConfig));
 app.route('/api/workspaces', createWorkspaceRoutes(noAuthConfig));
 app.route('/api/settings', createSettingsRoutes(noAuthConfig));
 app.route('/api', createStatsRoutes(noAuthConfig));
+
+// Action store config
+const actionConfig = {
+  getActionStore: (c: { get: (key: 'actionStore') => Variables['actionStore'] }) => c.get('actionStore'),
+};
+app.route('/api/actions', createActionRoutes(actionConfig));
+app.route('/api/submissions', createSubmissionRoutes(actionConfig));
+
+// Public form routes (no auth, rate-limited)
+app.route('/form', createFormRoutes(actionConfig));
 
 // MCP endpoint — uses SDK's serveSSE() to bridge HTTP/SSE <-> DO WebSocket
 // MCP keeps origin: '*' because MCP clients connect from various origins and

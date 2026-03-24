@@ -1,10 +1,11 @@
 import type { Child } from 'hono/jsx';
 import type { SettingsMap } from '@pignal/db';
 import { Layout } from './layout';
-import { buildThemeStyleTag } from '../lib/theme';
+import { buildThemeStyleTag, buildFontTags } from '../lib/theme';
 import { sanitizeCss } from '../lib/css-sanitize';
 import { APP_JS_URL, HTMX_JS_URL, LOGO_SVG_URL } from '../lib/static-versions';
-import { IconGitHub, IconTwitter, IconRSS } from '../components/icons';
+import { IconGitHub, IconTwitter, IconRSS, IconLinkedIn, IconMastodon, IconYouTube, IconWebsite } from '../components/icons';
+import { getCtaSettings, StickyCta } from './cta-block';
 
 interface PublicLayoutProps {
   title: string;
@@ -34,8 +35,15 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
   const customCss = settings.source_custom_css;
   const customHead = settings.source_custom_head;
   const codeTheme = settings.source_code_theme;
+  const linkedinUrl = safeUrl(settings.source_social_linkedin);
+  const mastodonUrl = safeUrl(settings.source_social_mastodon);
+  const youtubeUrl = safeUrl(settings.source_social_youtube);
+  const websiteUrl = safeUrl(settings.source_social_website);
+  const faviconUrl = safeUrl(settings.source_favicon_url);
+  const logoUrl = safeUrl(settings.source_logo_url);
 
   const themeStyle = buildThemeStyleTag(settings);
+  const fontTags = buildFontTags(settings);
   // Sanitize custom CSS: strip dangerous patterns (imports, expressions, script schemes)
   const safeCss = customCss ? sanitizeCss(customCss) : '';
   const customCssTag = safeCss ? `<style>${safeCss}</style>` : '';
@@ -43,12 +51,12 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
   // HTML/scripts (analytics, fonts, etc.) and is only settable by the SERVER_TOKEN admin.
   const customHeadHtml = customHead || '';
 
-  const headContent = (head || `<title>${title} | ${sourceTitle}</title>`) + themeStyle + customCssTag + customHeadHtml;
+  const headContent = (head || `<title>${title} | ${sourceTitle}</title>`) + themeStyle + fontTags + customCssTag + customHeadHtml;
 
   const codeThemeAttr = codeTheme && codeTheme !== 'default' ? codeTheme : undefined;
 
   return (
-    <Layout title={title} head={headContent}>
+    <Layout title={title} head={headContent} faviconUrl={faviconUrl}>
       <div {...(codeThemeAttr ? { 'data-code-theme': codeThemeAttr } : {})}>
         {/* Navigation */}
         <header class="sticky top-0 z-40 border-b border-border bg-bg-page/60 backdrop-blur-md">
@@ -57,7 +65,10 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
               {/* Left: Logo + site name */}
               <div class="flex items-center">
                 <a href="/" class="inline-flex items-center gap-1.5 text-base font-bold text-text no-underline hover:text-primary transition-colors">
-                  <img src={LOGO_SVG_URL} alt="" width="20" height="20" class="rounded" />
+                  {logoUrl
+                    ? <img src={logoUrl} alt="" height="20" class="rounded" />
+                    : <img src={LOGO_SVG_URL} alt="" width="20" height="20" class="rounded" />
+                  }
                   {logoText}
                 </a>
               </div>
@@ -84,6 +95,50 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
                     aria-label="Twitter"
                   >
                     <IconTwitter size={16} />
+                  </a>
+                )}
+                {linkedinUrl && (
+                  <a
+                    href={linkedinUrl}
+                    target="_blank"
+                    rel="noopener"
+                    class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
+                    aria-label="LinkedIn"
+                  >
+                    <IconLinkedIn size={16} />
+                  </a>
+                )}
+                {mastodonUrl && (
+                  <a
+                    href={mastodonUrl}
+                    target="_blank"
+                    rel="noopener"
+                    class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
+                    aria-label="Mastodon"
+                  >
+                    <IconMastodon size={16} />
+                  </a>
+                )}
+                {youtubeUrl && (
+                  <a
+                    href={youtubeUrl}
+                    target="_blank"
+                    rel="noopener"
+                    class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
+                    aria-label="YouTube"
+                  >
+                    <IconYouTube size={16} />
+                  </a>
+                )}
+                {websiteUrl && (
+                  <a
+                    href={websiteUrl}
+                    target="_blank"
+                    rel="noopener"
+                    class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
+                    aria-label="Website"
+                  >
+                    <IconWebsite size={16} />
                   </a>
                 )}
                 <a
@@ -142,6 +197,21 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
             </div>
           </div>
         </footer>
+
+        {(() => {
+          const stickyCta = getCtaSettings(settings, 'sticky');
+          if (stickyCta && stickyCta.text && stickyCta.buttonText) {
+            return (
+              <StickyCta
+                text={stickyCta.text}
+                buttonText={stickyCta.buttonText}
+                buttonUrl={stickyCta.buttonUrl}
+                actionSlug={stickyCta.actionSlug}
+              />
+            );
+          }
+          return null;
+        })()}
 
         <script src={HTMX_JS_URL}></script>
         <script src={APP_JS_URL}></script>

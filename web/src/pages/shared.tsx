@@ -4,10 +4,10 @@ import type { WebEnv } from '../types';
 import { PublicLayout } from '../components/public-layout';
 import { TypeBadge } from '../components/type-badge';
 import { VisibilityBadge } from '../components/visibility-badge';
-import { TableOfContents } from '../components/table-of-contents';
+
 import { SourceActionBar } from '../components/source-action-bar';
-import { buildMetaTags } from '../lib/seo';
-import { renderMarkdown, stripMarkdown, extractHeadings, normalizeHeadings } from '../lib/markdown';
+import { buildMetaTags, resolveOgImage } from '../lib/seo';
+import { renderMarkdown, stripMarkdown, normalizeHeadings } from '../lib/markdown';
 import { formatDate, readingTime } from '../lib/time';
 import { raw } from 'hono/html';
 
@@ -39,14 +39,9 @@ export async function sharedPage(c: Context<{ Bindings: WebEnv; Variables: WebVa
   const sourceAuthor = settings.owner_name || settings.source_title || domain;
   const githubUrl = settings.source_social_github || '';
 
-  const showToc = settings.source_show_toc !== 'false';
   const showReadingTime = settings.source_show_reading_time !== 'false';
 
-  // Derive OG image: prefer GitHub avatar (direct URL, no redirect), fall back to branded PNG
-  const githubUsername = githubUrl.replace(/\/$/, '').split('/').pop() || '';
-  const ogImage = githubUsername
-    ? `https://avatars.githubusercontent.com/${githubUsername}?s=400`
-    : `${sourceUrl}/og-image.png`;
+  const ogImage = resolveOgImage(settings, sourceUrl);
 
   const description = stripMarkdown(row.content).slice(0, 160);
   const metaTags = buildMetaTags({
@@ -59,7 +54,6 @@ export async function sharedPage(c: Context<{ Bindings: WebEnv; Variables: WebVa
   });
 
   const normalized = normalizeHeadings(row.content);
-  const headings = extractHeadings(normalized, true);
   const renderedContent = renderMarkdown(normalized, true);
 
   // Unlisted content should not be CDN-cached — revoked tokens must take effect immediately
@@ -67,7 +61,7 @@ export async function sharedPage(c: Context<{ Bindings: WebEnv; Variables: WebVa
 
   return c.html(
     <PublicLayout title={row.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
-      <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_200px] gap-10 items-start max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-12 w-full">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-12 w-full">
         <main class="min-w-0 max-w-full break-words">
           <div class="flex items-center gap-2 text-sm text-muted mb-4 p-3 bg-warning-bg border border-warning-border rounded-lg">
             <VisibilityBadge visibility="unlisted" />
@@ -119,12 +113,6 @@ export async function sharedPage(c: Context<{ Bindings: WebEnv; Variables: WebVa
             </div>
           </article>
         </main>
-
-        {showToc && (
-          <div class="max-xl:hidden">
-            <TableOfContents headings={headings} />
-          </div>
-        )}
       </div>
     </PublicLayout>
   );

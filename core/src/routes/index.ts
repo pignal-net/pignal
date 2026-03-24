@@ -4,4 +4,8 @@ export { createWorkspaceRoutes } from './workspaces';
 export { createStatsRoutes } from './stats';
 export { createSettingsRoutes } from './settings';
 export { createPublicRoutes } from './public';
+export { createActionRoutes, createSubmissionRoutes } from './actions';
+export { createFormRoutes } from './forms';
 export type { RouteFactoryConfig } from '../types';
+export type { ActionRouteConfig } from './actions';
+export type { FormRouteConfig } from './forms';

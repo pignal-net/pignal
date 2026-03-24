@@ -1,8 +1,8 @@
 import type { ItemPostProps } from '@pignal/templates';
-import { TableOfContents } from '../../components/table-of-contents';
+
 import { SourceActionBar } from '../../components/source-action-bar';
 import { JsonLd } from '../../components/json-ld';
-import { buildSourcePostingJsonLd, buildMetaTags } from '../../lib/seo';
+import { buildSourcePostingJsonLd, buildMetaTags, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
 import { formatDate, readingTime } from '../../lib/time';
 import { raw } from 'hono/html';
@@ -41,21 +41,17 @@ export function CaseStudiesItemPost(props: ItemPostProps) {
     item,
     settings,
     renderedContent,
-    headings,
+    headings: _headings,
     sourceUrl,
     sourceAuthor,
     githubUrl,
   } = props;
 
   const sourceTitle = settings.source_title || 'My Case Studies';
-  const showToc = settings.source_show_toc !== 'false';
   const showReadingTime = settings.source_show_reading_time !== 'false';
   const dateStr = item.vouchedAt || item.createdAt;
 
-  const githubUsername = githubUrl.replace(/\/$/, '').split('/').pop() || '';
-  const ogImage = githubUsername
-    ? `https://avatars.githubusercontent.com/${githubUsername}?s=400`
-    : `${sourceUrl}/og-image.png`;
+  const ogImage = resolveOgImage(settings, sourceUrl);
 
   const description = stripMarkdown(item.content).slice(0, 160);
   const jsonLd = buildSourcePostingJsonLd(item, settings, sourceUrl, description, props.seo);
@@ -147,12 +143,6 @@ export function CaseStudiesItemPost(props: ItemPostProps) {
             )}
           </article>
         </main>
-
-        {showToc && (
-          <div class="max-xl:hidden">
-            <TableOfContents headings={headings} />
-          </div>
-        )}
       </div>
     </CaseStudiesLayout>
   );

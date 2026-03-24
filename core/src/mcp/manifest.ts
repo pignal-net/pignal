@@ -10,6 +10,11 @@ import {
   createTypeToolSchema,
   vouchItemToolSchema,
   batchVouchItemsToolSchema,
+  createActionToolSchema,
+  updateActionToolSchema,
+  listActionsToolSchema,
+  listSubmissionsToolSchema,
+  manageSubmissionToolSchema,
 } from '../validation/schemas';
 import type { ToolDefinition } from '../federation/types';
 
@@ -199,6 +204,100 @@ export function getDefaultToolManifest(mcpConfig?: McpConfig): ToolDefinition[] 
       endpoint: {
         method: 'POST',
         path: '/api/items/batch-vouch',
+      },
+      requiredScopes: ['items:write'],
+      responseFormat: 'raw',
+    },
+    {
+      name: 'create_action',
+      description:
+        td?.create_action ??
+        'Create a site action (form) for lead capture, contact, newsletter signup, etc. Returns the slug for embedding in content via {{action:slug}}.',
+      inputSchema: zodToJsonSchema(createActionToolSchema, {
+        target: 'openApi3',
+      }) as Record<string, unknown>,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+      },
+      endpoint: { method: 'POST', path: '/api/actions' },
+      requiredScopes: ['items:write'],
+      responseFormat: 'raw',
+    },
+    {
+      name: 'update_action',
+      description:
+        td?.update_action ??
+        'Update a site action — modify fields, settings, status, or slug.',
+      inputSchema: zodToJsonSchema(updateActionToolSchema, {
+        target: 'openApi3',
+      }) as Record<string, unknown>,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+      endpoint: {
+        method: 'PATCH',
+        path: '/api/actions/{actionId}',
+        pathParams: ['actionId'],
+      },
+      requiredScopes: ['items:write'],
+      responseFormat: 'raw',
+    },
+    {
+      name: 'list_actions',
+      description:
+        td?.list_actions ??
+        'List all site actions (forms) with submission counts and field definitions.',
+      inputSchema: zodToJsonSchema(listActionsToolSchema, {
+        target: 'openApi3',
+      }) as Record<string, unknown>,
+      annotations: { readOnlyHint: true, idempotentHint: true },
+      endpoint: {
+        method: 'GET',
+        path: '/api/actions',
+        queryParams: ['status'],
+      },
+      requiredScopes: ['items:read'],
+      responseFormat: 'raw',
+    },
+    {
+      name: 'list_submissions',
+      description:
+        td?.list_submissions ??
+        'List form submissions with filtering by action and status.',
+      inputSchema: zodToJsonSchema(listSubmissionsToolSchema, {
+        target: 'openApi3',
+      }) as Record<string, unknown>,
+      annotations: { readOnlyHint: true, idempotentHint: true },
+      endpoint: {
+        method: 'GET',
+        path: '/api/actions/submissions',
+        queryParams: ['actionId', 'status', 'limit', 'offset'],
+      },
+      requiredScopes: ['items:read'],
+      responseFormat: 'raw',
+    },
+    {
+      name: 'manage_submission',
+      description:
+        td?.manage_submission ??
+        'Update the status of a form submission (mark as read, replied, archived, or spam).',
+      inputSchema: zodToJsonSchema(manageSubmissionToolSchema, {
+        target: 'openApi3',
+      }) as Record<string, unknown>,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+      endpoint: {
+        method: 'PATCH',
+        path: '/api/actions/submissions/{submissionId}',
+        pathParams: ['submissionId'],
+        bodyParams: ['status'],
       },
       requiredScopes: ['items:write'],
       responseFormat: 'raw',

@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/d1';
 import type { ZodTypeAny } from 'zod';
 
 import { ItemStore } from '@pignal/core/store';
+import { ActionStore } from '@pignal/core/store/action-store';
 import {
   formatItem,
   formatWorkspace,
@@ -20,6 +21,11 @@ import {
   createType,
   vouchItem,
   batchVouchItems,
+  createActionOp,
+  updateActionOp,
+  listActionsOp,
+  listSubmissionsOp,
+  manageSubmissionOp,
   saveItemToolSchema,
   listItemsToolSchema,
   searchItemsToolSchema,
@@ -29,6 +35,11 @@ import {
   createTypeToolSchema,
   vouchItemToolSchema,
   batchVouchItemsToolSchema,
+  createActionToolSchema,
+  updateActionToolSchema,
+  listActionsToolSchema,
+  listSubmissionsToolSchema,
+  manageSubmissionToolSchema,
   type SaveItemToolInput,
   type ListItemsToolInput,
   type SearchItemsToolInput,
@@ -38,6 +49,11 @@ import {
   type CreateTypeToolInput,
   type VouchItemToolInput,
   type BatchVouchItemsToolInput,
+  type CreateActionToolInput,
+  type UpdateActionToolInput,
+  type ListActionsToolInput,
+  type ListSubmissionsToolInput,
+  type ManageSubmissionToolInput,
   type MetadataField,
 } from '@pignal/core/mcp';
 import {
@@ -92,6 +108,11 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
   private getStore() {
     const db = drizzle(this.env.DB);
     return new ItemStore(db);
+  }
+
+  private getActionStore() {
+    const db = drizzle(this.env.DB);
+    return new ActionStore(db);
   }
 
   async init() {
@@ -433,6 +454,115 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
               text: lines.join('\n'),
             },
           ],
+        };
+      }
+    );
+
+    // --- Site Actions tools ---
+
+    const actionStore = this.getActionStore();
+
+    // Create action tool
+    server.registerTool(
+      'create_action',
+      {
+        description: td.create_action ?? 'Create a site action (form) for lead capture, contact, newsletter signup, etc. Returns the slug for embedding in content via {{action:slug}}.',
+        inputSchema: createActionToolSchema.shape,
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
+      },
+      async (input: CreateActionToolInput) => {
+        const text = await createActionOp(actionStore, input);
+        return {
+          content: [{ type: 'text' as const, text }],
+        };
+      }
+    );
+
+    // Update action tool
+    server.registerTool(
+      'update_action',
+      {
+        description: td.update_action ?? 'Update a site action — modify fields, settings, status, or slug.',
+        inputSchema: updateActionToolSchema.shape,
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
+      },
+      async (input: UpdateActionToolInput) => {
+        const text = await updateActionOp(actionStore, input);
+        return {
+          content: [{ type: 'text' as const, text }],
+        };
+      }
+    );
+
+    // List actions tool
+    server.registerTool(
+      'list_actions',
+      {
+        description: td.list_actions ?? 'List all site actions (forms) with submission counts and field definitions.',
+        inputSchema: listActionsToolSchema.shape,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
+      },
+      async (input: ListActionsToolInput) => {
+        const text = await listActionsOp(actionStore, input);
+        return {
+          content: [{ type: 'text' as const, text }],
+        };
+      }
+    );
+
+    // List submissions tool
+    server.registerTool(
+      'list_submissions',
+      {
+        description: td.list_submissions ?? 'List form submissions with filtering by action and status.',
+        inputSchema: listSubmissionsToolSchema.shape,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
+      },
+      async (input: ListSubmissionsToolInput) => {
+        const text = await listSubmissionsOp(actionStore, input);
+        return {
+          content: [{ type: 'text' as const, text }],
+        };
+      }
+    );
+
+    // Manage submission tool
+    server.registerTool(
+      'manage_submission',
+      {
+        description: td.manage_submission ?? 'Update the status of a form submission (mark as read, replied, archived, or spam).',
+        inputSchema: manageSubmissionToolSchema.shape,
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
+      },
+      async (input: ManageSubmissionToolInput) => {
+        const text = await manageSubmissionOp(actionStore, input);
+        return {
+          content: [{ type: 'text' as const, text }],
         };
       }
     );

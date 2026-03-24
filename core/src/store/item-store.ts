@@ -33,6 +33,9 @@ import type {
   UpdateWorkspaceParams,
 } from '@pignal/db';
 
+import type { EventBus as PignalEventBus } from '../events/event-bus';
+import { createEvent } from '../events/event-bus';
+
 /**
  * Pure business logic for item storage.
  * Accepts any Drizzle SQLite database instance (DO SQLite or D1).
@@ -45,7 +48,11 @@ export class ItemStore implements ItemStoreRpc {
   // Both DO SQLite ('sync') and D1 ('async') extend BaseSQLiteDatabase.
   // All queries use await, which works with both modes at runtime.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(private db: BaseSQLiteDatabase<any, any>) {}
+  constructor(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private db: BaseSQLiteDatabase<any, any>,
+    private eventBus?: PignalEventBus,
+  ) {}
 
   // --- Item methods ---
 
@@ -513,6 +520,16 @@ export class ItemStore implements ItemStoreRpc {
     }
 
     await this.db.update(items).set(updates).where(eq(items.id, id));
+
+    // Emit item.published event when visibility is set to vouched
+    if (params.visibility === 'vouched' && this.eventBus) {
+      void this.eventBus.emit(createEvent('item.published', {
+        itemId: id,
+        slug: updates.slug ?? null,
+        visibility: params.visibility,
+      }));
+    }
+
     return this.getWithMeta(id);
   }
 

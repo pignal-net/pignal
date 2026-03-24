@@ -9,6 +9,7 @@ import type { ApiKeyStore } from '@pignal/core/store/api-keys';
 import { securityHeaders } from './middleware/headers';
 import { sessionMiddleware } from './middleware/session';
 import { csrfMiddleware } from './middleware/csrf';
+import { analyticsMiddleware } from './middleware/analytics';
 import { rateLimit } from '@pignal/core/middleware/rate-limit';
 import { clearSessionCookie } from './lib/cookie';
 
@@ -22,7 +23,19 @@ import logoPng from './static/logo.png';
 // Pages
 import { loginPage, loginHandler } from './pages/login';
 import { dashboardPage } from './pages/dashboard';
-import { itemsPage, itemListPartial } from './pages/items';
+import {
+  itemsPage,
+  editItemFormHandler,
+  editItemHandler,
+  deleteItemHandler,
+  toggleArchiveHandler,
+  togglePinHandler,
+  vouchItemHandler,
+  bulkArchiveItemsHandler,
+  bulkUnarchiveItemsHandler,
+  bulkVouchItemsHandler,
+  bulkDeleteItemsHandler,
+} from './pages/items';
 import {
   itemDetailPage,
   validateHandler,
@@ -32,15 +45,55 @@ import {
   unpinHandler,
   visibilityHandler,
 } from './pages/item-detail';
-import { typesPage, createTypeHandler, updateTypeHandler, deleteTypeHandler } from './pages/types';
+import {
+  typesPage,
+  addTypeFormHandler,
+  createTypeHandler,
+  editTypeFormHandler,
+  editTypeHandler,
+  deleteTypeHandler,
+  bulkDeleteTypesHandler,
+} from './pages/types';
 import {
   workspacesPage,
+  addWorkspaceFormHandler,
   createWorkspaceHandler,
-  batchUpdateWorkspacesHandler,
+  editWorkspaceFormHandler,
+  editWorkspaceHandler,
+  toggleVisibilityHandler,
   deleteWorkspaceHandler,
+  bulkDeleteWorkspacesHandler,
 } from './pages/workspaces';
 import { settingsPage, updateSettingHandler, batchUpdateSettingsHandler } from './pages/settings';
-import { apiKeysPage, createApiKeyHandler, deleteApiKeyHandler } from './pages/api-keys';
+import {
+  apiKeysPage,
+  addApiKeyFormHandler,
+  createApiKeyHandler,
+  deleteApiKeyHandler,
+  bulkRevokeApiKeysHandler,
+} from './pages/api-keys';
+import {
+  actionsPage,
+  addActionFormHandler,
+  createActionHandler,
+  editActionFormHandler,
+  editActionHandler,
+  deleteActionHandler,
+  toggleActionStatusHandler,
+  exportActionSubmissionsHandler,
+  bulkPauseActionsHandler,
+  bulkActivateActionsHandler,
+  bulkDeleteActionsHandler,
+} from './pages/actions';
+import {
+  submissionsPage,
+  updateSubmissionHandler,
+  deleteSubmissionHandler,
+  bulkReadSubmissionsHandler,
+  bulkArchiveSubmissionsHandler,
+  bulkSpamSubmissionsHandler,
+  bulkDeleteSubmissionsHandler,
+} from './pages/submissions';
 import { sourcePageFeed } from './pages/source-page';
 import { itemPostPage } from './pages/item-post';
 import { sharedPage } from './pages/shared';
@@ -195,6 +248,10 @@ export function createWebRoutes(config: WebRouteConfig) {
     return c.body(generateLlmsFullTxt(metadata, result.total, sourceUrl, templateConfig.vocabulary));
   });
 
+  // Analytics tracking on public pages (fire-and-forget via waitUntil)
+  router.use('/', analyticsMiddleware);
+  router.use('/item/:slug', analyticsMiddleware);
+
   // Public source page at root (no auth, no CSRF, no HTMX -- pure SSR for crawlability)
   router.get('/', sourcePageFeed);
 
@@ -291,10 +348,21 @@ export function createWebRoutes(config: WebRouteConfig) {
   // Admin pages
   router.get('/pignal', dashboardPage);
   router.get('/pignal/items', itemsPage);
-  router.get('/pignal/items/list', itemListPartial);
-  router.get('/pignal/items/:id', itemDetailPage);
 
-  // Item actions (HTMX partial + form POST fallback)
+  // Item bulk actions (must be before :id routes to avoid matching "bulk" as :id)
+  router.post('/pignal/items/bulk/archive', bulkArchiveItemsHandler);
+  router.post('/pignal/items/bulk/unarchive', bulkUnarchiveItemsHandler);
+  router.post('/pignal/items/bulk/vouch', bulkVouchItemsHandler);
+  router.post('/pignal/items/bulk/delete', bulkDeleteItemsHandler);
+
+  // Item detail + actions
+  router.get('/pignal/items/:id', itemDetailPage);
+  router.get('/pignal/items/:id/edit-form', editItemFormHandler);
+  router.post('/pignal/items/:id/edit', editItemHandler);
+  router.post('/pignal/items/:id/delete', deleteItemHandler);
+  router.post('/pignal/items/:id/toggle-archive', toggleArchiveHandler);
+  router.post('/pignal/items/:id/toggle-pin', togglePinHandler);
+  router.post('/pignal/items/:id/vouch', vouchItemHandler);
   router.post('/pignal/items/:id/validate', validateHandler);
   router.post('/pignal/items/:id/archive', archiveHandler);
   router.post('/pignal/items/:id/unarchive', unarchiveHandler);
@@ -304,14 +372,21 @@ export function createWebRoutes(config: WebRouteConfig) {
 
   // Types CRUD
   router.get('/pignal/types', typesPage);
+  router.get('/pignal/types/add-form', addTypeFormHandler);
   router.post('/pignal/types', createTypeHandler);
-  router.post('/pignal/types/:id/update', updateTypeHandler);
+  router.post('/pignal/types/bulk/delete', bulkDeleteTypesHandler);
+  router.get('/pignal/types/:id/edit-form', editTypeFormHandler);
+  router.post('/pignal/types/:id/edit', editTypeHandler);
   router.post('/pignal/types/:id/delete', deleteTypeHandler);
 
   // Workspaces CRUD
   router.get('/pignal/workspaces', workspacesPage);
+  router.get('/pignal/workspaces/add-form', addWorkspaceFormHandler);
   router.post('/pignal/workspaces', createWorkspaceHandler);
-  router.post('/pignal/workspaces/batch', batchUpdateWorkspacesHandler);
+  router.post('/pignal/workspaces/bulk/delete', bulkDeleteWorkspacesHandler);
+  router.get('/pignal/workspaces/:id/edit-form', editWorkspaceFormHandler);
+  router.post('/pignal/workspaces/:id/edit', editWorkspaceHandler);
+  router.post('/pignal/workspaces/:id/toggle-visibility', toggleVisibilityHandler);
   router.post('/pignal/workspaces/:id/delete', deleteWorkspaceHandler);
 
   // Settings
@@ -321,8 +396,32 @@ export function createWebRoutes(config: WebRouteConfig) {
 
   // API Keys
   router.get('/pignal/api-keys', apiKeysPage);
+  router.get('/pignal/api-keys/add-form', addApiKeyFormHandler);
   router.post('/pignal/api-keys', createApiKeyHandler);
+  router.post('/pignal/api-keys/bulk-revoke', bulkRevokeApiKeysHandler);
   router.post('/pignal/api-keys/:id/delete', deleteApiKeyHandler);
+
+  // Site Actions
+  router.get('/pignal/actions', actionsPage);
+  router.get('/pignal/actions/add-form', addActionFormHandler);
+  router.post('/pignal/actions', createActionHandler);
+  router.post('/pignal/actions/bulk-pause', bulkPauseActionsHandler);
+  router.post('/pignal/actions/bulk-activate', bulkActivateActionsHandler);
+  router.post('/pignal/actions/bulk-delete', bulkDeleteActionsHandler);
+  router.get('/pignal/actions/:id/edit-form', editActionFormHandler);
+  router.post('/pignal/actions/:id/update', editActionHandler);
+  router.post('/pignal/actions/:id/delete', deleteActionHandler);
+  router.post('/pignal/actions/:id/toggle-status', toggleActionStatusHandler);
+  router.get('/pignal/actions/:id/export', exportActionSubmissionsHandler);
+
+  // Submissions
+  router.get('/pignal/submissions', submissionsPage);
+  router.post('/pignal/submissions/bulk-read', bulkReadSubmissionsHandler);
+  router.post('/pignal/submissions/bulk-archive', bulkArchiveSubmissionsHandler);
+  router.post('/pignal/submissions/bulk-spam', bulkSpamSubmissionsHandler);
+  router.post('/pignal/submissions/bulk-delete', bulkDeleteSubmissionsHandler);
+  router.post('/pignal/submissions/:id/status', updateSubmissionHandler);
+  router.post('/pignal/submissions/:id/delete', deleteSubmissionHandler);
 
   return router;
 }

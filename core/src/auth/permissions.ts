@@ -18,6 +18,7 @@ export const VALID_PERMISSIONS = [
   'manage_types',
   'manage_workspaces',
   'manage_settings',
+  'manage_actions',
 ] as const;
 
 export type Permission = (typeof VALID_PERMISSIONS)[number];

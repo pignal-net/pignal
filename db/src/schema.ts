@@ -111,3 +111,65 @@ export const apiKeys = sqliteTable(
 
 export type ApiKeySelect = typeof apiKeys.$inferSelect;
 export type ApiKeyInsert = typeof apiKeys.$inferInsert;
+
+// --- Site Actions (forms, lead capture, etc.) ---
+
+export const siteActions = sqliteTable(
+  'site_actions',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    description: text('description'),
+    fields: text('fields').notNull(), // JSON: SiteActionField[]
+    settings: text('settings').notNull().default('{}'), // JSON: SiteActionSettings
+    status: text('status').notNull().default('active'), // 'active' | 'paused' | 'archived'
+    submissionCount: integer('submission_count').default(0),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [uniqueIndex('idx_site_actions_slug').on(table.slug), index('idx_site_actions_status').on(table.status)]
+);
+
+export type SiteActionSelect = typeof siteActions.$inferSelect;
+export type SiteActionInsert = typeof siteActions.$inferInsert;
+
+export const submissions = sqliteTable(
+  'submissions',
+  {
+    id: text('id').primaryKey(),
+    actionId: text('action_id')
+      .notNull()
+      .references(() => siteActions.id, { onDelete: 'cascade' }),
+    data: text('data').notNull(), // JSON: Record<string, string>
+    status: text('status').notNull().default('new'), // 'new' | 'read' | 'replied' | 'archived' | 'spam'
+    ipHash: text('ip_hash'),
+    referrer: text('referrer'),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [
+    index('idx_submissions_action').on(table.actionId, table.createdAt),
+    index('idx_submissions_status').on(table.actionId, table.status),
+  ]
+);
+
+export type SubmissionSelect = typeof submissions.$inferSelect;
+export type SubmissionInsert = typeof submissions.$inferInsert;
+
+// --- Page Views (analytics) ---
+
+export const pageViews = sqliteTable(
+  'page_views',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    path: text('path').notNull(),
+    slug: text('slug'),
+    referrer: text('referrer'),
+    country: text('country'),
+    createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+  },
+  (table) => [index('idx_views_path_date').on(table.path, table.createdAt), index('idx_views_slug').on(table.slug)]
+);
+
+export type PageViewSelect = typeof pageViews.$inferSelect;
+export type PageViewInsert = typeof pageViews.$inferInsert;

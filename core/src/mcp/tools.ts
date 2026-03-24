@@ -4,6 +4,9 @@ import type {
   MetadataResult,
   ItemTypeWithActions,
   WorkspaceSelect,
+  ActionStoreRpc,
+  SiteActionSelect,
+  SubmissionWithAction,
 } from '@pignal/db';
 
 import {
@@ -16,6 +19,11 @@ import {
   createTypeToolSchema,
   vouchItemToolSchema,
   batchVouchItemsToolSchema,
+  createActionToolSchema,
+  updateActionToolSchema,
+  listActionsToolSchema,
+  listSubmissionsToolSchema,
+  manageSubmissionToolSchema,
   type SaveItemToolInput,
   type ListItemsToolInput,
   type SearchItemsToolInput,
@@ -25,6 +33,11 @@ import {
   type CreateTypeToolInput,
   type VouchItemToolInput,
   type BatchVouchItemsToolInput,
+  type CreateActionToolInput,
+  type UpdateActionToolInput,
+  type ListActionsToolInput,
+  type ListSubmissionsToolInput,
+  type ManageSubmissionToolInput,
 } from '../validation/schemas';
 
 // --- Metadata fields for formatting ---
@@ -342,6 +355,67 @@ export async function batchVouchItems(
   return { succeeded, failed };
 }
 
+// --- Site Actions formatting utilities ---
+
+export function formatAction(a: SiteActionSelect): string {
+  const fields = JSON.parse(a.fields) as { name: string; type: string; label: string; required?: boolean }[];
+  const fieldList = fields.map(f => `  - ${f.label} (${f.type}${f.required ? ', required' : ''})`).join('\n');
+  return [
+    `ID: ${a.id}`,
+    `**${a.name}** (/${a.slug})`,
+    `Status: ${a.status} | Submissions: ${a.submissionCount}`,
+    a.description ? `Description: ${a.description}` : null,
+    `Fields:\n${fieldList}`,
+    `Embed in content: {{action:${a.slug}}}`,
+  ].filter(Boolean).join('\n');
+}
+
+export function formatSubmission(s: SubmissionWithAction): string {
+  const dataEntries = Object.entries(s.data).map(([k, v]) => `  ${k}: ${v}`).join('\n');
+  return [
+    `ID: ${s.id}`,
+    `Form: ${s.actionName} (${s.actionSlug})`,
+    `Status: ${s.status} | Submitted: ${s.createdAt}`,
+    `Data:\n${dataEntries}`,
+  ].join('\n');
+}
+
+// --- Site Actions tool operation functions ---
+
+export async function createActionOp(store: ActionStoreRpc, input: CreateActionToolInput): Promise<string> {
+  const action = await store.createAction({
+    id: crypto.randomUUID(),
+    ...input,
+  });
+  return `Action created successfully.\n\n${formatAction(action)}\n\nEmbed in any item content with: {{action:${action.slug}}}`;
+}
+
+export async function updateActionOp(store: ActionStoreRpc, input: UpdateActionToolInput): Promise<string> {
+  const { actionId, ...params } = input;
+  const action = await store.updateAction(actionId, params);
+  if (!action) return 'Action not found.';
+  return `Action updated.\n\n${formatAction(action)}`;
+}
+
+export async function listActionsOp(store: ActionStoreRpc, input: ListActionsToolInput): Promise<string> {
+  const actions = await store.listActions(input.status ? { status: input.status } : undefined);
+  if (actions.length === 0) return 'No actions found.';
+  return actions.map(formatAction).join('\n\n---\n\n');
+}
+
+export async function listSubmissionsOp(store: ActionStoreRpc, input: ListSubmissionsToolInput): Promise<string> {
+  const { submissions, total } = await store.listSubmissions(input);
+  if (submissions.length === 0) return 'No submissions found.';
+  const header = `Showing ${submissions.length} of ${total} submissions`;
+  return header + '\n\n' + submissions.map(formatSubmission).join('\n\n---\n\n');
+}
+
+export async function manageSubmissionOp(store: ActionStoreRpc, input: ManageSubmissionToolInput): Promise<string> {
+  const success = await store.updateSubmissionStatus(input.submissionId, input.status);
+  if (!success) return 'Submission not found.';
+  return `Submission ${input.submissionId} marked as "${input.status}".`;
+}
+
 // --- Re-export schemas for tool registration ---
 
 export {
@@ -354,6 +428,11 @@ export {
   createTypeToolSchema,
   vouchItemToolSchema,
   batchVouchItemsToolSchema,
+  createActionToolSchema,
+  updateActionToolSchema,
+  listActionsToolSchema,
+  listSubmissionsToolSchema,
+  manageSubmissionToolSchema,
   type SaveItemToolInput,
   type ListItemsToolInput,
   type SearchItemsToolInput,
@@ -363,4 +442,9 @@ export {
   type CreateTypeToolInput,
   type VouchItemToolInput,
   type BatchVouchItemsToolInput,
+  type CreateActionToolInput,
+  type UpdateActionToolInput,
+  type ListActionsToolInput,
+  type ListSubmissionsToolInput,
+  type ManageSubmissionToolInput,
 };
