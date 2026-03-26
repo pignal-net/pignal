@@ -233,7 +233,7 @@ export async function actionsPage(c: Context<{ Bindings: WebEnv; Variables: Page
   ];
 
   return c.html(
-    <AppLayout title={t('actions.title')} currentPath="/pignal/actions" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale}>
+    <AppLayout title={t('actions.title')} currentPath="/pignal/actions" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale} visitor={c.get("visitor")}>
       <PageHeader
         title={t('actions.title')}
         description={t('actions.description')}

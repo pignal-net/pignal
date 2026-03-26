@@ -33,8 +33,9 @@ export async function sourcePageFeed(c: Context<{ Bindings: WebEnv; Variables: W
   const store = c.get('store');
   const isHtmx = isHtmxRequest(c);
 
-  // Vary on HX-Request so browser caches full page and HTMX partial separately
-  c.header('Vary', 'HX-Request');
+  // Vary on HX-Request so browser caches full page and HTMX partial separately.
+  // Add Cookie when visitor SSO is available so login/logout busts browser cache.
+  c.header('Vary', c.env.VISITOR_SITE_SECRET ? 'HX-Request, Cookie' : 'HX-Request');
 
   const settings = await store.getSettings();
   const template = getTemplate(c.get('templateName'));
@@ -91,7 +92,7 @@ export async function sourcePageFeed(c: Context<{ Bindings: WebEnv; Variables: W
   const items = result.items.map(toItem);
   const publicWorkspaces = allWorkspaces.filter((w) => w.visibility === 'public');
 
-  c.header('Cache-Control', 'public, max-age=60');
+  c.header('Cache-Control', c.get('visitor') ? 'private, max-age=60' : 'public, max-age=60');
 
   const t = c.get('t');
   const defaultLocale = c.get('defaultLocale');

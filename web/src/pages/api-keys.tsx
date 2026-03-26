@@ -152,7 +152,7 @@ export async function apiKeysPage(c: Context<{ Bindings: WebEnv; Variables: Page
   ];
 
   return c.html(
-    <AppLayout title={t('apiKeys.title')} currentPath="/pignal/api-keys" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale}>
+    <AppLayout title={t('apiKeys.title')} currentPath="/pignal/api-keys" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale} visitor={c.get("visitor")}>
       <PageHeader
         title={t('apiKeys.title')}
         description={t('apiKeys.description')}

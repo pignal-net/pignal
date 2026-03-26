@@ -235,7 +235,7 @@ export async function itemsPage(c: Context<{ Bindings: WebEnv; Variables: WebVar
   ];
 
   return c.html(
-    <AppLayout title={t('items.title')} currentPath="/pignal/items" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale}>
+    <AppLayout title={t('items.title')} currentPath="/pignal/items" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale} visitor={c.get("visitor")}>
       <PageHeader title={t('items.title')} description={t('items.description')} count={result.total} />
 
       <ManagedList

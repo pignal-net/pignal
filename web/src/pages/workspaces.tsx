@@ -167,7 +167,7 @@ export async function workspacesPage(c: Context<{ Bindings: WebEnv; Variables: W
   ];
 
   return c.html(
-    <AppLayout title={t('workspaces.title')} currentPath="/pignal/workspaces" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale}>
+    <AppLayout title={t('workspaces.title')} currentPath="/pignal/workspaces" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale} visitor={c.get("visitor")}>
       <PageHeader title={t('workspaces.title')} description={t('workspaces.description')} count={total} />
 
       <ManagedList

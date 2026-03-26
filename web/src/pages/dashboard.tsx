@@ -140,6 +140,7 @@ export async function dashboardPage(c: Context<{ Bindings: WebEnv; Variables: We
       t={t}
       locale={locale}
       defaultLocale={defaultLocale}
+      visitor={c.get("visitor")}
     >
       <PageHeader title={t('dashboard.title')} description={t('dashboard.description')} />
 

@@ -1,5 +1,6 @@
 import type { Child } from 'hono/jsx';
 import type { TFunction, Locale } from '@pignal/render/i18n/types';
+import type { VisitorContext } from '../types';
 import { Layout } from '@pignal/render/components/layout';
 import { HTMX_JS_URL, APP_JS_URL, LOGO_SVG_URL } from '@pignal/render/lib/static-versions';
 import { IconLogout, IconExternalLink, IconHamburger } from '@pignal/render/components/icons';
@@ -15,6 +16,8 @@ interface AppLayoutProps {
   locale: Locale;
   defaultLocale: Locale;
   children: Child;
+  /** Visitor identity from hub SSO (null if not authenticated or self-hosted). */
+  visitor?: VisitorContext;
 }
 
 export function AppLayout({
@@ -26,6 +29,7 @@ export function AppLayout({
   locale,
   defaultLocale,
   children,
+  visitor,
 }: AppLayoutProps) {
   const lp = (path: string) => localePath(path, locale, defaultLocale);
 
@@ -96,14 +100,42 @@ export function AppLayout({
                 <button class="theme-toggle" type="button" aria-label={t('common.toggleTheme')}>
                 </button>
 
-                {/* Logout (hidden on mobile) */}
-                <a
-                  href={lp('/pignal/logout')}
-                  class="hidden md:inline-flex items-center p-2 text-muted hover:text-text hover:bg-surface-hover rounded-md transition-colors"
-                  aria-label={t('common.logout')}
-                >
-                  <IconLogout size={16} />
-                </a>
+                {/* User menu / Logout (hidden on mobile) */}
+                {visitor ? (
+                  <details class="dropdown relative hidden md:inline-block">
+                    <summary class="flex items-center gap-1.5 px-1.5 py-1 rounded-md hover:bg-surface-hover transition-colors cursor-pointer list-none select-none">
+                      <img
+                        src={`https://github.com/${visitor.login}.png?size=32`}
+                        alt=""
+                        width="20"
+                        height="20"
+                        class="rounded-full"
+                      />
+                    </summary>
+                    <div class="absolute right-0 top-full mt-1 min-w-[180px] bg-surface border border-border rounded-lg shadow-md z-50 py-1">
+                      <div class="px-3 py-2 border-b border-border-subtle">
+                        <div class="text-sm font-medium text-text truncate">{visitor.name}</div>
+                        <div class="text-xs text-muted truncate">@{visitor.login}</div>
+                      </div>
+                      <a href="/" target="_blank" rel="noopener" class="flex items-center gap-2 px-3 py-1.5 text-sm text-text hover:bg-surface-hover transition-colors">
+                        <IconExternalLink size={14} />
+                        {t('common.viewSite')}
+                      </a>
+                      <a href="https://pignal.net/logout" class="flex items-center gap-2 px-3 py-1.5 text-sm text-text hover:bg-surface-hover transition-colors">
+                        <IconLogout size={14} />
+                        {t('common.signOut')}
+                      </a>
+                    </div>
+                  </details>
+                ) : (
+                  <a
+                    href={lp('/pignal/logout')}
+                    class="hidden md:inline-flex items-center p-2 text-muted hover:text-text hover:bg-surface-hover rounded-md transition-colors"
+                    aria-label={t('common.logout')}
+                  >
+                    <IconLogout size={16} />
+                  </a>
+                )}
 
                 {/* Mobile hamburger menu */}
                 <details class="md:hidden relative">
@@ -125,6 +157,23 @@ export function AppLayout({
                       </a>
                     ))}
                     <div class="border-t border-border my-1" />
+                    {visitor && (
+                      <div class="px-4 py-2 border-b border-border-subtle">
+                        <div class="flex items-center gap-2">
+                          <img
+                            src={`https://github.com/${visitor.login}.png?size=32`}
+                            alt=""
+                            width="20"
+                            height="20"
+                            class="rounded-full"
+                          />
+                          <div>
+                            <div class="text-sm font-medium text-text truncate">{visitor.name}</div>
+                            <div class="text-xs text-muted truncate">@{visitor.login}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <a
                       href="/"
                       target="_blank"
@@ -134,13 +183,23 @@ export function AppLayout({
                       {t('common.viewSite')}
                       <IconExternalLink size={14} />
                     </a>
-                    <a
-                      href={lp('/pignal/logout')}
-                      class="flex items-center gap-2 px-4 py-2 text-sm text-muted hover:text-text hover:bg-surface-hover transition-colors"
-                    >
-                      <IconLogout size={14} />
-                      {t('common.logout')}
-                    </a>
+                    {visitor ? (
+                      <a
+                        href="https://pignal.net/logout"
+                        class="flex items-center gap-2 px-4 py-2 text-sm text-muted hover:text-text hover:bg-surface-hover transition-colors"
+                      >
+                        <IconLogout size={14} />
+                        {t('common.signOut')}
+                      </a>
+                    ) : (
+                      <a
+                        href={lp('/pignal/logout')}
+                        class="flex items-center gap-2 px-4 py-2 text-sm text-muted hover:text-text hover:bg-surface-hover transition-colors"
+                      >
+                        <IconLogout size={14} />
+                        {t('common.logout')}
+                      </a>
+                    )}
                   </div>
                 </details>
               </div>

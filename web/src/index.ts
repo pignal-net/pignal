@@ -253,6 +253,14 @@ export function createWebRoutes(config: WebRouteConfig) {
     return c.body(generateSitemap(sourceUrl, items, page === 1));
   });
 
+  // Visitor sign-out — clears SSO cookies locally (hub session stays intact)
+  router.get('/visitor-logout', (c) => {
+    c.header('Set-Cookie', 'pignal_visitor=; HttpOnly; Secure; SameSite=Lax; Domain=.pignal.net; Path=/; Max-Age=0', { append: true });
+    c.header('Set-Cookie', 'pignal_site=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0', { append: true });
+    const returnTo = c.req.query('return_to') || '/';
+    return c.redirect(returnTo);
+  });
+
   router.get('/llms.txt', async (c) => {
     const store = c.get('store');
     const sourceUrl = new URL(c.req.url).origin;

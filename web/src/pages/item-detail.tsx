@@ -153,7 +153,7 @@ export async function itemDetailPage(c: Context<{ Bindings: WebEnv; Variables: W
   const renderedContent = renderMarkdown(item.content);
 
   return c.html(
-    <AppLayout title={item.keySummary} currentPath="/pignal/items" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale}>
+    <AppLayout title={item.keySummary} currentPath="/pignal/items" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale} visitor={c.get("visitor")}>
       {/* Back navigation */}
       <nav class="mb-6">
         <a href="/pignal/items" class="inline-flex items-center gap-1 text-sm text-muted hover:text-primary transition-colors px-3 py-1.5 rounded-full hover:bg-surface-hover">

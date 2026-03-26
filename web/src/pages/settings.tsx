@@ -657,6 +657,7 @@ export async function settingsPage(c: Context<{ Bindings: WebEnv; Variables: Web
       t={t}
       locale={locale}
       defaultLocale={defaultLocale}
+      visitor={c.get("visitor")}
     >
       <div class="mb-8">
         <h1 class="text-2xl font-bold tracking-tight">{t('settings.title')}</h1>

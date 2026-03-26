@@ -192,7 +192,6 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
                         height="20"
                         class="rounded-full"
                       />
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted"><path d="m6 9 6 6 6-6"/></svg>
                     </summary>
                     <div class="absolute right-0 top-full mt-1 min-w-[180px] bg-surface border border-border rounded-lg shadow-md z-50 py-1">
                       {/* User info */}
@@ -207,8 +206,8 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
                           {t('common.admin')}
                         </a>
                       )}
-                      {/* Sign out — redirects to hub for centralized logout */}
-                      <a href="https://pignal.net/logout" class="flex items-center gap-2 px-3 py-1.5 text-sm text-text hover:bg-surface-hover transition-colors">
+                      {/* Sign out — clears SSO cookies locally, hub session stays */}
+                      <a href={`/visitor-logout?return_to=${encodeURIComponent(currentPath)}`} class="flex items-center gap-2 px-3 py-1.5 text-sm text-text hover:bg-surface-hover transition-colors">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                         {t('common.signOut')}
                       </a>

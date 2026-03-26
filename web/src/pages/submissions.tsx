@@ -310,7 +310,7 @@ export async function submissionsPage(c: Context<{ Bindings: WebEnv; Variables: 
     : undefined;
 
   return c.html(
-    <AppLayout title={t('submissions.title')} currentPath="/pignal/submissions" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale}>
+    <AppLayout title={t('submissions.title')} currentPath="/pignal/submissions" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale} visitor={c.get("visitor")}>
       <PageHeader
         title={t('submissions.title')}
         description={t('submissions.description')}

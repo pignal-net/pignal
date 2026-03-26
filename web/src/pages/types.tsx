@@ -183,7 +183,7 @@ export async function typesPage(c: Context<{ Bindings: WebEnv; Variables: WebVar
   ];
 
   return c.html(
-    <AppLayout title={t('types.title')} currentPath="/pignal/types" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale}>
+    <AppLayout title={t('types.title')} currentPath="/pignal/types" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale} visitor={c.get("visitor")}>
       <PageHeader title={t('types.title')} description={t('types.description')} count={total} />
 
       <ManagedList

@@ -117,7 +117,9 @@ export async function itemPostPage(c: Context<{ Bindings: WebEnv; Variables: Web
 
   const vocabulary = template.vocabulary;
 
-  c.header('Cache-Control', 'public, max-age=60');
+  // Vary on Cookie when visitor SSO is available so login/logout busts browser cache
+  if (c.env.VISITOR_SITE_SECRET) c.header('Vary', 'Cookie');
+  c.header('Cache-Control', c.get('visitor') ? 'private, max-age=60' : 'public, max-age=60');
 
   return c.html(
     <template.ItemPost
