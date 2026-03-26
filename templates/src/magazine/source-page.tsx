@@ -164,7 +164,7 @@ export function MagazineSourcePage(props: SourcePageProps) {
   const [heroItem, ...gridItems] = items;
 
   return (
-    <MagazineLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
+    <MagazineLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={props.t} locale={props.locale} defaultLocale={props.defaultLocale} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="source-page source-page--feed">

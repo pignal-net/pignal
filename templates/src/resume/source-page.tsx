@@ -148,7 +148,7 @@ export function ResumeSourcePage(props: SourcePageProps) {
   const sortParam = filters.sort === 'oldest' ? 'oldest' : undefined;
 
   return (
-    <ResumeLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
+    <ResumeLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={props.t} locale={props.locale} defaultLocale={props.defaultLocale} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="text-center px-4 pt-10 pb-8 border-b-2 border-border-subtle mb-8 fade-in-page">

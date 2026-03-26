@@ -211,7 +211,7 @@ export function CaseStudiesSourcePage(props: SourcePageProps) {
   const [heroItem, ...gridItems] = items;
 
   return (
-    <CaseStudiesLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
+    <CaseStudiesLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={props.t} locale={props.locale} defaultLocale={props.defaultLocale} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="source-page source-page--feed fade-in-page">

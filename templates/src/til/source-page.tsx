@@ -108,7 +108,7 @@ export function TilSourcePage(props: SourcePageProps) {
   const dateGroups = groupByDate(items);
 
   return (
-    <TilLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
+    <TilLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={props.t} locale={props.locale} defaultLocale={props.defaultLocale} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col">

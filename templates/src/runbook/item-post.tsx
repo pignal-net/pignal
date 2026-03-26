@@ -51,7 +51,7 @@ export function RunbookItemPost(props: ItemPostProps) {
     : 0;
 
   return (
-    <RunbookLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
+    <RunbookLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={props.t} locale={props.locale} defaultLocale={props.defaultLocale} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-4xl mx-auto px-4 pt-8 pb-16">

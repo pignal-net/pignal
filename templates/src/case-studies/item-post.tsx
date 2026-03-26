@@ -69,7 +69,7 @@ export function CaseStudiesItemPost(props: ItemPostProps) {
   const metrics = extractMetrics(item.content);
 
   return (
-    <CaseStudiesLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
+    <CaseStudiesLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={props.t} locale={props.locale} defaultLocale={props.defaultLocale} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="source-page source-page--post fade-in-page">

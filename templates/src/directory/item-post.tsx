@@ -48,7 +48,7 @@ export function DirectoryItemPost(props: ItemPostProps) {
   const statusClasses = getStatusClasses(item.validationActionLabel);
 
   return (
-    <DirectoryLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
+    <DirectoryLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={props.t} locale={props.locale} defaultLocale={props.defaultLocale} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-3xl mx-auto px-4 pt-8 pb-16">

@@ -55,7 +55,7 @@ export function WikiItemPost(props: ItemPostProps) {
   const tocHeadings = headings ? headings.filter((h) => h.level === 2 || h.level === 3) : [];
 
   return (
-    <WikiLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
+    <WikiLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={props.t} locale={props.locale} defaultLocale={props.defaultLocale} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-7xl mx-auto px-4 pt-8 pb-16 grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-8 items-start">

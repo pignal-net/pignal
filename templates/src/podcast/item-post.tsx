@@ -57,7 +57,7 @@ export function PodcastItemPost(props: ItemPostProps) {
   const duration = extractDuration(item.content);
 
   return (
-    <PodcastLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
+    <PodcastLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={props.t} locale={props.locale} defaultLocale={props.defaultLocale} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full fade-in-page">

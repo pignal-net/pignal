@@ -37,7 +37,7 @@ export function FlashcardsItemPost(props: ItemPostProps) {
   });
 
   return (
-    <FlashcardsLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
+    <FlashcardsLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={props.t} locale={props.locale} defaultLocale={props.defaultLocale} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-2xl mx-auto px-4 pt-8 pb-16">

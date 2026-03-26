@@ -127,7 +127,7 @@ export function DirectorySourcePage(props: SourcePageProps) {
   const sortedLetters = Object.keys(grouped).sort();
 
   return (
-    <DirectoryLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
+    <DirectoryLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={props.t} locale={props.locale} defaultLocale={props.defaultLocale} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-5xl mx-auto px-4 pt-8 pb-16">

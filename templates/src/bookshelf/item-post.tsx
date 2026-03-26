@@ -38,7 +38,7 @@ export function BookshelfItemPost(props: ItemPostProps) {
   });
 
   return (
-    <BookshelfLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
+    <BookshelfLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={props.t} locale={props.locale} defaultLocale={props.defaultLocale} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-3xl mx-auto px-4 pt-8 pb-16 fade-in-page">
