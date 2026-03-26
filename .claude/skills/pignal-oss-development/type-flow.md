@@ -45,12 +45,12 @@ Types flow strictly bottom-up across six packages. No build step — all package
 
 ### `@pignal/render` — Shared Rendering Layer
 
-- `packages/render/src/components/*.tsx` — Shared JSX components (layout, public-layout, pagination, type-badge, empty-state, item-feed, type-sidebar, source-action-bar, json-ld, icons, cta-block, language-switcher, action-form, item-card, visibility-badge, testimonials)
-- `packages/render/src/lib/*.ts` — Shared utilities (theme, seo, markdown, time, css-sanitize, static-versions, geo, rss, directives)
-- `packages/render/src/i18n/` — i18n setup, locale files, translation utilities
-- `packages/render/src/static/` — Static assets (tailwind.css, app.js, logo, htmx)
-- `packages/render/src/styles/input.css` — Design tokens (`@theme`), base styles, `@layer components`
-- `packages/render/src/types.ts` — Shared rendering type definitions
+- `render/src/components/*.tsx` — Shared JSX components (layout, public-layout, pagination, type-badge, empty-state, item-feed, type-sidebar, source-action-bar, json-ld, icons, cta-block, language-switcher, action-form, item-card, visibility-badge, testimonials)
+- `render/src/lib/*.ts` — Shared utilities (theme, seo, markdown, time, css-sanitize, static-versions, geo, rss, directives)
+- `render/src/i18n/` — i18n setup, locale files, translation utilities
+- `render/src/static/` — Static assets (tailwind.css, app.js, logo, htmx)
+- `render/src/styles/input.css` — Design tokens (`@theme`), base styles, `@layer components`
+- `render/src/types.ts` — Shared rendering type definitions
 
 ### `@pignal/templates` — Self-Contained Template Folders
 

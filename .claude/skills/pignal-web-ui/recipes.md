@@ -33,14 +33,14 @@ Step-by-step guides for common web UI development tasks.
    - Cards: `bg-surface rounded-xl border border-border-subtle shadow-card`
    - Text: `text-text` for primary, `text-muted` for secondary
    - Interactive: add `transition-colors` or `transition-shadow` on hover
-6. If the component needs a CSS class referenced by `app.js`, add it to `@layer components` in `packages/render/src/styles/input.css`
+6. If the component needs a CSS class referenced by `app.js`, add it to `@layer components` in `render/src/styles/input.css`
 7. Run `pnpm css:build && pnpm type-check`
 
 ## 3. Add a New Shared Rendering Component
 
 For components used by both templates and the admin dashboard (e.g., layout shells, pagination, icons, type badges).
 
-1. Create `packages/render/src/components/{name}.tsx`
+1. Create `render/src/components/{name}.tsx`
 2. Add JSX pragmas at the top:
    ```tsx
    /** @jsxRuntime automatic */
@@ -77,7 +77,7 @@ Each template is a self-contained folder in `templates/src/<name>/` with its own
 
 ## 5. Add an SVG Icon
 
-1. Open `packages/render/src/components/icons.tsx`
+1. Open `render/src/components/icons.tsx`
 2. Add a new exported function following the pattern:
    ```tsx
    export function IconNewName(props: IconProps) {
@@ -99,7 +99,7 @@ Each template is a self-contained folder in `templates/src/<name>/` with its own
 
 ## 6. Add a Design Token
 
-1. Open `packages/render/src/styles/input.css`
+1. Open `render/src/styles/input.css`
 2. Add to the `@theme {}` block:
    ```css
    --color-new-token: #hexvalue;
@@ -116,7 +116,7 @@ Each template is a self-contained folder in `templates/src/<name>/` with its own
 
 For complex patterns that can't be expressed as Tailwind utilities (e.g., multi-step animations, pseudo-elements, JS-referenced selectors):
 
-1. Open `packages/render/src/styles/input.css`
+1. Open `render/src/styles/input.css`
 2. Add to `@layer components { ... }`:
    ```css
    .my-component {
@@ -134,7 +134,7 @@ For complex patterns that can't be expressed as Tailwind utilities (e.g., multi-
 
 ## 8. Add a User-Customizable Theme Color
 
-1. Open `packages/render/src/lib/theme.ts`
+1. Open `render/src/lib/theme.ts`
 2. Add a new entry to `THEME_TOKENS` array:
    ```typescript
    {
@@ -146,7 +146,7 @@ For complex patterns that can't be expressed as Tailwind utilities (e.g., multi-
      darkVars: (c) => `--tw-new:color-mix(in srgb,${c} 85%,white)`,
    },
    ```
-3. In `packages/render/src/styles/input.css` `@theme {}`, reference the variable with a fallback:
+3. In `render/src/styles/input.css` `@theme {}`, reference the variable with a fallback:
    ```css
    --color-new: var(--tw-new, #default-hex);
    ```

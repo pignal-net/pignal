@@ -19,7 +19,7 @@ templates/src/<name>/
 └── layout.tsx       # Layout wrapper (HTML shell)
 ```
 
-Template JSX files and config live together in a single folder -- there is no split between packages. Shared rendering components and lib utilities live in the `@pignal/render` package (`packages/render/`).
+Template JSX files and config live together in a single folder -- there is no split between packages. Shared rendering components and lib utilities live in the `@pignal/render` package (`render/`).
 
 ### JSX Pragma Requirement
 
@@ -194,7 +194,7 @@ export const shopTemplate: Template = {
 
 Templates use **Tailwind v4 utility classes** directly in JSX. There are no per-template CSS files -- all templates set `styles: ''`. Never create a separate `styles.css` file for a template.
 
-A single compiled CSS file (`packages/render/src/static/tailwind.css`, built from `packages/render/src/styles/input.css`) provides the design system tokens and base styles for all pages. Run `pnpm css:build` before deploying (or `pnpm css:watch` during development).
+A single compiled CSS file (`render/src/static/tailwind.css`, built from `render/src/styles/input.css`) provides the design system tokens and base styles for all pages. Run `pnpm css:build` before deploying (or `pnpm css:watch` during development).
 
 ### Design tokens
 
@@ -379,7 +379,7 @@ Dark mode is handled automatically by CSS custom properties -- tokens switch val
 
 ### Theme customization
 
-Source owners can set 5 customizable accent colors via settings (e.g., `source_color_primary`, `source_color_secondary`, `source_color_text`, `source_color_muted`, `source_color_border`). The theme engine (`packages/render/src/lib/theme.ts`) generates `--tw-*` CSS custom properties that override the defaults in `@theme {}`. All tokens adapt automatically to light/dark mode via `prefers-color-scheme` and `[data-theme]`.
+Source owners can set 5 customizable accent colors via settings (e.g., `source_color_primary`, `source_color_secondary`, `source_color_text`, `source_color_muted`, `source_color_border`). The theme engine (`render/src/lib/theme.ts`) generates `--tw-*` CSS custom properties that override the defaults in `@theme {}`. All tokens adapt automatically to light/dark mode via `prefers-color-scheme` and `[data-theme]`.
 
 ---
 
@@ -561,9 +561,9 @@ The MCP agent reads the `TEMPLATE` env var at startup and uses the matching conf
 4. The script auto-registers the config in `templates/src/all-configs.ts`
 5. (Optional) Add seed data in `templates/seeds/<name>.sql`
 6. The `seo` hints, vocabulary, and MCP content are automatically used by:
-   - JSON-LD structured data (`packages/render/src/lib/seo.ts`)
-   - llms.txt / llms-full.txt (`packages/render/src/lib/geo.ts`)
-   - Atom feed (`packages/render/src/lib/rss.ts`)
+   - JSON-LD structured data (`render/src/lib/seo.ts`)
+   - llms.txt / llms-full.txt (`render/src/lib/geo.ts`)
+   - Atom feed (`render/src/lib/rss.ts`)
    - MCP metadata text (`core/src/mcp/tools.ts`)
    - MCP agent (`server/src/mcp/agent.ts`)
 

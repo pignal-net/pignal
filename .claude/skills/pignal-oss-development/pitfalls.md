@@ -18,8 +18,8 @@
 | Forgetting `all-configs.ts` update | Hub needs access to all template configs | After adding `<name>/config.ts`, add import/export to `templates/src/all-configs.ts` |
 | Forgetting `resolve-template` after adding a template | Server uses build-time resolved template | Run `pnpm resolve-template` or `TEMPLATE=<name> pnpm dev:server` (auto-runs it) |
 | Creating template JSX in `web/src/templates/` | Old location — templates are now self-contained | Template JSX lives in `templates/src/<name>/` alongside its config |
-| Putting shared components in `templates` or `web` | Components needed by multiple templates belong in render | Move to `packages/render/src/components/`. Templates and web import from `@pignal/render/components/*` |
-| Putting shared libs in `web` | Libs like theme, seo, markdown belong in render | These now live in `packages/render/src/lib/`. Import from `@pignal/render/lib/*` |
+| Putting shared components in `templates` or `web` | Components needed by multiple templates belong in render | Move to `render/src/components/`. Templates and web import from `@pignal/render/components/*` |
+| Putting shared libs in `web` | Libs like theme, seo, markdown belong in render | These now live in `render/src/lib/`. Import from `@pignal/render/lib/*` |
 | Missing JSX pragmas in render/template TSX | Hono JSX requires explicit pragma in each file | Add `/** @jsxRuntime automatic */` and `/** @jsxImportSource hono/jsx */` at the top |
 | Importing icons from `web/src/components/icons.tsx` | Icons moved to render package | Import from `@pignal/render/components/icons` |
 | Creating template without checking catalog | Duplicate or rejected template gets built | Read `templates/src/catalog.ts` first — check for ID conflicts and rejected entries |

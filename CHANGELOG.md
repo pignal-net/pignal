@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ### Changed
 
 - **Template isolation architecture** — introduced `@pignal/render` package and restructured `@pignal/templates` for self-contained, build-time-resolved templates
-- New package `@pignal/render` (`packages/render/`) — shared rendering components, lib utilities, i18n, static assets, and Tailwind styles extracted from `@pignal/web`
+- New package `@pignal/render` (`render/`) — shared rendering components, lib utilities, i18n, static assets, and Tailwind styles extracted from `@pignal/web`
 - Each template is now a self-contained folder in `templates/src/<name>/` with config + JSX co-located (was split across `templates/` for config and `web/src/templates/` for JSX)
 - Template configs split from monolithic `config.ts` into individual `<name>/config.ts` files
 - `@pignal/web` slimmed to admin dashboard + routing only (no template code)
@@ -28,9 +28,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ### Removed
 
 - `web/src/templates/` directory (moved to `templates/src/`)
-- `web/src/components/` shared rendering components (moved to `packages/render/src/components/`)
-- `web/src/lib/` shared utilities (moved to `packages/render/src/lib/`)
-- `web/src/i18n/`, `web/src/static/`, `web/src/styles/` (moved to `packages/render/`)
+- `web/src/components/` shared rendering components (moved to `render/src/components/`)
+- `web/src/lib/` shared utilities (moved to `render/src/lib/`)
+- `web/src/i18n/`, `web/src/static/`, `web/src/styles/` (moved to `render/`)
 - Monolithic config files: `configs-feed.ts`, `configs-grid.ts`, `configs-directory.ts`, `configs-remaining.ts`
 - `getAvailableTemplates()` (unused)
 

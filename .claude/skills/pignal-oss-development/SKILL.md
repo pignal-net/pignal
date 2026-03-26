@@ -17,12 +17,12 @@ Six packages with strict layering: `@pignal/db` (schema + types) -> `@pignal/cor
 | Validation schema | `core` | `core/src/validation/schemas.ts` |
 | MCP tool | `core` | `core/src/mcp/tools.ts` + `core/src/mcp/manifest.ts` |
 | Permission | `core` | `core/src/auth/permissions.ts` |
-| Shared rendering component | `render` | `packages/render/src/components/*.tsx` |
-| Shared rendering lib | `render` | `packages/render/src/lib/*.ts` |
-| SVG icons | `render` | `packages/render/src/components/icons.tsx` |
-| Design tokens / CSS | `render` | `packages/render/src/styles/input.css` |
-| Theme engine | `render` | `packages/render/src/lib/theme.ts` |
-| i18n / translations | `render` | `packages/render/src/i18n/` |
+| Shared rendering component | `render` | `render/src/components/*.tsx` |
+| Shared rendering lib | `render` | `render/src/lib/*.ts` |
+| SVG icons | `render` | `render/src/components/icons.tsx` |
+| Design tokens / CSS | `render` | `render/src/styles/input.css` |
+| Theme engine | `render` | `render/src/lib/theme.ts` |
+| i18n / translations | `render` | `render/src/i18n/` |
 | Template config (vocabulary/SEO/MCP) | `templates` | `templates/src/<name>/config.ts` |
 | Template JSX (source page, item post) | `templates` | `templates/src/<name>/source-page.tsx`, `item-post.tsx`, `layout.tsx` |
 | Template catalog | `templates` | `templates/src/catalog.ts` (shipped/planned/rejected registry) |

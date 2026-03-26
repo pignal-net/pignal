@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
-/* Scan all TSX files for class names */
+/* Scan all packages for Tailwind class names */
 @source "../components/";
-@source "../pages/";
-@source "../templates/";
 @source "../lib/";
 @source "../static/app.js";
+@source "../../../templates/src/";
+@source "../../../web/src/";
 
 /*
  * Dark mode via data-theme attribute OR system preference (auto mode).

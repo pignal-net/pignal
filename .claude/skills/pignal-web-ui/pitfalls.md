@@ -13,7 +13,7 @@ Common mistakes when developing UI for Pignal OSS and how to fix them.
 | `gap-4` in grids | Too tight | Use `gap-6` for card grids, `gap-8` for sidebar+content |
 | `text-[0.7rem]` or smaller | Custom font sizes that break the scale | Use `text-xs` (0.75rem) minimum for badges, `text-sm` for meta |
 | `<p class="text-muted py-12">` empty state | Missing the empty state pattern | Use `.empty-state` with `.empty-state-icon`, `.empty-state-title`, `.empty-state-description` |
-| Emoji icons | Quick placeholder that never gets replaced | Use SVG icons from `packages/render/src/components/icons.tsx` |
+| Emoji icons | Quick placeholder that never gets replaced | Use SVG icons from `render/src/components/icons.tsx` |
 | Creating a `styles.css` per template | Old pattern | All templates set `styles: ''`. Use Tailwind utilities directly in JSX |
 | Forgetting `pnpm css:build` | Tailwind requires a build step | Run before `pnpm dev:server` or deploy. Add to CI. |
 | Stale `tailwind.css` in production | Deploying without rebuilding CSS | `deploy:server` script already chains `css:build` — verify yours does too |
@@ -30,9 +30,9 @@ Common mistakes when developing UI for Pignal OSS and how to fix them.
 | Create form buried at bottom | Users can't find it | Put create sections at TOP with `border-2 border-dashed` pattern |
 | No page header on admin pages | Jumping straight to content | Every admin page needs the page header pattern: `h1` + `p` in `mb-8` div |
 | Inline styles with old vars | Using `var(--pico-*)` or `var(--app-*)` | Use `var(--color-primary)`, `var(--color-muted)`, `var(--color-border)`, etc. |
-| Adding shared components to `web/` | Components needed by templates belong in render | Shared components go in `packages/render/src/components/`. Only admin-specific components go in `web/src/components/` |
-| Adding shared libs to `web/` | Libs like theme, seo, markdown belong in render | These live in `packages/render/src/lib/`. Only admin-only utils (cookie, htmx, slug) stay in `web/src/lib/` |
+| Adding shared components to `web/` | Components needed by templates belong in render | Shared components go in `render/src/components/`. Only admin-specific components go in `web/src/components/` |
+| Adding shared libs to `web/` | Libs like theme, seo, markdown belong in render | These live in `render/src/lib/`. Only admin-only utils (cookie, htmx, slug) stay in `web/src/lib/` |
 | Importing icons from `web/` | Icons moved to render package | Import from `@pignal/render/components/icons`, not from web |
 | Missing JSX pragmas in render/template files | Hono JSX requires explicit pragma | Add `/** @jsxRuntime automatic */` and `/** @jsxImportSource hono/jsx */` at top of every TSX file in render and templates |
 | Creating template JSX in `web/src/templates/` | Old location | Template JSX now lives in `templates/src/<name>/` alongside its config |
-| Editing `input.css` in `web/` | Styles moved to render | Edit `packages/render/src/styles/input.css` instead |
+| Editing `input.css` in `web/` | Styles moved to render | Edit `render/src/styles/input.css` instead |

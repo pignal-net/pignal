@@ -5,10 +5,10 @@ description: Use when creating or modifying UI components, pages, templates, or 
 
 # Pignal Web UI Development
 
-Tailwind v4 design system with Hono JSX SSR. All styling uses utility classes in JSX — no separate CSS files per component or template. Single compiled CSS from `packages/render/src/styles/input.css`.
+Tailwind v4 design system with Hono JSX SSR. All styling uses utility classes in JSX — no separate CSS files per component or template. Single compiled CSS from `render/src/styles/input.css`.
 
 Three packages handle UI:
-- **`@pignal/render`** (`packages/render/`) — Shared rendering: components, lib, i18n, static assets, styles
+- **`@pignal/render`** (`render/`) — Shared rendering: components, lib, i18n, static assets, styles
 - **`@pignal/templates`** (`templates/`) — Self-contained template folders with config + JSX
 - **`@pignal/web`** (`web/`) — Admin dashboard pages and admin-only components
 
@@ -18,12 +18,12 @@ Three packages handle UI:
 |------|---------|-------|
 | New admin page | `web/src/pages/*.tsx` | [recipes.md](./recipes.md) #1 |
 | New admin component | `web/src/components/*.tsx` | [recipes.md](./recipes.md) #2 |
-| New shared rendering component | `packages/render/src/components/*.tsx` | [recipes.md](./recipes.md) #3 |
+| New shared rendering component | `render/src/components/*.tsx` | [recipes.md](./recipes.md) #3 |
 | New template | `templates/src/<name>/` | [recipes.md](./recipes.md) #4 |
-| Add SVG icon | `packages/render/src/components/icons.tsx` | [recipes.md](./recipes.md) #5 |
-| Add design token | `packages/render/src/styles/input.css` | [recipes.md](./recipes.md) #6 |
-| Add CSS component class | `packages/render/src/styles/input.css` | [recipes.md](./recipes.md) #7 |
-| Update theme colors | `packages/render/src/lib/theme.ts` | [recipes.md](./recipes.md) #8 |
+| Add SVG icon | `render/src/components/icons.tsx` | [recipes.md](./recipes.md) #5 |
+| Add design token | `render/src/styles/input.css` | [recipes.md](./recipes.md) #6 |
+| Add CSS component class | `render/src/styles/input.css` | [recipes.md](./recipes.md) #7 |
+| Update theme colors | `render/src/lib/theme.ts` | [recipes.md](./recipes.md) #8 |
 | Style with dark mode | Any `.tsx` file | [design-system.md](./design-system.md) |
 
 ## Design Principles
@@ -40,19 +40,19 @@ Three packages handle UI:
 
 | File | Purpose |
 |------|---------|
-| `packages/render/src/styles/input.css` | Design tokens (`@theme`), base styles, `@layer components` |
-| `packages/render/src/components/icons.tsx` | Shared SVG icon components |
-| `packages/render/src/lib/theme.ts` | Theme engine — `--tw-*` CSS vars from settings |
-| `packages/render/src/lib/static-versions.ts` | Cache-busted URLs for `tailwind.css`, `app.js` |
-| `packages/render/src/static/app.js` | Client JS: theme toggle, toasts, save bar, scroll spy |
-| `packages/render/src/components/layout.tsx` | Base HTML shell |
-| `packages/render/src/components/public-layout.tsx` | Public layout (sticky nav, footer) |
+| `render/src/styles/input.css` | Design tokens (`@theme`), base styles, `@layer components` |
+| `render/src/components/icons.tsx` | Shared SVG icon components |
+| `render/src/lib/theme.ts` | Theme engine — `--tw-*` CSS vars from settings |
+| `render/src/lib/static-versions.ts` | Cache-busted URLs for `tailwind.css`, `app.js` |
+| `render/src/static/app.js` | Client JS: theme toggle, toasts, save bar, scroll spy |
+| `render/src/components/layout.tsx` | Base HTML shell |
+| `render/src/components/public-layout.tsx` | Public layout (sticky nav, footer) |
 | `web/src/components/app-layout.tsx` | Admin layout (sticky nav, footer) |
 
 ## Build
 
 ```bash
-pnpm css:build   # Build Tailwind → packages/render/src/static/tailwind.css
+pnpm css:build   # Build Tailwind → render/src/static/tailwind.css
 pnpm css:watch   # Watch mode during development
 pnpm dev:server  # Start local dev server (auto-runs resolve-template)
 ```

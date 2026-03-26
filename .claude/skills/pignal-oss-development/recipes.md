@@ -69,7 +69,7 @@ See `templates/GENERATION_GUIDE.md` for full generation rules, differentiation c
 
 For components used by both templates and web admin (e.g., layout shells, pagination, icons, type badges).
 
-1. Create `packages/render/src/components/{name}.tsx`
+1. Create `render/src/components/{name}.tsx`
 2. Add JSX pragmas at the top: `/** @jsxRuntime automatic */` and `/** @jsxImportSource hono/jsx */`
 3. Define a TypeScript interface for props
 4. Export a named function component (not default export)

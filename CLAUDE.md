@@ -88,7 +88,7 @@ Every request creates an `ItemStore` and `ActionStore` from D1 via middleware. A
 |---------|------|-------------|
 | `@pignal/db` | `db/` | Drizzle ORM schemas (`schema.ts`: items, item_types, type_actions, workspaces, settings, site_actions, submissions, page_views) and TypeScript types (`ItemStoreRpc`, `ActionStoreRpc`, `ItemWithMeta`, etc.). |
 | `@pignal/core` | `core/` | `ItemStore` + `ActionStore` (pure business logic), route factories, Zod validation, MCP tools (15 tools), `DirectiveRegistry`, `FieldTypeRegistry`, `EventBus`, webhook dispatcher, federation. Template-agnostic. |
-| `@pignal/render` | `packages/render/` | Shared rendering layer: Hono JSX components (layout, public-layout, pagination, item-card, cta-block, icons, etc.), lib utilities (theme, seo, markdown, directives, time, rss), i18n, static assets (tailwind.css, htmx.min.js, app.js), Tailwind v4 styles (input.css). Used by templates and web admin. |
+| `@pignal/render` | `render/` | Shared rendering layer: Hono JSX components (layout, public-layout, pagination, item-card, cta-block, icons, etc.), lib utilities (theme, seo, markdown, directives, time, rss), i18n, static assets (tailwind.css, htmx.min.js, app.js), Tailwind v4 styles (input.css). Used by templates and web admin. |
 | `@pignal/templates` | `templates/` | 24 self-contained templates. Each folder (`src/<name>/`) has `config.ts` (vocabulary, SEO, MCP) + JSX (`index.tsx`, `source-page.tsx`, `item-post.tsx`, `layout.tsx`). Build-time resolution via `_resolved.ts`. Seed SQL in `seeds/`. `all-configs.ts` barrel for hub use. |
 | `@pignal/web` | `web/` | Admin dashboard + routing only. Admin-specific components (app-layout, page-header, filter-sidebar, etc.), pages (dashboard, items, settings, etc.), middleware (session, CSRF, analytics). No template JSX, no shared components. |
 | `@pignal/server` | `server/` | Wires everything together. D1 storage, token auth, mounts route factories at `/api/*`, MCP at `/mcp`, public forms at `/form/*`, public source page at `/`, admin UI at `/pignal`, `/.well-known/pignal` for federation |
@@ -171,14 +171,14 @@ Lightweight server-side view counting on public pages (`/`, `/item/:slug`). No c
 - **Template configs barrel**: `templates/src/all-configs.ts` — Exports all 24 template configs (used by hub for directory/catalog)
 - **Template types**: `templates/src/types.ts` — Template interface, SourcePageProps, ItemPostProps, LayoutProps
 - **Template seeds**: `templates/seeds/` — blog.sql, shop.sql (seed data per template)
-- **Render components**: `packages/render/src/components/` — Shared JSX: layout, public-layout, pagination, type-badge, empty-state, item-feed, item-card, type-sidebar, source-action-bar, json-ld, icons, cta-block, language-switcher, action-form, visibility-badge, testimonials
-- **Render lib**: `packages/render/src/lib/` — theme.ts, seo.ts, markdown.ts, time.ts, css-sanitize.ts, static-versions.ts, geo.ts, rss.ts, directives.ts
-- **Render i18n**: `packages/render/src/i18n/` — index.ts, t.ts, types.ts, utils.ts, locales/
-- **Design tokens / input CSS**: `packages/render/src/styles/input.css` — `@theme` block, dark mode, base layer, `@layer components` classes
-- **Static assets**: `packages/render/src/static/` — tailwind.css, htmx.min.js, app.js, logo.svg, logo.png
-- **SVG icons**: `packages/render/src/components/icons.tsx` — Shared inline SVG icon components
-- **Theme engine**: `packages/render/src/lib/theme.ts` — CSS custom property generation from source settings
-- **Directives rendering**: `packages/render/src/lib/directives.ts` — Directive rendering (action forms, CTAs, testimonials) + `renderContentWithDirectives()`
+- **Render components**: `render/src/components/` — Shared JSX: layout, public-layout, pagination, type-badge, empty-state, item-feed, item-card, type-sidebar, source-action-bar, json-ld, icons, cta-block, language-switcher, action-form, visibility-badge, testimonials
+- **Render lib**: `render/src/lib/` — theme.ts, seo.ts, markdown.ts, time.ts, css-sanitize.ts, static-versions.ts, geo.ts, rss.ts, directives.ts
+- **Render i18n**: `render/src/i18n/` — index.ts, t.ts, types.ts, utils.ts, locales/
+- **Design tokens / input CSS**: `render/src/styles/input.css` — `@theme` block, dark mode, base layer, `@layer components` classes
+- **Static assets**: `render/src/static/` — tailwind.css, htmx.min.js, app.js, logo.svg, logo.png
+- **SVG icons**: `render/src/components/icons.tsx` — Shared inline SVG icon components
+- **Theme engine**: `render/src/lib/theme.ts` — CSS custom property generation from source settings
+- **Directives rendering**: `render/src/lib/directives.ts` — Directive rendering (action forms, CTAs, testimonials) + `renderContentWithDirectives()`
 - **Federation**: `core/src/federation/` — `well-known.ts` (handler), `types.ts` (WellKnownResponse, etc.)
 - **DB schema**: `db/src/schema.ts` — 8 tables (items, item_types, type_actions, workspaces, settings, api_keys, site_actions, submissions, page_views)
 - **TypeScript types**: `db/src/types.ts` — `ItemStoreRpc`, `ActionStoreRpc` interfaces, all data types
@@ -195,7 +195,7 @@ Lightweight server-side view counting on public pages (`/`, `/item/:slug`). No c
 ## Template System
 
 The template system is split across three packages:
-- **`@pignal/render`** (`packages/render/`) — Shared rendering components, lib utilities, i18n, static assets, and styles. Used by all templates and the web admin.
+- **`@pignal/render`** (`render/`) — Shared rendering components, lib utilities, i18n, static assets, and styles. Used by all templates and the web admin.
 - **`@pignal/templates`** (`templates/`) — 24 self-contained template folders. Each folder has config (vocabulary, SEO, MCP) + JSX (source-page, item-post, layout) together. Build-time resolution selects one template per deployment.
 
 Templates import shared components and utilities from `@pignal/render`:
@@ -252,10 +252,10 @@ See `templates/TEMPLATE_GUIDE.md` for the full contract, prop types, and checkli
 
 #### Architecture Overview
 
-- **Tailwind v4** with CSS-first configuration at `packages/render/src/styles/input.css`
-- Built to `packages/render/src/static/tailwind.css` via `pnpm css:build` (watch mode: `pnpm css:watch`)
+- **Tailwind v4** with CSS-first configuration at `render/src/styles/input.css`
+- Built to `render/src/static/tailwind.css` via `pnpm css:build` (watch mode: `pnpm css:watch`)
 - The compiled CSS is imported as text via Wrangler rules (configured in `wrangler.toml` with `type = "Text"` for `.css` and `.png` files) and served at `/static/tailwind.css`
-- Theme engine (`packages/render/src/lib/theme.ts`) generates `--tw-*` CSS custom properties from source settings, overriding the defaults in the `@theme {}` block
+- Theme engine (`render/src/lib/theme.ts`) generates `--tw-*` CSS custom properties from source settings, overriding the defaults in the `@theme {}` block
 - **NO per-template CSS files** — all styling uses Tailwind utility classes directly in JSX (`styles: ''` on all templates)
 
 #### Design Tokens
@@ -422,7 +422,7 @@ Standard patterns used across all pages. Use these exactly to maintain consisten
 
 #### SVG Icons
 
-Shared icon components in `packages/render/src/components/icons.tsx`. All icons are inline SVGs with no external dependencies.
+Shared icon components in `render/src/components/icons.tsx`. All icons are inline SVGs with no external dependencies.
 
 **Available icons:**
 - Theme: `IconSun`, `IconMoon`, `IconMonitor`
@@ -452,7 +452,7 @@ Shared icon components in `packages/render/src/components/icons.tsx`. All icons 
 | `source_color_text` | `--tw-text` | `#373C44` |
 | `source_color_muted` | `--tw-muted`, `--tw-border` | `#646B79` |
 
-`packages/render/src/lib/theme.ts` reads these from settings and generates a `<style>` tag with CSS variable overrides for both light and dark mode. Dark mode values are automatically derived using `color-mix()`. Custom CSS is also supported via the `source_custom_css` setting (sanitized, injected via `<style>`).
+`render/src/lib/theme.ts` reads these from settings and generates a `<style>` tag with CSS variable overrides for both light and dark mode. Dark mode values are automatically derived using `color-mix()`. Custom CSS is also supported via the `source_custom_css` setting (sanitized, injected via `<style>`).
 
 #### Responsive Breakpoints
 
@@ -485,7 +485,7 @@ Base layer headings use `clamp()` for `h1` (1.75rem to 2.25rem) and negative let
 
 #### CSS Component Classes
 
-These classes are defined in the `@layer components` block of `packages/render/src/styles/input.css` and referenced by JavaScript (`packages/render/src/static/app.js`). Use them as-is:
+These classes are defined in the `@layer components` block of `render/src/styles/input.css` and referenced by JavaScript (`render/src/static/app.js`). Use them as-is:
 
 | Class | Purpose |
 |-------|---------|
