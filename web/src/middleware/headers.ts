@@ -6,7 +6,7 @@ const ADMIN_CSP = [
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'", // HTMX inline styles require unsafe-inline for style only
   "font-src 'self'",
-  "img-src 'self' data:",
+  "img-src 'self' data: https://github.com https://avatars.githubusercontent.com",
   "connect-src 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
@@ -27,18 +27,25 @@ const PUBLIC_CSP = [
   "form-action 'self'",
 ].join('; ');
 
+/** Strip locale prefix from path for route matching. */
+function stripLocale(path: string): string {
+  const match = path.match(/^\/(en|vi|zh)(\/.*)?$/);
+  return match ? (match[2] || '/') : path;
+}
+
 /** Public route prefixes that get the permissive CSP. */
 function isPublicRoute(path: string): boolean {
-  return path === '/' ||
-    path.startsWith('/item/') ||
-    path.startsWith('/s/') ||
-    path.startsWith('/static/') ||
-    path === '/feed.xml' ||
-    path === '/robots.txt' ||
-    path === '/sitemap.xml' ||
-    path.startsWith('/sitemap-') ||
-    path === '/llms.txt' ||
-    path === '/llms-full.txt';
+  const p = stripLocale(path);
+  return p === '/' ||
+    p.startsWith('/item/') ||
+    p.startsWith('/s/') ||
+    p.startsWith('/static/') ||
+    p === '/feed.xml' ||
+    p === '/robots.txt' ||
+    p === '/sitemap.xml' ||
+    p.startsWith('/sitemap-') ||
+    p === '/llms.txt' ||
+    p === '/llms-full.txt';
 }
 
 /**

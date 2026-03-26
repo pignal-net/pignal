@@ -171,7 +171,7 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
                   <IconRSS size={16} />
                 </a>
 
-                {/* Visitor login / identity (hub SSO) */}
+                {/* Visitor login / profile dropdown (hub SSO) */}
                 {settings.visitor_login_enabled === 'true' && !visitor && (
                   <a
                     href={`https://pignal.net/auth/visitor?return_to=${encodeURIComponent(sourceUrl + currentPath)}`}
@@ -181,32 +181,37 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
                   </a>
                 )}
                 {visitor && (
-                  <div class="flex items-center gap-1">
-                    <img
-                      src={`https://github.com/${visitor.login}.png?size=32`}
-                      alt=""
-                      width="20"
-                      height="20"
-                      class="rounded-full"
-                    />
-                    <span class="text-xs text-muted max-w-[80px] truncate hidden sm:inline">{visitor.name}</span>
-                    {visitor.role === 'admin' && (
-                      <a
-                        href="/pignal"
-                        class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                      >
-                        Admin
+                  <details class="dropdown relative">
+                    <summary class="flex items-center gap-1.5 px-1.5 py-1 rounded-md hover:bg-surface-hover transition-colors cursor-pointer list-none select-none">
+                      <img
+                        src={`https://github.com/${visitor.login}.png?size=32`}
+                        alt=""
+                        width="20"
+                        height="20"
+                        class="rounded-full"
+                      />
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted"><path d="m6 9 6 6 6-6"/></svg>
+                    </summary>
+                    <div class="absolute right-0 top-full mt-1 min-w-[180px] bg-surface border border-border rounded-lg shadow-md z-50 py-1">
+                      {/* User info */}
+                      <div class="px-3 py-2 border-b border-border-subtle">
+                        <div class="text-sm font-medium text-text truncate">{visitor.name}</div>
+                        <div class="text-xs text-muted truncate">@{visitor.login}</div>
+                      </div>
+                      {/* Admin link */}
+                      {visitor.role === 'admin' && (
+                        <a href={lp('/pignal')} class="flex items-center gap-2 px-3 py-1.5 text-sm text-text hover:bg-surface-hover transition-colors">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                          {t('common.admin')}
+                        </a>
+                      )}
+                      {/* Sign out */}
+                      <a href="https://pignal.net/auth/visitor/logout" class="flex items-center gap-2 px-3 py-1.5 text-sm text-text hover:bg-surface-hover transition-colors">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        {t('common.signOut')}
                       </a>
-                    )}
-                    <a
-                      href="https://pignal.net/auth/visitor/logout"
-                      class="p-1 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
-                      aria-label={t('common.logout')}
-                      title={t('common.logout')}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                    </a>
-                  </div>
+                    </div>
+                  </details>
                 )}
 
                 {/* Vertical divider */}
