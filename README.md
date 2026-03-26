@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="web/src/static/logo.svg" alt="pignal" width="80" height="80" />
+  <img src="render/src/static/logo.svg" alt="pignal" width="80" height="80" />
 </p>
 
 <h1 align="center">Pignal — AI-native website platform powered by Cloudflare</h1>
