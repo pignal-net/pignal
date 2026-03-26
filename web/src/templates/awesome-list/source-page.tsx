@@ -105,7 +105,7 @@ export function AwesomeListSourcePage(props: SourcePageProps) {
   const publicWorkspaces = workspaces.filter((w) => w.visibility === 'public');
 
   return (
-    <AwesomeListLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
+    <AwesomeListLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">

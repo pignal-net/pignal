@@ -61,7 +61,7 @@ export function WritingSourcePage(props: SourcePageProps) {
   const headContent = `${metaTags}${relLinks}`;
 
   return (
-    <WritingLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
+    <WritingLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-[680px] mx-auto px-4 sm:px-6 py-8 w-full">

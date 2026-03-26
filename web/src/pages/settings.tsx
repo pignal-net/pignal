@@ -28,6 +28,7 @@ const DEFAULTS: Record<string, string> = {
   source_social_youtube: '',
   source_social_website: '',
   source_custom_footer: '',
+  source_locale: 'en',
   source_custom_css: '',
   source_custom_head: '',
   source_color_accent: '',
@@ -98,6 +99,11 @@ const CATEGORY_DEFS = [
       'source_code_theme',
       'source_custom_footer',
     ],
+  },
+  {
+    slug: 'language',
+    i18nKey: 'language',
+    keys: ['source_locale'],
   },
   {
     slug: 'advanced',
@@ -228,6 +234,16 @@ function getFields(t: TFunction): Record<string, FieldConfig> {
         { value: 'default', label: t('settings.field.codeThemeDefault') },
         { value: 'github', label: t('settings.field.codeThemeGithub') },
         { value: 'monokai', label: t('settings.field.codeThemeMonokai') },
+      ],
+    },
+    source_locale: {
+      label: t('settings.field.sourceLocale'),
+      description: t('settings.field.sourceLocaleDescription'),
+      type: 'select',
+      options: [
+        { value: 'en', label: 'English' },
+        { value: 'vi', label: 'Tiếng Việt' },
+        { value: 'zh', label: '中文 (简体)' },
       ],
     },
     source_custom_css: {

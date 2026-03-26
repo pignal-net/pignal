@@ -37,7 +37,7 @@ export function PortfolioItemPost(props: ItemPostProps) {
   });
 
   return (
-    <PortfolioLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
+    <PortfolioLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-4xl mx-auto px-4 pt-8 pb-16 fade-in-page">

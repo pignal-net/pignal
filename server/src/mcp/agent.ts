@@ -230,13 +230,22 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
       },
       async () => {
         const metadata = await getMetadata(store);
+        const settings = await store.getSettings();
+        const siteLocale = settings.source_locale || 'en';
         const text = buildMetadataText(metadata, config.vocabulary);
+
+        // Add language context so AI produces content in the configured locale
+        const LOCALE_NAMES: Record<string, string> = { en: 'English', vi: 'Vietnamese', zh: 'Chinese' };
+        const langName = LOCALE_NAMES[siteLocale] || siteLocale;
+        const langContext = siteLocale !== 'en'
+          ? `\n\nIMPORTANT: This site's content language is ${langName} (${siteLocale}). All item titles, summaries, and content MUST be written in ${langName}.`
+          : '';
 
         return {
           content: [
             {
               type: 'text' as const,
-              text,
+              text: text + langContext,
             },
           ],
         };

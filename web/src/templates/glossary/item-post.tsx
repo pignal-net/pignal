@@ -44,7 +44,7 @@ export function GlossaryItemPost(props: ItemPostProps) {
   });
 
   return (
-    <GlossaryLayout title={termName} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
+    <GlossaryLayout title={termName} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-[750px] mx-auto py-8 pb-16">

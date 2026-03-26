@@ -58,6 +58,9 @@ export async function sourcePageFeed(c: Context<{ Bindings: WebEnv; Variables: W
   const filterQs = filterParams.toString();
   const paginationBase = filterQs ? `/?${filterQs}` : '/';
 
+  const locale = c.get('locale');
+  const vocabulary = template.vocabulary;
+
   // HTMX partial: delegate to template's PartialResults
   if (isHtmx) {
     const result = await store.listPublic({ typeId, workspaceId, tag, q, limit, offset, sort });
@@ -71,7 +74,7 @@ export async function sourcePageFeed(c: Context<{ Bindings: WebEnv; Variables: W
         offset={offset}
         paginationBase={paginationBase}
         sort={sort}
-        vocabulary={template.vocabulary}
+        vocabulary={vocabulary}
       />
     );
   }
@@ -91,7 +94,6 @@ export async function sourcePageFeed(c: Context<{ Bindings: WebEnv; Variables: W
   c.header('Cache-Control', 'public, max-age=60');
 
   const t = c.get('t');
-  const locale = c.get('locale');
   const defaultLocale = c.get('defaultLocale');
   const localePrefix = locale === defaultLocale ? '' : `/${locale}`;
 
@@ -107,12 +109,13 @@ export async function sourcePageFeed(c: Context<{ Bindings: WebEnv; Variables: W
       paginationBase={`${localePrefix}${paginationBase}`}
       sourceUrl={sourceUrl}
       isHtmxRequest={false}
-      vocabulary={template.vocabulary}
+      vocabulary={vocabulary}
       seo={template.seo}
       t={t}
       locale={locale}
       defaultLocale={defaultLocale}
       localePrefix={localePrefix}
+      visitor={c.get('visitor')}
     />
   );
 }

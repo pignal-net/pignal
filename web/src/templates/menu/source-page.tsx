@@ -120,7 +120,7 @@ export function MenuSourcePage(props: SourcePageProps) {
   }
 
   return (
-    <MenuLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
+    <MenuLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-3xl mx-auto py-4">

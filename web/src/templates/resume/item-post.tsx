@@ -37,7 +37,7 @@ export function ResumeItemPost(props: ItemPostProps) {
   const dateStr = item.vouchedAt || item.createdAt;
 
   return (
-    <ResumeLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
+    <ResumeLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="source-page source-page--post fade-in-page">

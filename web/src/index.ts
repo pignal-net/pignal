@@ -16,6 +16,7 @@ import { i18nMiddleware } from './middleware/locale';
 import { sessionMiddleware } from './middleware/session';
 import { csrfMiddleware } from './middleware/csrf';
 import { analyticsMiddleware } from './middleware/analytics';
+import { visitorMiddleware } from './middleware/visitor';
 import { rateLimit } from '@pignal/core/middleware/rate-limit';
 import { clearSessionCookie } from './lib/cookie';
 
@@ -152,6 +153,10 @@ export function createWebRoutes(config: WebRouteConfig) {
     }
     await next();
   });
+
+  // Visitor authentication (hub SSO — managed sites only)
+  // Must run before sessionMiddleware so c.get('visitor') is available for admin role check
+  router.use('*', visitorMiddleware);
 
   // Language detection: path > query > cookie > Accept-Language header
   router.use('*', languageDetector({

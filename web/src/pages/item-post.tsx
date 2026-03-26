@@ -108,11 +108,14 @@ export async function itemPostPage(c: Context<{ Bindings: WebEnv; Variables: Web
     renderedContent += `<div class="bg-surface rounded-xl border border-border-subtle shadow-card p-6 mt-8"><h3 class="text-lg font-semibold text-text">${escHtml(postCta.title)}</h3>${descHtml}${buttonHtml}</div>`;
   }
 
-  const template = getTemplate(c.get('templateName'));
+  const templateName = c.get('templateName');
+  const template = getTemplate(templateName);
   const t = c.get('t');
   const locale = c.get('locale');
   const defaultLocale = c.get('defaultLocale');
   const localePrefix = locale === defaultLocale ? '' : `/${locale}`;
+
+  const vocabulary = template.vocabulary;
 
   c.header('Cache-Control', 'public, max-age=60');
 
@@ -125,12 +128,13 @@ export async function itemPostPage(c: Context<{ Bindings: WebEnv; Variables: Web
       sourceUrl={sourceUrl}
       sourceAuthor={sourceAuthor}
       githubUrl={githubUrl}
-      vocabulary={template.vocabulary}
+      vocabulary={vocabulary}
       seo={template.seo}
       t={t}
       locale={locale}
       defaultLocale={defaultLocale}
       localePrefix={localePrefix}
+      visitor={c.get('visitor')}
     />
   );
 }

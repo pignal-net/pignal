@@ -35,6 +35,13 @@ export interface WellKnownTemplate {
   tagline: string;
 }
 
+export interface WellKnownLanguage {
+  /** Admin-configured preferred language (ISO 639-1 code, e.g. 'en', 'vi', 'zh'). */
+  preferred: string;
+  /** All languages this instance supports for UI and content. */
+  supported: string[];
+}
+
 export interface WellKnownResponse {
   version: string;
   api_version: string;
@@ -42,6 +49,7 @@ export interface WellKnownResponse {
   capabilities: WellKnownCapabilities;
   stats: WellKnownStats;
   endpoints: WellKnownEndpoints;
+  language?: WellKnownLanguage;
   template?: WellKnownTemplate;
   tools?: ToolDefinition[];
 }

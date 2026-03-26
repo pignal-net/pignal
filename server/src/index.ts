@@ -94,6 +94,10 @@ app.get('/.well-known/pignal', async (c) => {
       mcp: '/mcp',
       public_items: '/api/public/items',
     },
+    language: {
+      preferred: settings.source_locale || 'en',
+      supported: ['en', 'vi', 'zh'],
+    },
     template: {
       id: profile.id,
       displayName: profile.displayName,

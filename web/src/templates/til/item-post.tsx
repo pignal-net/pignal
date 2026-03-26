@@ -34,7 +34,7 @@ export function TilItemPost(props: ItemPostProps) {
   });
 
   return (
-    <TilLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
+    <TilLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-[680px] mx-auto px-4 sm:px-6 py-8 pb-16 w-full">

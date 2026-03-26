@@ -34,7 +34,7 @@ export function MenuItemPost(props: ItemPostProps) {
   });
 
   return (
-    <MenuLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
+    <MenuLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-2xl mx-auto py-4">

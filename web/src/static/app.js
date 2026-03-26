@@ -1011,6 +1011,16 @@ document.addEventListener('click', function (e) {
       : null;
     if (!btn) return;
 
+    // Row-action dropdowns contain forms with submit buttons — let them submit normally.
+    // Only intercept clicks for select-style form dropdowns (not action menus).
+    var parentDropdown = btn.closest('.form-dropdown');
+    if (parentDropdown && parentDropdown.classList.contains('row-actions-dd')) {
+      // Close the dropdown, but let the form/HTMX handle the action
+      parentDropdown.removeAttribute('data-open');
+      removePortal();
+      return;
+    }
+
     // For buttons (form dropdowns): prevent default and stop propagation
     // For links (filter dropdowns with hx-get): just update the label, let HTMX handle navigation
     var isLink = btn.tagName === 'A';
@@ -1021,6 +1031,12 @@ document.addEventListener('click', function (e) {
 
     // Check if this is a portal listbox click
     if (portalListbox && portalListbox.contains(btn) && portalDropdown) {
+      // Row-action portals: close dropdown, let form/HTMX handle the action
+      if (portalDropdown.classList.contains('row-actions-dd')) {
+        portalDropdown.removeAttribute('data-open');
+        removePortal();
+        return;
+      }
       selectOption(btn, portalDropdown);
       return;
     }

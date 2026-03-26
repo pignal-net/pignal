@@ -23,23 +23,22 @@ export async function i18nMiddleware(
 		? (settings.source_locale as Locale)
 		: FALLBACK_LOCALE;
 
-	// Hono's languageDetector sets c.get('language')
-	const detected = (c.get('language' as keyof WebVars) as string) ?? siteDefault;
-	const locale = SUPPORTED_LOCALES.includes(detected as Locale)
-		? (detected as Locale)
-		: siteDefault;
-
-	// Redirect if URL has the default locale as prefix (e.g., /en/... when default is en)
+	// Determine locale from URL path prefix
 	const pathname = new URL(c.req.url).pathname;
 	const segments = pathname.split('/').filter(Boolean);
-	if (
-		segments.length > 0 &&
-		segments[0] === siteDefault &&
-		SUPPORTED_LOCALES.includes(segments[0] as Locale)
-	) {
+	const pathLocale = segments.length > 0 && SUPPORTED_LOCALES.includes(segments[0] as Locale)
+		? (segments[0] as Locale)
+		: null;
+
+	// Redirect if URL has the default locale as prefix (e.g., /en/... when default is en)
+	if (pathLocale === siteDefault) {
 		const cleanPath = '/' + segments.slice(1).join('/') || '/';
 		return c.redirect(cleanPath, 301);
 	}
+
+	// URL prefix is authoritative. No prefix = site default.
+	// Cookie/header detection from languageDetector is ignored — locale is path-driven.
+	const locale = pathLocale ?? siteDefault;
 
 	// Register active template's translations
 	const templateName = c.get('templateName');
