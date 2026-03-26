@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import type { ActionStoreRpc, SubmissionWithAction, SiteActionSelect, SubmissionStatus } from '@pignal/db';
 import type { WebEnv, WebVars } from '../types';
-import type { TFunction } from '../i18n/types';
+import type { TFunction } from '@pignal/render/i18n/types';
 import { AppLayout } from '../components/app-layout';
 import { PageHeader } from '../components/page-header';
 import { StatusBadge } from '../components/status-badge';
@@ -9,10 +9,10 @@ import { ManagedList, TableResultsWrapper } from '../components/managed-list';
 import type { SortTab, FilterDropdown, BulkAction, TableColumn } from '../components/managed-list';
 import type { RowAction } from '../components/feed-item';
 import { TableRow, TableCell, TableActions, RowActions } from '../components/feed-item';
-import { Pagination } from '../components/pagination';
+import { Pagination } from '@pignal/render/components/pagination';
 import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
-import { relativeTime } from '../lib/time';
+import { relativeTime } from '@pignal/render/lib/time';
 
 type PageVars = WebVars & { actionStore: ActionStoreRpc };
 

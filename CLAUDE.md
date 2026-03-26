@@ -12,14 +12,15 @@ All commands run from the repo root using pnpm workspaces:
 
 ```bash
 pnpm install              # Install all workspace dependencies
-pnpm dev:server           # Start local dev server (localhost:8787)
+pnpm dev:server           # Start local dev server (runs resolve-template first, then localhost:8787)
 pnpm deploy:server        # Deploy to Cloudflare Workers
 pnpm db:migrate           # Apply D1 migrations locally
 pnpm db:migrate:prod      # Apply D1 migrations to production
 pnpm db:seed:blog         # Seed blog template data locally
 pnpm db:seed:shop         # Seed shop template data locally
-pnpm template:create      # Scaffold a new template
-pnpm css:build            # Build Tailwind v4 CSS (web/src/styles/input.css → web/src/static/tailwind.css)
+pnpm template:create      # Scaffold a new template (into templates/src/<name>/)
+pnpm resolve-template     # Generate _resolved.ts for the active template (reads TEMPLATE env var)
+pnpm css:build            # Build Tailwind v4 CSS (render/src/styles/input.css → render/src/static/tailwind.css)
 pnpm css:watch            # Watch mode for Tailwind CSS during development
 pnpm type-check           # Type-check all packages
 pnpm lint                 # Lint all packages (server only currently)
@@ -61,9 +62,11 @@ D1 migrations live in `server/migrations/`. Seed SQL files live in `templates/se
   ↑
 @pignal/core        ItemStore, ActionStore, route factories, validation, MCP tools, directives, webhooks, events (GENERIC)
   ↑
-@pignal/templates   Template configs, vocabulary, SEO, MCP config, schema overrides, seed SQL
+@pignal/render      Shared rendering: components, lib utilities, i18n, static assets, styles
   ↑
-@pignal/web         Hono JSX SSR admin dashboard + template-driven source page + directive rendering + analytics
+@pignal/templates   Self-contained templates (config + JSX per folder), build-time resolution, seed SQL
+  ↑
+@pignal/web         Admin dashboard + routing only (no templates, no shared components)
   ↑
 @pignal/server      Deployable Worker: REST + MCP + Web, D1 storage, token auth
 ```
@@ -85,8 +88,9 @@ Every request creates an `ItemStore` and `ActionStore` from D1 via middleware. A
 |---------|------|-------------|
 | `@pignal/db` | `db/` | Drizzle ORM schemas (`schema.ts`: items, item_types, type_actions, workspaces, settings, site_actions, submissions, page_views) and TypeScript types (`ItemStoreRpc`, `ActionStoreRpc`, `ItemWithMeta`, etc.). |
 | `@pignal/core` | `core/` | `ItemStore` + `ActionStore` (pure business logic), route factories, Zod validation, MCP tools (15 tools), `DirectiveRegistry`, `FieldTypeRegistry`, `EventBus`, webhook dispatcher, federation. Template-agnostic. |
-| `@pignal/templates` | `templates/` | Template configs (vocabulary, SEO hints, MCP instructions, schema descriptions), `Template` interface, prop types, seed SQL |
-| `@pignal/web` | `web/` | Admin dashboard + public source page via Hono JSX SSR. HTMX for interactivity. Tailwind v4 for styling. Template JSX components. Content directive rendering. CTA blocks. Testimonials. Page view analytics middleware. |
+| `@pignal/render` | `packages/render/` | Shared rendering layer: Hono JSX components (layout, public-layout, pagination, item-card, cta-block, icons, etc.), lib utilities (theme, seo, markdown, directives, time, rss), i18n, static assets (tailwind.css, htmx.min.js, app.js), Tailwind v4 styles (input.css). Used by templates and web admin. |
+| `@pignal/templates` | `templates/` | 24 self-contained templates. Each folder (`src/<name>/`) has `config.ts` (vocabulary, SEO, MCP) + JSX (`index.tsx`, `source-page.tsx`, `item-post.tsx`, `layout.tsx`). Build-time resolution via `_resolved.ts`. Seed SQL in `seeds/`. `all-configs.ts` barrel for hub use. |
+| `@pignal/web` | `web/` | Admin dashboard + routing only. Admin-specific components (app-layout, page-header, filter-sidebar, etc.), pages (dashboard, items, settings, etc.), middleware (session, CSRF, analytics). No template JSX, no shared components. |
 | `@pignal/server` | `server/` | Wires everything together. D1 storage, token auth, mounts route factories at `/api/*`, MCP at `/mcp`, public forms at `/form/*`, public source page at `/`, admin UI at `/pignal`, `/.well-known/pignal` for federation |
 
 ### Route Factory Pattern
@@ -161,20 +165,27 @@ Lightweight server-side view counting on public pages (`/`, `/item/:slug`). No c
 - **FieldTypeRegistry**: `core/src/actions/field-types.ts` — `FieldTypeRegistry` class with 8 built-in field type handlers (text, email, textarea, select, url, tel, number, checkbox)
 - **EventBus**: `core/src/events/event-bus.ts` — Lightweight event system with wildcard support. Used by webhooks.
 - **Webhook dispatcher**: `core/src/webhooks/dispatcher.ts` — `createWebhookListener()` factory, HMAC-SHA256 signing, fire-and-forget delivery
-- **Template configs**: `templates/src/config.ts` — TemplateConfig, vocabulary, SEO hints, MCP config with schemaDescriptions
+- **Template configs**: `templates/src/<name>/config.ts` — Per-template TemplateConfig (vocabulary, SEO, MCP, schemaDescriptions). Type definitions in `templates/src/config.ts`.
+- **Template JSX**: `templates/src/<name>/` — Self-contained template folders with `config.ts`, `index.tsx`, `source-page.tsx`, `item-post.tsx`, `layout.tsx`
+- **Template registry**: `templates/src/registry.ts` — Uses build-time `_resolved.ts` (generated by `scripts/resolve-template.ts`)
+- **Template configs barrel**: `templates/src/all-configs.ts` — Exports all 24 template configs (used by hub for directory/catalog)
 - **Template types**: `templates/src/types.ts` — Template interface, SourcePageProps, ItemPostProps, LayoutProps
 - **Template seeds**: `templates/seeds/` — blog.sql, shop.sql (seed data per template)
+- **Render components**: `packages/render/src/components/` — Shared JSX: layout, public-layout, pagination, type-badge, empty-state, item-feed, item-card, type-sidebar, source-action-bar, json-ld, icons, cta-block, language-switcher, action-form, visibility-badge, testimonials
+- **Render lib**: `packages/render/src/lib/` — theme.ts, seo.ts, markdown.ts, time.ts, css-sanitize.ts, static-versions.ts, geo.ts, rss.ts, directives.ts
+- **Render i18n**: `packages/render/src/i18n/` — index.ts, t.ts, types.ts, utils.ts, locales/
+- **Design tokens / input CSS**: `packages/render/src/styles/input.css` — `@theme` block, dark mode, base layer, `@layer components` classes
+- **Static assets**: `packages/render/src/static/` — tailwind.css, htmx.min.js, app.js, logo.svg, logo.png
+- **SVG icons**: `packages/render/src/components/icons.tsx` — Shared inline SVG icon components
+- **Theme engine**: `packages/render/src/lib/theme.ts` — CSS custom property generation from source settings
+- **Directives rendering**: `packages/render/src/lib/directives.ts` — Directive rendering (action forms, CTAs, testimonials) + `renderContentWithDirectives()`
 - **Federation**: `core/src/federation/` — `well-known.ts` (handler), `types.ts` (WellKnownResponse, etc.)
 - **DB schema**: `db/src/schema.ts` — 8 tables (items, item_types, type_actions, workspaces, settings, api_keys, site_actions, submissions, page_views)
 - **TypeScript types**: `db/src/types.ts` — `ItemStoreRpc`, `ActionStoreRpc` interfaces, all data types
-- **Web templates**: `web/src/templates/` — Template JSX components: `registry.ts` (lookup), `blog/` (default), `shop/` (grid catalog). All styling via Tailwind utility classes.
-- **Web directives**: `web/src/lib/directives.ts` — Directive rendering (action forms, CTAs, testimonials) + `renderContentWithDirectives()`
-- **Web components (business)**: `web/src/components/action-form.tsx` (dynamic form renderer), `cta-block.tsx` (HeroCta, PostCta, StickyCta, InlineCta), `testimonials.tsx` (testimonial card grid)
-- **Design tokens / input CSS**: `web/src/styles/input.css` — `@theme` block, dark mode, base layer, `@layer components` classes
-- **SVG icons**: `web/src/components/icons.tsx` — Shared inline SVG icon components
-- **Theme engine**: `web/src/lib/theme.ts` — CSS custom property generation from source settings
+- **Web components (admin)**: `web/src/components/` — Admin-only: app-layout, create-section, feed-item, filter-sidebar, flash, form-dropdown, managed-list, page-header, skeleton, stat-card, status-badge
 - **Web pages**: `web/src/pages/` — dashboard, items, source-page, item-post, settings, api-keys, actions (form management), submissions (lead management)
-- **Web middleware**: `web/src/middleware/` — session, CSRF, security headers, analytics (page view tracking)
+- **Web middleware**: `web/src/middleware/` — session, CSRF, security headers, analytics (page view tracking), locale, visitor
+- **Web lib**: `web/src/lib/` — cookie.ts, htmx.ts, slug.ts (admin-specific utilities only)
 - **Server entry**: `server/src/index.ts` — Hono app, mounts all routes including `/api/actions`, `/api/submissions`, `/form/*`
 - **Store middleware**: `server/src/middleware/store.ts` — Creates ItemStore, ActionStore, EventBus, FieldTypeRegistry from D1
 - **Permission middleware**: `server/src/middleware/permission-auth.ts` — `requirePermission`, `requireByMethod`, `resolveItemPermission`, `mcpPermissionCheck`
@@ -183,16 +194,22 @@ Lightweight server-side view counting on public pages (`/`, `/item/:slug`). No c
 
 ## Template System
 
-The template system is split across two packages:
-- **`@pignal/templates`** (`templates/`) — Config, types, seed data. Defines `TemplateConfig` (vocabulary, SEO hints, MCP config with `schemaDescriptions`), `Template` interface, and prop types.
-- **`@pignal/web`** (`web/src/templates/`) — JSX components (blog, shop) and registry. Each template folder contains `index.tsx`, `source-page.tsx`, `item-post.tsx`, and `layout.tsx`. All styling uses Tailwind utility classes directly in JSX.
+The template system is split across three packages:
+- **`@pignal/render`** (`packages/render/`) — Shared rendering components, lib utilities, i18n, static assets, and styles. Used by all templates and the web admin.
+- **`@pignal/templates`** (`templates/`) — 24 self-contained template folders. Each folder has config (vocabulary, SEO, MCP) + JSX (source-page, item-post, layout) together. Build-time resolution selects one template per deployment.
+
+Templates import shared components and utilities from `@pignal/render`:
+```tsx
+import { ItemCard } from '@pignal/render/components/item-card';
+import { renderMarkdown } from '@pignal/render/lib/markdown';
+```
 
 ### Template Contract
 
 Every template exports an object conforming to the `Template` interface (`templates/src/types.ts`):
 
 - **Required components**: `SourcePage`, `ItemPost`, `Layout`, `PartialResults`
-- **Optional overrides**: `ItemCard`, `Header`, `Footer`, `FilterBar` (fall back to shared components)
+- **Optional overrides**: `ItemCard`, `Header`, `Footer`, `FilterBar` (fall back to shared components in `@pignal/render`)
 - **`vocabulary`**: `TemplateVocabulary` — maps generic terms (item, type, workspace, vouch) to domain-specific language
 - **`seo`**: `TemplateSeoHints` — Schema.org types for JSON-LD
 - **`meta`**: `{ name, description }` — template metadata
@@ -200,25 +217,34 @@ Every template exports an object conforming to the `Template` interface (`templa
 
 ### Template Config
 
-Each template has a `TemplateConfig` in `templates/src/config.ts` with:
+Each template has its own `config.ts` in `templates/src/<name>/config.ts` with:
 - **`vocabulary`** — domain language mapping (e.g., "product", "category", "collection" for shop)
 - **`seo`** — Schema.org `@type` for source page and items
 - **`mcp`** — instructions, tool descriptions, response labels, and `schemaDescriptions` (per-field Zod `.describe()` overrides for rich MCP quality)
 
-### Template Registry
+Type definitions (`TemplateConfig`, `TemplateVocabulary`, etc.) remain in `templates/src/config.ts`. The `all-configs.ts` barrel re-exports all 24 configs for hub use (directory/catalog).
 
-Templates are registered in `web/src/templates/registry.ts`. The `getTemplate(templateName)` function returns the matching template (defaulting to `blog`).
+### Template Registry (Build-Time Resolution)
 
-Available templates:
-- **blog** (default) — Vertical feed layout with timeline grouping
-- **shop** — Grid-based product catalog layout
+Templates use **build-time resolution** instead of a runtime registry. The `resolve-template` script (`templates/scripts/resolve-template.ts`) reads the `TEMPLATE` env var and generates `templates/src/_resolved.ts`, which imports only the selected template.
+
+`templates/src/registry.ts` provides `getTemplate()` which returns the resolved template. Only one template is bundled per deployment, keeping the worker size minimal.
+
+The server imports the resolved config via:
+```typescript
+import { resolvedConfig } from '@pignal/templates/resolved';
+```
+
+Available templates (24): awesome-list, blog (default), bookshelf, case-studies, changelog, course, directory, flashcards, glossary, incidents, journal, magazine, menu, podcast, portfolio, recipes, resume, reviews, runbook, services, shop, til, wiki, writing.
 
 ### Creating a New Template
 
-1. Add a `TemplateConfig` in `templates/src/config.ts` with vocabulary, SEO, MCP config, and `schemaDescriptions`
-2. Run `pnpm template:create <name>` (from `templates/`) to scaffold JSX components in `web/src/templates/<name>/`
-3. Implement `source-page.tsx`, `item-post.tsx`, and `layout.tsx` using Tailwind utility classes
+1. Run `pnpm template:create <name>` — scaffolds `templates/src/<name>/` with `config.ts`, `index.tsx`, `source-page.tsx`, `item-post.tsx`, `layout.tsx`, and adds the config to `all-configs.ts`
+2. Edit `config.ts` with vocabulary, SEO, MCP config, and `schemaDescriptions`
+3. Implement `source-page.tsx`, `item-post.tsx`, and `layout.tsx` using Tailwind utility classes, importing shared components from `@pignal/render/components/*`
 4. (Optional) Add seed data in `templates/seeds/<name>.sql`
+
+No registry modification is needed -- the build-time resolution (`pnpm resolve-template`) picks up the new template automatically when `TEMPLATE=<name>` is set.
 
 See `templates/TEMPLATE_GUIDE.md` for the full contract, prop types, and checklist.
 
@@ -226,10 +252,10 @@ See `templates/TEMPLATE_GUIDE.md` for the full contract, prop types, and checkli
 
 #### Architecture Overview
 
-- **Tailwind v4** with CSS-first configuration at `web/src/styles/input.css`
-- Built to `web/src/static/tailwind.css` via `pnpm css:build` (watch mode: `pnpm css:watch`)
+- **Tailwind v4** with CSS-first configuration at `packages/render/src/styles/input.css`
+- Built to `packages/render/src/static/tailwind.css` via `pnpm css:build` (watch mode: `pnpm css:watch`)
 - The compiled CSS is imported as text via Wrangler rules (configured in `wrangler.toml` with `type = "Text"` for `.css` and `.png` files) and served at `/static/tailwind.css`
-- Theme engine (`web/src/lib/theme.ts`) generates `--tw-*` CSS custom properties from source settings, overriding the defaults in the `@theme {}` block
+- Theme engine (`packages/render/src/lib/theme.ts`) generates `--tw-*` CSS custom properties from source settings, overriding the defaults in the `@theme {}` block
 - **NO per-template CSS files** — all styling uses Tailwind utility classes directly in JSX (`styles: ''` on all templates)
 
 #### Design Tokens
@@ -396,7 +422,7 @@ Standard patterns used across all pages. Use these exactly to maintain consisten
 
 #### SVG Icons
 
-Shared icon components in `web/src/components/icons.tsx`. All icons are inline SVGs with no external dependencies.
+Shared icon components in `packages/render/src/components/icons.tsx`. All icons are inline SVGs with no external dependencies.
 
 **Available icons:**
 - Theme: `IconSun`, `IconMoon`, `IconMonitor`
@@ -426,7 +452,7 @@ Shared icon components in `web/src/components/icons.tsx`. All icons are inline S
 | `source_color_text` | `--tw-text` | `#373C44` |
 | `source_color_muted` | `--tw-muted`, `--tw-border` | `#646B79` |
 
-`theme.ts` reads these from settings and generates a `<style>` tag with CSS variable overrides for both light and dark mode. Dark mode values are automatically derived using `color-mix()`. Custom CSS is also supported via the `source_custom_css` setting (sanitized, injected via `<style>`).
+`packages/render/src/lib/theme.ts` reads these from settings and generates a `<style>` tag with CSS variable overrides for both light and dark mode. Dark mode values are automatically derived using `color-mix()`. Custom CSS is also supported via the `source_custom_css` setting (sanitized, injected via `<style>`).
 
 #### Responsive Breakpoints
 
@@ -459,7 +485,7 @@ Base layer headings use `clamp()` for `h1` (1.75rem to 2.25rem) and negative let
 
 #### CSS Component Classes
 
-These classes are defined in the `@layer components` block of `input.css` and referenced by JavaScript (`app.js`). Use them as-is:
+These classes are defined in the `@layer components` block of `packages/render/src/styles/input.css` and referenced by JavaScript (`packages/render/src/static/app.js`). Use them as-is:
 
 | Class | Purpose |
 |-------|---------|
@@ -484,7 +510,7 @@ Print media hides navigation, filters, TOC, back-to-top, theme toggle, and foote
 
 ### The `TEMPLATE` Environment Variable
 
-The active template is set via the `TEMPLATE` env var in `wrangler.toml` under `[vars]` (defaults to `blog`). When changed and redeployed, the public source page renders using the new template's components, vocabulary, and styles.
+The active template is set via the `TEMPLATE` env var in `wrangler.toml` under `[vars]` (defaults to `blog`). When changed, run `pnpm resolve-template` (or `pnpm dev:server`, which runs it automatically) to regenerate `templates/src/_resolved.ts`. Only the selected template's code is bundled into the deployed worker.
 
 ## URL Structure
 
@@ -533,3 +559,8 @@ The active template is set via the `TEMPLATE` env var in `wrangler.toml` under `
 - `prefer-const`, `no-var`, `eqeqeq: always`
 - All packages: TypeScript strict mode, ES2022 target, `moduleResolution: bundler`
 - Server/web use Hono JSX (`jsxImportSource: hono/jsx`)
+- **JSX pragma required** for `@pignal/render` and `@pignal/templates` TSX files (packages outside the `jsxImportSource` tsconfig scope):
+  ```tsx
+  /** @jsxRuntime automatic */
+  /** @jsxImportSource hono/jsx */
+  ```

@@ -1,10 +1,10 @@
 import type { Context } from 'hono';
 import type { WebEnv, WebVars } from '../types';
-import { Layout } from '../components/layout';
+import { Layout } from '@pignal/render/components/layout';
 import { createSessionCookie } from '../lib/cookie';
 import { timingSafeEqual } from '@pignal/core/auth/timing-safe';
 import { getCsrfToken, CSRF_FIELD, CSRF_COOKIE } from '../middleware/csrf';
-import { APP_JS_URL, LOGO_SVG_URL } from '../lib/static-versions';
+import { APP_JS_URL, LOGO_SVG_URL } from '@pignal/render/lib/static-versions';
 
 export function loginPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const t = c.get('t');

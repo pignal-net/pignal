@@ -1,9 +1,9 @@
 import type { Context, Next } from 'hono';
 import type { WebEnv, WebVars } from '../types';
-import type { Locale } from '../i18n/types';
-import { SUPPORTED_LOCALES, FALLBACK_LOCALE } from '../i18n/types';
-import { createT, registerTranslations } from '../i18n/t';
-import { getTemplate } from '../templates/registry';
+import type { Locale } from '@pignal/render/i18n/types';
+import { SUPPORTED_LOCALES, FALLBACK_LOCALE } from '@pignal/render/i18n/types';
+import { createT, registerTranslations } from '@pignal/render/i18n/t';
+import { getTemplate } from '@pignal/templates';
 
 /**
  * i18n middleware — runs AFTER Hono's languageDetector.

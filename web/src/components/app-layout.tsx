@@ -1,10 +1,10 @@
 import type { Child } from 'hono/jsx';
-import type { TFunction, Locale } from '../i18n/types';
-import { Layout } from './layout';
-import { HTMX_JS_URL, APP_JS_URL, LOGO_SVG_URL } from '../lib/static-versions';
-import { IconLogout, IconExternalLink, IconHamburger } from '../components/icons';
-import { localePath } from '../i18n/utils';
-import { LanguageSwitcher } from './language-switcher';
+import type { TFunction, Locale } from '@pignal/render/i18n/types';
+import { Layout } from '@pignal/render/components/layout';
+import { HTMX_JS_URL, APP_JS_URL, LOGO_SVG_URL } from '@pignal/render/lib/static-versions';
+import { IconLogout, IconExternalLink, IconHamburger } from '@pignal/render/components/icons';
+import { localePath } from '@pignal/render/i18n/utils';
+import { LanguageSwitcher } from '@pignal/render/components/language-switcher';
 
 interface AppLayoutProps {
   title: string;

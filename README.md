@@ -102,7 +102,7 @@ cp wrangler.toml.example wrangler.toml
 
 Edit `wrangler.toml` and replace the placeholder `database_id` with the value from step 3.
 
-To use a non-default template, add `TEMPLATE = "shop"` (or your template name) under `[vars]` in `wrangler.toml`.
+To use a non-default template, set `TEMPLATE = "shop"` (or your template name) under `[vars]` in `wrangler.toml`, then run `pnpm resolve-template` (this runs automatically with `pnpm dev:server`).
 
 ### 5. Set your secret token
 
@@ -222,7 +222,7 @@ Set `TEMPLATE = "shop"` (or your template name) under `[vars]` in `wrangler.toml
 ### Creating a new template
 
 1. Add a `TemplateConfig` in `templates/src/config.ts` — vocabulary, SEO hints, MCP instructions, and `schemaDescriptions`
-2. Run `pnpm template:create <name>` from `templates/` to scaffold JSX components in `web/src/templates/<name>/`
+2. Run `pnpm template:create <name>` from `templates/` to scaffold config + JSX in `templates/src/<name>/`
 3. Customize `source-page.tsx`, `item-post.tsx`, `layout.tsx`, and `styles.css`
 4. (Optional) Add seed data in `templates/seeds/<name>.sql`
 

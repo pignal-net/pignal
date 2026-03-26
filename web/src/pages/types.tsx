@@ -1,15 +1,15 @@
 import type { Context } from 'hono';
 import type { ItemTypeWithActions, TypeGuidance } from '@pignal/db';
 import type { WebEnv, WebVars } from '../types';
-import type { TFunction } from '../i18n/types';
+import type { TFunction } from '@pignal/render/i18n/types';
 import type { BulkAction, TableColumn } from '../components/managed-list';
 import { AppLayout } from '../components/app-layout';
 import { PageHeader } from '../components/page-header';
 import { ManagedList, TableResultsWrapper } from '../components/managed-list';
 import type { RowAction } from '../components/feed-item';
 import { TableRow, TableCell, TableActions, RowActions } from '../components/feed-item';
-import { Pagination } from '../components/pagination';
-import { relativeTime } from '../lib/time';
+import { Pagination } from '@pignal/render/components/pagination';
+import { relativeTime } from '@pignal/render/lib/time';
 import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
 

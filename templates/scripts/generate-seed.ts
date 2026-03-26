@@ -13,7 +13,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 import type { TemplateSeedData, TemplateTypeSeed, TemplateWorkspaceSeed, TemplateSettingsSeed } from '../src/config';
-import { getTemplateConfig } from '../src/config';
+import { getTemplateConfig } from '../src/all-configs';
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -1,13 +1,13 @@
 import type { Context } from 'hono';
 import type { WebEnv, WebVars } from '../types';
-import { PublicLayout } from '../components/public-layout';
-import { TypeBadge } from '../components/type-badge';
-import { VisibilityBadge } from '../components/visibility-badge';
+import { PublicLayout } from '@pignal/render/components/public-layout';
+import { TypeBadge } from '@pignal/render/components/type-badge';
+import { VisibilityBadge } from '@pignal/render/components/visibility-badge';
 
-import { SourceActionBar } from '../components/source-action-bar';
-import { buildMetaTags, resolveOgImage } from '../lib/seo';
-import { renderMarkdown, stripMarkdown, normalizeHeadings } from '../lib/markdown';
-import { formatDate, readingTime } from '../lib/time';
+import { SourceActionBar } from '@pignal/render/components/source-action-bar';
+import { buildMetaTags, resolveOgImage } from '@pignal/render/lib/seo';
+import { renderMarkdown, stripMarkdown, normalizeHeadings } from '@pignal/render/lib/markdown';
+import { formatDate, readingTime } from '@pignal/render/lib/time';
 import { raw } from 'hono/html';
 
 function formatAiSource(sourceAi: string): string | null {

@@ -1,0 +1,36 @@
+{
+  "name": "@pignal/render",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./components/*": "./src/components/*.tsx",
+    "./lib/*": "./src/lib/*.ts",
+    "./i18n": "./src/i18n/index.ts",
+    "./i18n/*": "./src/i18n/*.ts",
+    "./static/*": "./src/static/*",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "css:build": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./src/static/tailwind.css --minify",
+    "css:watch": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./src/static/tailwind.css --watch",
+    "type-check": "tsc --noEmit",
+    "check-all": "pnpm type-check"
+  },
+  "dependencies": {
+    "@pignal/core": "workspace:*",
+    "@pignal/db": "workspace:*",
+    "hono": "^4.6.0",
+    "marked": "^15.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241112.0",
+    "@tailwindcss/cli": "^4.2.2",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.6.0"
+  }
+}

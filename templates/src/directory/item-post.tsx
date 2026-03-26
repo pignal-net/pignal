@@ -1,0 +1,100 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource hono/jsx */
+import type { ItemPostProps } from '../types';
+import { TypeBadge } from '@pignal/render/components/type-badge';
+import { SourceActionBar } from '@pignal/render/components/source-action-bar';
+import { JsonLd } from '@pignal/render/components/json-ld';
+import { buildSourcePostingJsonLd, buildMetaTags, resolveOgImage } from '@pignal/render/lib/seo';
+import { stripMarkdown } from '@pignal/render/lib/markdown';
+import { formatDate } from '@pignal/render/lib/time';
+import { raw } from 'hono/html';
+import { DirectoryLayout } from './layout';
+
+function getStatusClasses(label: string | null): string {
+  if (!label) return '';
+  const lower = label.toLowerCase();
+  if (lower.includes('active') || lower.includes('recommended')) return 'bg-success-bg text-success border border-success-border';
+  if (lower.includes('new')) return 'bg-info-bg text-info border border-info-border';
+  if (lower.includes('archived') || lower.includes('inactive') || lower.includes('stale')) return 'bg-surface-raised text-muted border border-border';
+  if (lower.includes('deprecated') || lower.includes('shutting')) return 'bg-error-bg text-error border border-error-border';
+  return 'bg-success-bg text-success border border-success-border';
+}
+
+export function DirectoryItemPost(props: ItemPostProps) {
+  const {
+    item,
+    settings,
+    renderedContent,
+    sourceUrl,
+    sourceAuthor,
+    githubUrl,
+  } = props;
+
+  const sourceTitle = settings.source_title || 'My Resource Directory';
+
+  const ogImage = resolveOgImage(settings, sourceUrl);
+
+  const description = stripMarkdown(item.content).slice(0, 160);
+  const jsonLd = buildSourcePostingJsonLd(item, settings, sourceUrl, description, props.seo);
+  const metaTags = buildMetaTags({
+    title: `${item.keySummary} | ${sourceTitle}`,
+    description,
+    canonicalUrl: `${sourceUrl}/item/${item.slug}`,
+    ogType: 'article',
+    feedUrl: `${sourceUrl}/feed.xml`,
+    imageUrl: ogImage,
+  });
+
+  const statusClasses = getStatusClasses(item.validationActionLabel);
+
+  return (
+    <DirectoryLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} visitor={props.visitor}>
+      <JsonLd data={jsonLd} />
+
+      <div class="max-w-3xl mx-auto px-4 pt-8 pb-16">
+        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
+
+        <article class="min-w-0 max-w-full">
+          <header class="mb-6">
+            <div class="source-category">
+              <TypeBadge typeName={item.typeName} />
+              {item.workspaceName && (
+                <a href={`/?workspace=${item.workspaceId}`} class="workspace-badge">{item.workspaceName}</a>
+              )}
+              {item.validationActionLabel && (
+                <span class={`text-[0.68rem] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${statusClasses}`}>{item.validationActionLabel}</span>
+              )}
+            </div>
+            <h1>{item.keySummary}</h1>
+            <div class="post-meta">
+              {githubUrl ? (
+                <a href={githubUrl} target="_blank" rel="noopener" class="post-author">
+                  {sourceAuthor}
+                </a>
+              ) : (
+                <span>{sourceAuthor}</span>
+              )}
+              <time datetime={item.vouchedAt || item.createdAt}>
+                {formatDate(item.vouchedAt || item.createdAt)}
+              </time>
+            </div>
+          </header>
+
+          <div class="content leading-relaxed">
+            {raw(renderedContent)}
+          </div>
+
+          {item.tags && item.tags.length > 0 && (
+            <footer class="mt-10 pt-6 border-t border-border-subtle">
+              <div class="flex flex-wrap gap-2">
+                {item.tags.map((t) => (
+                  <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
+                ))}
+              </div>
+            </footer>
+          )}
+        </article>
+      </div>
+    </DirectoryLayout>
+  );
+}

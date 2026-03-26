@@ -1,11 +1,11 @@
 ---
 name: pignal-oss-development
-description: Use when developing on Pignal OSS packages (db, core, web, server) — adding fields, endpoints, MCP tools, permissions, templates, or migrations in the self-hosted item store
+description: Use when developing on Pignal OSS packages (db, core, render, templates, web, server) — adding fields, endpoints, MCP tools, permissions, templates, or migrations in the self-hosted item store
 ---
 
 # Pignal OSS Development
 
-Five packages with strict layering: `@pignal/db` (schema + types) -> `@pignal/core` (logic + routes) -> `@pignal/templates` (profiles + configs + catalog) -> `@pignal/server` + `@pignal/web` (deployment + UI). Always modify bottom-up.
+Six packages with strict layering: `@pignal/db` (schema + types) -> `@pignal/core` (logic + routes) -> `@pignal/render` (shared rendering) -> `@pignal/templates` (self-contained template folders) -> `@pignal/web` (admin dashboard) -> `@pignal/server` (deployment wiring). Always modify bottom-up.
 
 ## Which Package?
 
@@ -17,21 +17,35 @@ Five packages with strict layering: `@pignal/db` (schema + types) -> `@pignal/co
 | Validation schema | `core` | `core/src/validation/schemas.ts` |
 | MCP tool | `core` | `core/src/mcp/tools.ts` + `core/src/mcp/manifest.ts` |
 | Permission | `core` | `core/src/auth/permissions.ts` |
-| Server wiring / auth | `server` | `server/src/index.ts` + `server/src/middleware/` |
-| Web UI page | `web` | `web/src/pages/*.tsx` |
-| Template profile/config | `templates` | `templates/src/config.ts` (profile + vocabulary + SEO + MCP) |
+| Shared rendering component | `render` | `packages/render/src/components/*.tsx` |
+| Shared rendering lib | `render` | `packages/render/src/lib/*.ts` |
+| SVG icons | `render` | `packages/render/src/components/icons.tsx` |
+| Design tokens / CSS | `render` | `packages/render/src/styles/input.css` |
+| Theme engine | `render` | `packages/render/src/lib/theme.ts` |
+| i18n / translations | `render` | `packages/render/src/i18n/` |
+| Template config (vocabulary/SEO/MCP) | `templates` | `templates/src/<name>/config.ts` |
+| Template JSX (source page, item post) | `templates` | `templates/src/<name>/source-page.tsx`, `item-post.tsx`, `layout.tsx` |
 | Template catalog | `templates` | `templates/src/catalog.ts` (shipped/planned/rejected registry) |
 | Template seed data | `templates` | `templates/seeds/<name>.sql` (generated via `pnpm seed:generate`) |
-| Web template JSX | `web` | `web/src/templates/<name>/` (see `GENERATION_GUIDE.md`) |
+| All-configs barrel (for hub) | `templates` | `templates/src/all-configs.ts` |
+| Admin dashboard page | `web` | `web/src/pages/*.tsx` |
+| Admin component | `web` | `web/src/components/*.tsx` |
+| Server wiring / auth | `server` | `server/src/index.ts` + `server/src/middleware/` |
 | D1 migration | `server` | `server/migrations/NNNN_description.sql` |
 
 ## Modification Order
 
-Always: `db -> core -> server/web`. Never modify upstream packages first.
+Always: `db -> core -> render -> templates -> web -> server`. Never modify upstream packages first.
+
+## Import Patterns
+
+- Templates and web admin import shared rendering: `import { X } from '@pignal/render/components/x'` and `import { y } from '@pignal/render/lib/y'`
+- Server/web import the resolved template config: `import { resolvedConfig } from '@pignal/templates/resolved'`
+- TSX files in `render` and `templates` need JSX pragmas: `/** @jsxRuntime automatic */` and `/** @jsxImportSource hono/jsx */`
 
 ## Detailed Guides
 
-- [recipes.md](./recipes.md) — Step-by-step for 6 common tasks
+- [recipes.md](./recipes.md) — Step-by-step for 7 common tasks
 - [pitfalls.md](./pitfalls.md) — Common mistakes and fixes
 - [type-flow.md](./type-flow.md) — How types propagate across packages
 

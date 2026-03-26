@@ -3,7 +3,7 @@ import type { Item } from '@pignal/core';
 import type { ItemWithMeta } from '@pignal/db';
 import type { WebEnv, WebVars } from '../types';
 import { isHtmxRequest } from '../lib/htmx';
-import { getTemplate } from '../templates/registry';
+import { getTemplate } from '@pignal/templates';
 
 function toItem(row: ItemWithMeta): Item {
   return {

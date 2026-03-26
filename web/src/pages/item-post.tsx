@@ -3,9 +3,9 @@ import type { Item } from '@pignal/core';
 import type { ItemWithMeta, SiteActionSelect } from '@pignal/db';
 import type { DirectiveContext } from '@pignal/core/directives/registry';
 import type { WebEnv, WebVars } from '../types';
-import { renderContentWithDirectives } from '../lib/directives';
-import { getTemplate } from '../templates/registry';
-import { getCtaSettings } from '../components/cta-block';
+import { renderContentWithDirectives } from '@pignal/render/lib/directives';
+import { getTemplate } from '@pignal/templates';
+import { getCtaSettings } from '@pignal/render/components/cta-block';
 import { ActionStore } from '@pignal/core/store/action-store';
 import { drizzle } from 'drizzle-orm/d1';
 

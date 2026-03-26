@@ -9,17 +9,23 @@
   "exports": {
     ".": "./src/index.ts",
     "./config": "./src/config.ts",
-    "./seeds/*": "./seeds/*"
+    "./resolved": "./src/_resolved.ts",
+    "./all-configs": "./src/all-configs.ts",
+    "./registry": "./src/template-registry.ts",
+    "./seeds/*": "./seeds/*",
+    "./*": "./src/*/index.tsx"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
     "check-all": "pnpm type-check",
     "template:create": "tsx scripts/create-template.ts",
-    "seed:generate": "tsx scripts/generate-seed.ts"
+    "seed:generate": "tsx scripts/generate-seed.ts",
+    "resolve-template": "tsx scripts/resolve-template.ts"
   },
   "dependencies": {
     "@pignal/core": "workspace:*",
     "@pignal/db": "workspace:*",
+    "@pignal/render": "workspace:*",
     "hono": "^4.6.0"
   },
   "devDependencies": {

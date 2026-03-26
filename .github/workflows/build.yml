@@ -1,4 +1,4 @@
-name: Build Server Bundle
+name: Build Server Bundles
 
 on:
   push:
@@ -29,19 +29,35 @@ jobs:
         working-directory: server
         run: cp wrangler.toml.example wrangler.toml
 
-      - name: Build Worker bundle
-        working-directory: server
-        run: npx wrangler deploy --dry-run --outdir dist
+      - name: Build CSS (shared across all templates)
+        run: pnpm css:build
 
-      - name: Package bundle
-        working-directory: server
+      - name: Build per-template bundles
         run: |
-          mkdir -p dist/migrations
-          cp migrations/*.sql dist/migrations/
-          mkdir -p dist/seeds
-          cp ../templates/seeds/*.sql dist/seeds/
-          cd dist
-          tar -czf ../bundle.tar.gz --exclude='*.map' --exclude='README.md' .
+          TEMPLATES=$(jq -r '.[] | select(.status == "shipped") | "\(.index):\(.id)"' templates/templates.json)
+          for entry in $TEMPLATES; do
+            INDEX=$(echo "$entry" | cut -d: -f1)
+            TMPL=$(echo "$entry" | cut -d: -f2)
+            IDX=$(printf "%02d" "$INDEX")
+
+            echo "Building template: $TMPL (#$IDX)"
+            TEMPLATE="$TMPL" pnpm resolve-template
+
+            cd server
+            npx wrangler deploy --dry-run --outdir "dist-$TMPL"
+
+            mkdir -p "dist-$TMPL/migrations"
+            cp migrations/*.sql "dist-$TMPL/migrations/"
+            if [ -f "../templates/seeds/$TMPL.sql" ]; then
+              cp "../templates/seeds/$TMPL.sql" "dist-$TMPL/seed.sql"
+            fi
+
+            cd "dist-$TMPL"
+            tar -czf "../../pignal-$IDX-$TMPL.tar.gz" --exclude='*.map' --exclude='README.md' .
+            cd ../..
+          done
+
+          echo "Built $(ls pignal-*.tar.gz | wc -l | tr -d ' ') template bundles"
 
       - name: Determine release tag
         id: tag
@@ -62,6 +78,6 @@ jobs:
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.name }}
-          files: server/bundle.tar.gz
+          files: pignal-*.tar.gz
           generate_release_notes: false
           make_latest: true

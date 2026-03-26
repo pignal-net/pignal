@@ -46,6 +46,34 @@ importers:
         specifier: ^5.6.0
         version: 5.9.3
 
+  packages/render:
+    dependencies:
+      '@pignal/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@pignal/db':
+        specifier: workspace:*
+        version: link:../../db
+      hono:
+        specifier: ^4.6.0
+        version: 4.12.5
+      marked:
+        specifier: ^15.0.0
+        version: 15.0.12
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20241112.0
+        version: 4.20260305.1
+      '@tailwindcss/cli':
+        specifier: ^4.2.2
+        version: 4.2.2
+      tailwindcss:
+        specifier: ^4.2.2
+        version: 4.2.2
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+
   server:
     dependencies:
       '@modelcontextprotocol/sdk':
@@ -106,6 +134,9 @@ importers:
       '@pignal/db':
         specifier: workspace:*
         version: link:../db
+      '@pignal/render':
+        specifier: workspace:*
+        version: link:../packages/render
       hono:
         specifier: ^4.6.0
         version: 4.12.5
@@ -128,6 +159,9 @@ importers:
       '@pignal/db':
         specifier: workspace:*
         version: link:../db
+      '@pignal/render':
+        specifier: workspace:*
+        version: link:../packages/render
       '@pignal/templates':
         specifier: workspace:*
         version: link:../templates

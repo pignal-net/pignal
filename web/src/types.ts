@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 
 import type { ItemStoreRpc } from '@pignal/db';
 import type { ApiKeyStore } from '@pignal/core/store/api-keys';
-import type { Locale, TFunction } from './i18n/types';
+import type { Locale, TFunction } from '@pignal/render/i18n/types';
 
 export type WebEnv = {
   SERVER_TOKEN: string;

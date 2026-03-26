@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import type { ApiKeyInfo, WorkspaceSelect } from '@pignal/db';
 import type { ApiKeyStore } from '@pignal/core/store/api-keys';
 import type { WebEnv, WebVars } from '../types';
-import type { TFunction } from '../i18n/types';
+import type { TFunction } from '@pignal/render/i18n/types';
 import { VALID_PERMISSIONS } from '@pignal/core/auth/permissions';
 
 type PageVars = WebVars & { apiKeyStore: ApiKeyStore };
@@ -15,7 +15,7 @@ import { TableRow, TableCell, TableActions, RowActions } from '../components/fee
 import { FormDropdown } from '../components/form-dropdown';
 import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
-import { relativeTime } from '../lib/time';
+import { relativeTime } from '@pignal/render/lib/time';
 
 /** Human-readable labels for each permission, using i18n. */
 function getPermissionMeta(t: TFunction): Record<string, { label: string; desc: string }> {

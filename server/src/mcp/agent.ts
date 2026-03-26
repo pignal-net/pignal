@@ -56,8 +56,8 @@ import {
   type ManageSubmissionToolInput,
   type MetadataField,
 } from '@pignal/core/mcp';
+import { resolvedConfig } from '@pignal/templates/resolved';
 import {
-  getTemplateConfig,
   formatResponseLabel,
   DEFAULT_TEMPLATE_CONFIG,
 } from '@pignal/templates';
@@ -98,7 +98,7 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
   server = this.createServer();
 
   private async createServer(): Promise<McpServer> {
-    const config = getTemplateConfig(this.env.TEMPLATE || 'blog');
+    const config = resolvedConfig;
     return new McpServer(
       { name: 'pignal', version: '1.0.0' },
       { instructions: config.mcp.instructions }
@@ -117,7 +117,7 @@ export class SelfHostedMcpAgent extends McpAgent<Env, unknown, Record<string, un
 
   async init() {
     const store = this.getStore();
-    const config = getTemplateConfig(this.env.TEMPLATE || 'blog');
+    const config = resolvedConfig;
     const td = config.mcp.toolDescriptions;
     const rl = config.mcp.responseLabels;
     const sd = config.mcp.schemaDescriptions;

@@ -16,7 +16,7 @@ import {
 } from '@pignal/core/routes';
 import { ApiKeyStore } from '@pignal/core/store/api-keys';
 import { getDefaultToolManifest } from '@pignal/core/mcp/manifest';
-import { getTemplateConfig } from '@pignal/templates';
+import { resolvedConfig } from '@pignal/templates/resolved';
 import { createWebRoutes } from '@pignal/web';
 
 import { SelfHostedMcpAgent } from './mcp/agent';
@@ -71,7 +71,7 @@ app.get('/.well-known/pignal', async (c) => {
     } catch { /* invalid URL, leave empty */ }
   }
 
-  const templateConfig = getTemplateConfig(c.env.TEMPLATE || 'blog');
+  const templateConfig = resolvedConfig;
   const { profile } = templateConfig;
 
   c.header('Cache-Control', 'public, max-age=300');

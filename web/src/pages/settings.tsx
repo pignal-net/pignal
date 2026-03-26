@@ -1,11 +1,11 @@
 import type { Context } from 'hono';
 import type { Child } from 'hono/jsx';
-import type { TFunction } from '../i18n/types';
+import type { TFunction } from '@pignal/render/i18n/types';
 import type { WebEnv, WebVars } from '../types';
 import { AppLayout } from '../components/app-layout';
 import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
-import { FONT_OPTIONS, isValidHexColor } from '../lib/theme';
+import { FONT_OPTIONS, isValidHexColor } from '@pignal/render/lib/theme';
 import { raw } from 'hono/html';
 
 /* --- Default values (from seed migration) --- */

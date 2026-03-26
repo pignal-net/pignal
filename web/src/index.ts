@@ -7,8 +7,8 @@ import type { ItemWithMeta } from '@pignal/db';
 import type { WebEnv, WebRouteConfig, WebVars } from './types';
 
 // i18n — registers shared translations at import time
-import './i18n';
-import { SUPPORTED_LOCALES } from './i18n/types';
+import '@pignal/render/i18n';
+import { SUPPORTED_LOCALES } from '@pignal/render/i18n/types';
 
 // Middleware
 import { securityHeaders } from './middleware/headers';
@@ -21,11 +21,11 @@ import { rateLimit } from '@pignal/core/middleware/rate-limit';
 import { clearSessionCookie } from './lib/cookie';
 
 // Static assets (imported as raw text)
-import tailwindCSS from './static/tailwind.css';
-import htmxJS from './static/htmx.min.js';
-import appJS from './static/app.js';
-import { logoSVG } from './lib/static-versions';
-import logoPng from './static/logo.png';
+import tailwindCSS from '@pignal/render/static/tailwind.css';
+import htmxJS from '@pignal/render/static/htmx.min.js';
+import appJS from '@pignal/render/static/app.js';
+import { logoSVG } from '@pignal/render/lib/static-versions';
+import logoPng from '@pignal/render/static/logo.png';
 
 // Pages
 import { loginPage, loginHandler } from './pages/login';
@@ -106,10 +106,10 @@ import { itemPostPage } from './pages/item-post';
 import { sharedPage } from './pages/shared';
 
 // Lib
-import { generateRobotsTxt, generateSitemap, generateSitemapIndex, generateLlmsTxt, generateLlmsFullTxt, SITEMAP_PAGE_SIZE } from './lib/geo';
-import { generateAtomFeed } from './lib/rss';
-import { formatDate, readingTime } from './lib/time';
-import { getTemplateConfig } from '@pignal/templates';
+import { generateRobotsTxt, generateSitemap, generateSitemapIndex, generateLlmsTxt, generateLlmsFullTxt, SITEMAP_PAGE_SIZE } from '@pignal/render/lib/geo';
+import { generateAtomFeed } from '@pignal/render/lib/rss';
+import { formatDate, readingTime } from '@pignal/render/lib/time';
+import { resolvedConfig } from '@pignal/templates/resolved';
 
 function toItem(row: ItemWithMeta): Item {
   return {
@@ -261,7 +261,7 @@ export function createWebRoutes(config: WebRouteConfig) {
       store.listTypes(),
       store.listPublic({ limit: 1, offset: 0 }),
     ]);
-    const templateConfig = getTemplateConfig(c.get('templateName'));
+    const templateConfig = resolvedConfig;
     c.header('Content-Type', 'text/plain; charset=utf-8');
     c.header('Cache-Control', 'public, max-age=3600');
     return c.body(generateLlmsTxt(settings, types, result.total, sourceUrl, templateConfig.vocabulary));
@@ -276,7 +276,7 @@ export function createWebRoutes(config: WebRouteConfig) {
     ]);
     // Only expose public workspaces on public endpoints
     metadata.workspaces = metadata.workspaces.filter((w) => w.visibility === 'public');
-    const templateConfig = getTemplateConfig(c.get('templateName'));
+    const templateConfig = resolvedConfig;
     c.header('Content-Type', 'text/plain; charset=utf-8');
     c.header('Cache-Control', 'public, max-age=3600');
     return c.body(generateLlmsFullTxt(metadata, result.total, sourceUrl, templateConfig.vocabulary));
@@ -301,7 +301,7 @@ export function createWebRoutes(config: WebRouteConfig) {
       store.listPublic({ limit: 50 }),
     ]);
     const items = result.items.map(toItem);
-    const templateConfig = getTemplateConfig(c.get('templateName'));
+    const templateConfig = resolvedConfig;
     c.header('Content-Type', 'application/atom+xml; charset=utf-8');
     c.header('Cache-Control', 'public, max-age=3600');
     return c.body(generateAtomFeed(settings, items, sourceUrl, templateConfig.vocabulary));

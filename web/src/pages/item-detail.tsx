@@ -1,14 +1,14 @@
 import type { Context } from 'hono';
 import type { WebEnv, WebVars } from '../types';
 import type { TypeActionSelect } from '@pignal/db';
-import type { TFunction } from '../i18n/types';
+import type { TFunction } from '@pignal/render/i18n/types';
 import { AppLayout } from '../components/app-layout';
-import { TypeBadge } from '../components/type-badge';
-import { VisibilityBadge } from '../components/visibility-badge';
-import { IconChevronLeft } from '../components/icons';
+import { TypeBadge } from '@pignal/render/components/type-badge';
+import { VisibilityBadge } from '@pignal/render/components/visibility-badge';
+import { IconChevronLeft } from '@pignal/render/components/icons';
 import { getCsrfToken } from '../middleware/csrf';
-import { renderMarkdown } from '../lib/markdown';
-import { formatDate } from '../lib/time';
+import { renderMarkdown } from '@pignal/render/lib/markdown';
+import { formatDate } from '@pignal/render/lib/time';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
 import { raw } from 'hono/html';
 

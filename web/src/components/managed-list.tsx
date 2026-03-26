@@ -1,5 +1,5 @@
 import type { Child } from 'hono/jsx';
-import { Pagination } from './pagination';
+import { Pagination } from '@pignal/render/components/pagination';
 
 export interface SortTab {
   label: string;

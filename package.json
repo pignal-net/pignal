@@ -2,8 +2,9 @@
   "name": "pignal",
   "private": true,
   "scripts": {
-    "dev:server": "pnpm --filter @pignal/server dev",
-    "deploy:server": "pnpm css:build && pnpm --filter @pignal/server deploy",
+    "resolve-template": "pnpm --filter @pignal/templates resolve-template",
+    "dev:server": "pnpm resolve-template && pnpm --filter @pignal/server dev",
+    "deploy:server": "pnpm resolve-template && pnpm css:build && pnpm --filter @pignal/server deploy",
     "db:migrate": "pnpm --filter @pignal/server db:migrate",
     "db:migrate:prod": "pnpm --filter @pignal/server db:migrate:prod",
     "db:seed": "pnpm --filter @pignal/server db:seed",
@@ -14,8 +15,8 @@
     "seed:generate": "pnpm --filter @pignal/templates seed:generate",
     "type-check": "pnpm -r type-check",
     "lint": "pnpm -r lint",
-    "css:build": "pnpm --filter @pignal/web css:build",
-    "css:watch": "pnpm --filter @pignal/web css:watch",
+    "css:build": "pnpm --filter @pignal/render css:build",
+    "css:watch": "pnpm --filter @pignal/render css:watch",
     "check-all": "pnpm -r check-all"
   }
 }

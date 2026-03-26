@@ -6,16 +6,43 @@ Quick start: `pnpm template:create <name>` (from `templates/`) scaffolds a compl
 
 ---
 
+## Template Architecture
+
+Each template is a **self-contained folder** in `templates/src/<name>/` containing:
+
+```
+templates/src/<name>/
+├── config.ts        # TemplateConfig (vocabulary, SEO, MCP, profile)
+├── index.tsx        # Template export (wires config + JSX components)
+├── source-page.tsx  # Source page component (feed/list/grid at /)
+├── item-post.tsx    # Item post component (detail at /item/:slug)
+└── layout.tsx       # Layout wrapper (HTML shell)
+```
+
+Template JSX files and config live together in a single folder -- there is no split between packages. Shared rendering components and lib utilities live in the `@pignal/render` package (`packages/render/`).
+
+### JSX Pragma Requirement
+
+All template `.tsx` files **must** include these pragmas at the top:
+
+```tsx
+/** @jsxRuntime automatic */
+/** @jsxImportSource hono/jsx */
+```
+
+---
+
 ## Template Contract
 
-Every template must export an object conforming to the `Template` interface (defined in `@pignal/templates`, see `templates/src/types.ts`):
+Every template must export an object conforming to the `Template` interface (defined in `templates/src/types.ts`):
 
 ```ts
 export interface Template {
   // Required components
-  SourcePage: (props: SourcePageProps) => any;  // Feed/list view at /
-  ItemPost:   (props: ItemPostProps) => any;    // Detail view at /item/:slug
-  Layout:     (props: LayoutProps) => any;      // HTML wrapper
+  SourcePage:      (props: SourcePageProps) => any;       // Feed/list view at /
+  ItemPost:        (props: ItemPostProps) => any;         // Detail view at /item/:slug
+  Layout:          (props: LayoutProps) => any;           // HTML wrapper
+  PartialResults:  (props: PartialResultsProps) => any;   // HTMX partial for filter/sort/paginate
 
   // Optional overrides (fall back to shared components)
   ItemCard?:  (props: ItemCardProps) => any;
@@ -25,30 +52,44 @@ export interface Template {
 
   vocabulary: TemplateVocabulary;   // Domain language mapping (from template config)
   seo: TemplateSeoHints;            // Schema.org types (from template config)
-  meta: { name: string; description: string };
-  styles: string;                   // Empty string — all styling via Tailwind utilities in JSX
+  profile: TemplateProfile;         // Template identity and classification
+  styles: string;                   // Empty string -- all styling via Tailwind utilities in JSX
+
+  // Optional per-locale translations
+  i18n?: Record<string, Record<string, string>>;
 }
 ```
 
-**Registration**: Templates are registered in `web/src/templates/registry.ts`. The `getTemplate()` function receives the template name from the `TEMPLATE` env var and returns the matching template (defaulting to `blog`).
+**Registration**: Templates are auto-registered at build time. The `resolve-template` script reads the `TEMPLATE` env var (or parses `server/wrangler.toml`) and generates `templates/src/_resolved.ts`, which imports only the selected template. No manual registry modification is needed.
 
-**Example** (`shop/index.ts`):
+**Example** (`shop/index.tsx`):
 
-```ts
-import type { Template } from '@pignal/templates';
-import { getTemplateConfig } from '@pignal/templates';
+```tsx
+/** @jsxRuntime automatic */
+/** @jsxImportSource hono/jsx */
+import type { Template, PartialResultsProps } from '../types';
 import { ShopSourcePage } from './source-page';
 import { ShopItemPost } from './item-post';
 import { ShopLayout } from './layout';
-const config = getTemplateConfig('shop');
+import { Pagination } from '@pignal/render/components/pagination';
+import { EmptyState } from '@pignal/render/components/empty-state';
+
+import { shopConfig as config } from './config';
+
+function ShopPartialResults(props: PartialResultsProps) {
+  // ... renders partial results for HTMX swap
+}
 
 export const shopTemplate: Template = {
   SourcePage: ShopSourcePage,
   ItemPost: ShopItemPost,
   Layout: ShopLayout,
+  PartialResults: ShopPartialResults,
+
   vocabulary: config.vocabulary,
   seo: config.seo,
-  meta: { name: 'shop', description: 'Grid-based product catalog layout' },
+  profile: config.profile,
+
   styles: '',
 };
 ```
@@ -72,6 +113,12 @@ export const shopTemplate: Template = {
 | `sourceUrl` | `string` | Origin URL of the source (e.g. `https://signals.example.com`) |
 | `isHtmxRequest` | `boolean` | Whether this is an HTMX partial request |
 | `vocabulary` | `TemplateVocabulary` | Domain language mapping |
+| `seo` | `TemplateSeoHints` | Schema.org types for JSON-LD |
+| `visitor` | `VisitorContext` | Visitor identity from hub SSO (null if not authenticated) |
+| `localePrefix` | `string` | Locale URL prefix (e.g., `/vi` or `''` for default locale) |
+| `t` | `(key, params?) => string` | i18n translation function |
+| `locale` | `string` | Current locale code |
+| `defaultLocale` | `string` | Default locale code |
 
 ### ItemPostProps
 
@@ -85,6 +132,12 @@ export const shopTemplate: Template = {
 | `sourceAuthor` | `string` | Author display name (owner_name > source_title > hostname) |
 | `githubUrl` | `string` | GitHub profile URL for author linking |
 | `vocabulary` | `TemplateVocabulary` | Domain language mapping |
+| `seo` | `TemplateSeoHints` | Schema.org types for JSON-LD |
+| `visitor` | `VisitorContext` | Visitor identity from hub SSO (null if not authenticated) |
+| `localePrefix` | `string` | Locale URL prefix |
+| `t` | `(key, params?) => string` | i18n translation function |
+| `locale` | `string` | Current locale code |
+| `defaultLocale` | `string` | Default locale code |
 
 ### LayoutProps
 
@@ -96,6 +149,22 @@ export const shopTemplate: Template = {
 | `sourceUrl` | `string` | Origin URL |
 | `settings` | `SettingsMap` | Source settings |
 | `children` | `Child` | Page content |
+| `visitor` | `VisitorContext` | Visitor identity from hub SSO (null if not authenticated) |
+| `t` | `(key, params?) => string` | i18n translation function (optional) |
+| `locale` | `string` | Current locale code (optional) |
+| `defaultLocale` | `string` | Default locale code (optional) |
+
+### PartialResultsProps
+
+| Field | Type | Description |
+|---|---|---|
+| `items` | `Item[]` | Items for the current page |
+| `total` | `number` | Total item count |
+| `limit` | `number` | Items per page |
+| `offset` | `number` | Current offset |
+| `paginationBase` | `string` | Base URL with current filters |
+| `sort` | `'newest' \| 'oldest'` | Current sort order |
+| `vocabulary` | `TemplateVocabulary` | Domain language mapping |
 
 ### Item (from @pignal/core)
 
@@ -123,9 +192,9 @@ export const shopTemplate: Template = {
 
 ## Styling Convention
 
-Templates use **Tailwind v4 utility classes** directly in JSX. There are no per-template CSS files — all templates set `styles: ''`. Never create a separate `styles.css` file for a template.
+Templates use **Tailwind v4 utility classes** directly in JSX. There are no per-template CSS files -- all templates set `styles: ''`. Never create a separate `styles.css` file for a template.
 
-A single compiled CSS file (`web/src/static/tailwind.css`, built from `web/src/styles/input.css`) provides the design system tokens and base styles for all pages. Run `pnpm css:build` before deploying (or `pnpm css:watch` during development).
+A single compiled CSS file (`packages/render/src/static/tailwind.css`, built from `packages/render/src/styles/input.css`) provides the design system tokens and base styles for all pages. Run `pnpm css:build` before deploying (or `pnpm css:watch` during development).
 
 ### Design tokens
 
@@ -220,7 +289,7 @@ Use these when Tailwind utilities are not sufficient (e.g., in `style` attribute
 </a>
 ```
 
-**Badge (tinted)** — use `color-mix` for the background with a colored text:
+**Badge (tinted)** -- use `color-mix` for the background with a colored text:
 
 ```tsx
 <span
@@ -281,7 +350,7 @@ Use these patterns for item post pages:
 
 ### SVG icons
 
-Import SVG icon components from `../../components/icons`. All icons default to 16x16 with `currentColor` fill/stroke:
+Import SVG icon components from `@pignal/render/components/icons`. All icons default to 16x16 with `currentColor` fill/stroke:
 
 | Icon | Name | Category |
 |---|---|---|
@@ -306,22 +375,22 @@ Usage: `<IconSun class="w-4 h-4" />` or `<IconSun size={18} />`
 
 ### Dark mode
 
-Dark mode is handled automatically by CSS custom properties — tokens switch values based on `prefers-color-scheme` and `[data-theme]`. **Never hardcode hex colors in JSX.** Always use design tokens (`text-text`, `text-muted`, `bg-surface`, `border-border-subtle`, etc.) or CSS custom properties (`var(--color-*)`). If you use tokens correctly, dark mode works with zero extra effort.
+Dark mode is handled automatically by CSS custom properties -- tokens switch values based on `prefers-color-scheme` and `[data-theme]`. **Never hardcode hex colors in JSX.** Always use design tokens (`text-text`, `text-muted`, `bg-surface`, `border-border-subtle`, etc.) or CSS custom properties (`var(--color-*)`). If you use tokens correctly, dark mode works with zero extra effort.
 
 ### Theme customization
 
-Source owners can set 5 customizable accent colors via settings (e.g., `source_color_primary`, `source_color_secondary`, `source_color_text`, `source_color_muted`, `source_color_border`). The theme engine (`web/src/lib/theme.ts`) generates `--tw-*` CSS custom properties that override the defaults in `@theme {}`. All tokens adapt automatically to light/dark mode via `prefers-color-scheme` and `[data-theme]`.
+Source owners can set 5 customizable accent colors via settings (e.g., `source_color_primary`, `source_color_secondary`, `source_color_text`, `source_color_muted`, `source_color_border`). The theme engine (`packages/render/src/lib/theme.ts`) generates `--tw-*` CSS custom properties that override the defaults in `@theme {}`. All tokens adapt automatically to light/dark mode via `prefers-color-scheme` and `[data-theme]`.
 
 ---
 
 ## HTMX Integration
 
-Templates render full pages. HTMX partial requests (filter changes, search, pagination) are handled by the route handler *before* the template is called -- partials bypass templates entirely and return `<FeedResults>` directly.
+Templates render full pages. HTMX partial requests (filter changes, search, pagination) are handled by the `PartialResults` component -- when the route handler detects an HTMX request, it calls `template.PartialResults(props)` and returns only the partial HTML that replaces `#source-results`.
 
 ### How it works
 
 1. Route handler checks `isHtmxRequest(c)` via `HX-Request` header
-2. If HTMX: returns only `<FeedResults>` (replaces `#source-results` content)
+2. If HTMX: calls `template.PartialResults(props)` (replaces `#source-results` content)
 3. If full page: calls `template.SourcePage(props)` for a complete HTML page
 
 ### What templates must provide
@@ -329,20 +398,22 @@ Templates render full pages. HTMX partial requests (filter changes, search, pagi
 Templates must include these HTMX anchor elements in their `SourcePage`:
 
 ```tsx
-{/* Loading indicator — shown during HTMX requests */}
+{/* Loading indicator -- shown during HTMX requests */}
 <div id="source-loading" class="source-loading htmx-indicator">
   <span class="app-spinner" />
 </div>
 
-{/* Results container — HTMX swaps content into this div */}
+{/* Results container -- HTMX swaps content into this div */}
 <div id="source-results">
   {/* Your item list, grid, or feed goes here */}
 </div>
 ```
 
+Templates must also export a `PartialResults` component in their `index.tsx` that renders just the item list/grid with pagination -- without any layout wrapper.
+
 ### CRITICAL: All interactive links must use HTMX
 
-**Every link that filters, sorts, paginates, or clears a filter MUST include HTMX attributes.** Without them, clicking a filter triggers a full page reload instead of a smooth partial swap — this is the difference between good UX and broken UX.
+**Every link that filters, sorts, paginates, or clears a filter MUST include HTMX attributes.** Without them, clicking a filter triggers a full page reload instead of a smooth partial swap -- this is the difference between good UX and broken UX.
 
 The required attributes for **every** interactive `<a>` element (sidebar links, sort tabs, tag chips, pagination, tag clear):
 
@@ -357,7 +428,7 @@ The required attributes for **every** interactive `<a>` element (sidebar links, 
 >
 ```
 
-**Helper pattern** (recommended — avoids repeating 5 attributes):
+**Helper pattern** (recommended -- avoids repeating 5 attributes):
 
 ```tsx
 function hxProps(url: string) {
@@ -430,15 +501,16 @@ The route handler sets `Vary: HX-Request` so browsers cache the full page and HT
 
 ## Template Config
 
-Each template has a corresponding `TemplateConfig` in `templates/src/config.ts`. This config provides vocabulary, SEO hints, MCP content, and schema descriptions that flow through to all public-facing outputs (JSON-LD, llms.txt, Atom feed, MCP server).
+Each template has a `TemplateConfig` in its own `templates/src/<name>/config.ts` file. This config provides the profile, vocabulary, SEO hints, MCP content, and schema descriptions that flow through to all public-facing outputs (JSON-LD, llms.txt, Atom feed, MCP server).
 
 ```ts
-import type { TemplateConfig } from '@pignal/templates';
+import type { TemplateConfig } from '../config';
 
 interface TemplateConfig {
-  vocabulary: TemplateVocabulary;  // Domain language mapping
-  seo: TemplateSeoHints;           // Schema.org types
-  mcp: TemplateMcpConfig;          // MCP instructions, tool descriptions, response labels, schema descriptions
+  profile: TemplateProfile;          // Template identity and classification
+  vocabulary: TemplateVocabulary;    // Domain language mapping
+  seo: TemplateSeoHints;             // Schema.org types
+  mcp: TemplateMcpConfig;            // MCP instructions, tool descriptions, response labels, schema descriptions
 }
 ```
 
@@ -458,7 +530,7 @@ The `seo` field on `Template` is passed through to `buildSourceJsonLd()` and `bu
 ```ts
 interface TemplateMcpConfig {
   instructions: string;                        // Server-level instructions shown to AI on connect
-  toolDescriptions: Record<string, string>;    // Per-tool descriptions (tool name → text)
+  toolDescriptions: Record<string, string>;    // Per-tool descriptions (tool name -> text)
   responseLabels: {
     saved: string;          // "Signal saved!" vs "Product created!"
     updated: string;        // "Signal updated!" vs "Product updated!"
@@ -467,28 +539,31 @@ interface TemplateMcpConfig {
     found: string;          // "Found {total} signals (showing {count})"
     visibilityUpdated: string;
     batchComplete: string;
+    workspaceCreated: string;
+    typeCreated: string;
   };
-  schemaDescriptions: Record<string, string>; // Per-field Zod .describe() overrides (toolName.fieldName → text)
+  schemaDescriptions: Record<string, string>; // Per-field Zod .describe() overrides (toolName.fieldName -> text)
 }
 ```
 
 The `schemaDescriptions` field lets templates override the generic `.describe()` text on individual Zod schema fields. Keys use `toolName.fieldName` format (e.g., `"save_item.keySummary"`). The MCP agent applies these at tool registration time, restoring domain-specific quality to field-level guidance without modifying core schemas.
 
 The MCP agent reads the `TEMPLATE` env var at startup and uses the matching config for:
-- **Server instructions** — shown to AI clients on connect
-- **Tool descriptions** — per-tool text describing what each tool does in domain terms
-- **Response labels** — text returned after tool execution (e.g., "Product created!" for shop)
+- **Server instructions** -- shown to AI clients on connect
+- **Tool descriptions** -- per-tool text describing what each tool does in domain terms
+- **Response labels** -- text returned after tool execution (e.g., "Product created!" for shop)
 
 ### Creating a New Template Config
 
-1. Add a new `TemplateConfig` object in `templates/src/config.ts`
-2. Add it to the `TEMPLATE_CONFIGS` record (keyed by template name)
-3. Write domain-appropriate MCP instructions, tool descriptions, response labels, and schema descriptions
-4. (Optional) Add seed data in `templates/seeds/<name>.sql`
-5. The `seo` hints, vocabulary, and MCP content are automatically used by:
-   - JSON-LD structured data (`web/src/lib/seo.ts`)
-   - llms.txt / llms-full.txt (`web/src/lib/geo.ts`)
-   - Atom feed (`web/src/lib/rss.ts`)
+1. Run `pnpm template:create <name>` -- this scaffolds `templates/src/<name>/config.ts` with a skeleton config
+2. Fill in the `TemplateProfile` with identity, classification, and seed data
+3. Fill in vocabulary, SEO hints, and MCP content (instructions, tool descriptions, response labels, schema descriptions)
+4. The script auto-registers the config in `templates/src/all-configs.ts`
+5. (Optional) Add seed data in `templates/seeds/<name>.sql`
+6. The `seo` hints, vocabulary, and MCP content are automatically used by:
+   - JSON-LD structured data (`packages/render/src/lib/seo.ts`)
+   - llms.txt / llms-full.txt (`packages/render/src/lib/geo.ts`)
+   - Atom feed (`packages/render/src/lib/rss.ts`)
    - MCP metadata text (`core/src/mcp/tools.ts`)
    - MCP agent (`server/src/mcp/agent.ts`)
 
@@ -530,7 +605,7 @@ Always use vocabulary for user-facing text:
 <p>No {vocabulary.itemPlural} matching this filter.</p>
 <label>Search {vocabulary.itemPlural}...</label>
 
-// Bad — hardcoded
+// Bad -- hardcoded
 <p>No signals matching this filter.</p>
 ```
 
@@ -538,26 +613,32 @@ Always use vocabulary for user-facing text:
 
 ## Complete Template Checklist
 
-### Files (all in `web/src/templates/<name>/`)
+### Files (all in `templates/src/<name>/`)
 
-- [ ] `index.ts` — Template export with vocabulary, meta, and `styles: ''`
-- [ ] `source-page.tsx` — Feed/list/grid view
-- [ ] `item-post.tsx` — Individual item detail page
-- [ ] `layout.tsx` — Layout wrapper (usually delegates to `PublicLayout`)
+- [ ] `config.ts` -- TemplateConfig with profile, vocabulary, SEO, and MCP content
+- [ ] `index.tsx` -- Template export with `PartialResults`, vocabulary, profile, and `styles: ''`
+- [ ] `source-page.tsx` -- Feed/list/grid view
+- [ ] `item-post.tsx` -- Individual item detail page
+- [ ] `layout.tsx` -- Layout wrapper (usually delegates to `PublicLayout`)
 
-### Template config (`templates/src/config.ts`)
+### JSX pragmas (every `.tsx` file)
 
-- [ ] `TemplateConfig` object created with vocabulary, SEO hints, and MCP content
-- [ ] Added to `TEMPLATE_CONFIGS` record (keyed by template name)
+- [ ] `/** @jsxRuntime automatic */` at top of file
+- [ ] `/** @jsxImportSource hono/jsx */` on second line
+
+### Template config (`templates/src/<name>/config.ts`)
+
+- [ ] `TemplateProfile` object with id, displayName, tagline, description, domain, contentType, layout, audience, useCases, differentiators, seedData
+- [ ] `TemplateConfig` object with profile, vocabulary, SEO hints, and MCP content
 - [ ] MCP `instructions` written in domain-appropriate language
 - [ ] MCP `toolDescriptions` customized for all 10 tools
-- [ ] MCP `responseLabels` customized (saved, updated, validated, notFound, found, visibilityUpdated, batchComplete)
+- [ ] MCP `responseLabels` customized (saved, updated, validated, notFound, found, visibilityUpdated, batchComplete, workspaceCreated, typeCreated)
 - [ ] MCP `schemaDescriptions` customized for key fields (save_item.keySummary, save_item.content, etc.)
 
-### Registry
+### Auto-registration
 
-- [ ] Import added in `web/src/templates/registry.ts`
-- [ ] Entry added to `TEMPLATES` record
+- [ ] Config imported in `templates/src/all-configs.ts` (auto-added by `pnpm template:create`)
+- [ ] Template export name added to `templates/scripts/resolve-template.ts` EXPORT_NAMES and CONFIG_NAMES maps (auto-added by `pnpm template:create`)
 
 ### Source page requirements
 
@@ -572,6 +653,12 @@ Always use vocabulary for user-facing text:
 - [ ] Filter state reflected in page title
 - [ ] OG image derived from GitHub avatar or fallback
 - [ ] Empty state message using vocabulary
+
+### PartialResults requirements
+
+- [ ] `PartialResults` component exported in `index.tsx`
+- [ ] Renders items + `<Pagination>` without layout wrapper
+- [ ] Handles empty state with `<EmptyState>` component
 
 ### Item post requirements
 
@@ -601,7 +688,7 @@ Always use vocabulary for user-facing text:
 - [ ] Sidebar layout uses `grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8`
 - [ ] Touch targets: minimum 44px height for interactive elements (links, buttons, chips)
 - [ ] Dark mode works automatically via CSS custom properties (no hardcoded colors, no `dark:` overrides needed)
-- [ ] No separate `styles.css` file created — all styling via Tailwind utilities in JSX
+- [ ] No separate `styles.css` file created -- all styling via Tailwind utilities in JSX
 - [ ] `styles: ''` in template export (always empty string)
 
 ---
@@ -618,7 +705,7 @@ Used by the `blog` template. Items stacked vertically, optionally grouped by tim
 </div>
 ```
 
-Key components: `<FeedResults>` (shared), `<ItemCard>` (shared), `<FilterBar>` (shared sidebar).
+Key components: `<FeedResults>` (from `@pignal/render/components/item-feed`), `<ItemCard>` (from `@pignal/render/components/item-card`), `<FilterBar>` (from `@pignal/render/components/type-sidebar`).
 
 ### Grid (card grid)
 
@@ -657,28 +744,36 @@ Compact rows, good for reference content.
 
 ## Available Shared Components
 
-Import from `../../components/`:
+Import from `@pignal/render/components/`:
 
 | Component | Import path | Purpose |
 |---|---|---|
-| `PublicLayout` | `public-layout` | Full HTML shell (header, footer, HTMX/JS) |
-| `ItemCard` | `item-feed` | Standard item card |
-| `FeedResults` | `item-feed` | Timeline-grouped feed with pagination |
-| `FilterBar` | `type-sidebar` | Sidebar with type/workspace/tag filters |
-| `Pagination` | `pagination` | Page navigation |
-| `TypeBadge` | `type-badge` | Colored type label |
-| `VisibilityBadge` | `visibility-badge` | Visibility status badge |
-| `TableOfContents` | `table-of-contents` | Heading-based TOC sidebar |
-| `SourceActionBar` | `source-action-bar` | Copy link / share actions |
-| `JsonLd` | `json-ld` | JSON-LD script tag |
+| `PublicLayout` | `@pignal/render/components/public-layout` | Full HTML shell (header, footer, HTMX/JS) |
+| `ItemCard` | `@pignal/render/components/item-card` | Standard item card |
+| `FeedResults` | `@pignal/render/components/item-feed` | Timeline-grouped feed with pagination |
+| `FilterBar` | `@pignal/render/components/type-sidebar` | Sidebar with type/workspace/tag filters |
+| `Pagination` | `@pignal/render/components/pagination` | Page navigation |
+| `TypeBadge` | `@pignal/render/components/type-badge` | Colored type label |
+| `VisibilityBadge` | `@pignal/render/components/visibility-badge` | Visibility status badge |
+| `SourceActionBar` | `@pignal/render/components/source-action-bar` | Copy link / share actions |
+| `JsonLd` | `@pignal/render/components/json-ld` | JSON-LD script tag |
+| `EmptyState` | `@pignal/render/components/empty-state` | Empty state with icon, title, description |
+| `CtaBlock` | `@pignal/render/components/cta-block` | Call-to-action block variants |
+| `ActionForm` | `@pignal/render/components/action-form` | Dynamic form renderer |
+| `Testimonials` | `@pignal/render/components/testimonials` | Testimonial card grid |
+| `LanguageSwitcher` | `@pignal/render/components/language-switcher` | Locale switcher |
+| Icons | `@pignal/render/components/icons` | SVG icon components |
 
-Import from `../../lib/`:
+Import from `@pignal/render/lib/`:
 
 | Function | Import path | Purpose |
 |---|---|---|
-| `buildMetaTags`, `buildSourceJsonLd`, `buildSourcePostingJsonLd`, `escapeHtmlAttr` | `seo` | SEO helpers |
-| `stripMarkdown` | `markdown` | Strip markdown to plain text |
-| `formatDate`, `relativeTime`, `readingTime` | `time` | Date/time formatting |
+| `buildMetaTags`, `buildSourceJsonLd`, `buildSourcePostingJsonLd`, `escapeHtmlAttr` | `@pignal/render/lib/seo` | SEO helpers |
+| `stripMarkdown` | `@pignal/render/lib/markdown` | Strip markdown to plain text |
+| `formatDate`, `relativeTime`, `readingTime` | `@pignal/render/lib/time` | Date/time formatting |
+| `generateThemeStyles` | `@pignal/render/lib/theme` | CSS custom property generation from settings |
+| `sanitizeCss` | `@pignal/render/lib/css-sanitize` | Custom CSS sanitization |
+| `renderContentWithDirectives` | `@pignal/render/lib/directives` | Content directive rendering |
 | `raw` | `hono/html` | Render pre-escaped HTML strings |
 
 ---
@@ -712,13 +807,17 @@ Templates read configuration from the `settings` map. Key settings:
 |---------|---------|-----|
 | Forgot `pnpm css:build` | Tailwind CSS file missing or stale, unstyled pages | Run `pnpm css:build` before deploying, or use `pnpm css:watch` during development |
 | Created a separate `styles.css` file | Extra CSS file not loaded, styles missing | Delete it. All styling uses Tailwind utility classes in JSX. Set `styles: ''` in the template export |
+| Missing JSX pragmas | JSX compilation fails, "React is not defined" errors | Add `/** @jsxRuntime automatic */` and `/** @jsxImportSource hono/jsx */` to every `.tsx` file |
 | Used `border-border` on cards | Borders too harsh, especially in dark mode | Use `border-border-subtle` for card borders and section separators. Reserve `border-border` for table rows and strong dividers |
 | Used raw `shadow-sm` on cards | Card elevation inconsistent across templates | Use `shadow-card` for card resting state and `shadow-card-hover` for hover. `shadow-sm`/`shadow-md` are for buttons and dropdowns |
 | No `.empty-state` pattern | Empty states look inconsistent, no icon, poor alignment | Use `.empty-state` container with `.empty-state-icon`, `.empty-state-title`, `.empty-state-description` classes |
 | Hardcoded hex colors | Theme breaks in dark mode, user color customization ignored | Use Tailwind design tokens (`text-text`, `text-muted`, `bg-surface`, `border-border-subtle`) or CSS vars (`var(--color-*)`) |
 | Forgot dark mode testing | Page looks fine in light mode but broken in dark | Never hardcode colors. Use CSS custom property tokens that switch automatically. Test both modes |
 | Missing HTMX anchors | Filter/search/pagination stops working | Include `#source-loading` and `#source-results` divs in `SourcePage` |
+| Missing `PartialResults` | HTMX partial updates return empty or error | Export `PartialResults` component in `index.tsx` that renders items + pagination without layout |
 | Forgetting vocabulary | UI shows hardcoded "signal" or "item" instead of domain term | Always use `vocabulary.item`, `vocabulary.itemPlural`, etc. for user-facing text |
-| Missing template config | MCP, llms.txt, JSON-LD, Atom feed use generic "item" language | Register a `TemplateConfig` in `templates/src/config.ts` with vocabulary, SEO hints, and MCP content |
+| Missing template config | MCP, llms.txt, JSON-LD, Atom feed use generic "item" language | Create `templates/src/<name>/config.ts` with vocabulary, SEO hints, and MCP content |
+| Importing from old paths | Build fails with module not found | Import shared components from `@pignal/render/components/*`, shared lib from `@pignal/render/lib/*` |
+| Editing `registry.ts` manually | No longer needed -- registry was removed | Template resolution is automatic via `resolve-template` script and `_resolved.ts` |
 | Small touch targets | Buttons/links hard to tap on mobile | Ensure all interactive elements have at least 44px height (filter chips, feed tabs, pagination links) |
 | Article title too small | Post page title doesn't stand out from body text | Use `text-3xl sm:text-4xl font-bold tracking-tight leading-tight` for article titles |

@@ -10,14 +10,13 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "css:build": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./src/static/tailwind.css --minify",
-    "css:watch": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./src/static/tailwind.css --watch",
     "type-check": "tsc --noEmit",
     "check-all": "pnpm type-check"
   },
   "dependencies": {
     "@pignal/core": "workspace:*",
     "@pignal/db": "workspace:*",
+    "@pignal/render": "workspace:*",
     "@pignal/templates": "workspace:*",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.6.0",
