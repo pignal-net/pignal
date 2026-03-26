@@ -17,6 +17,14 @@ export type Env = {
 /**
  * Variables set on the Hono context by middleware.
  */
+/** Visitor identity from hub SSO (null if not authenticated). */
+export type VisitorContext = {
+  id: string;
+  login: string;
+  name: string;
+  role: 'admin' | 'visitor';
+} | null;
+
 export type Variables = {
   store: ItemStoreRpc;
   actionStore: ActionStoreRpc;
@@ -28,4 +36,6 @@ export type Variables = {
   templateName: string;
   /** EventBus instance for dispatching lifecycle events. Set by store middleware. */
   eventBus: EventBus;
+  /** Visitor identity from hub SSO (null if not authenticated). Set by visitorMiddleware. */
+  visitor: VisitorContext;
 };

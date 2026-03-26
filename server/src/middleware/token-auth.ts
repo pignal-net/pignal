@@ -8,12 +8,14 @@ import type { Env, Variables } from '../types';
 
 /**
  * Bearer token authentication middleware for the self-hosted server.
- * Validates `Authorization: Bearer <token>` against:
- * 1. SERVER_TOKEN env var (fast path — admin access, all scopes)
- * 2. api_keys table (scoped access with optional workspace restriction)
+ *
+ * Authentication priority:
+ * 1. Visitor JWT with admin role (managed sites — hub SSO, set by visitorAuth middleware)
+ * 2. SERVER_TOKEN env var (fast path — admin access, all scopes)
+ * 3. api_keys table (scoped access with optional workspace restriction)
  *
  * Sets on context:
- * - authPermissions: string[] — granted permissions ('admin' for SERVER_TOKEN)
+ * - authPermissions: string[] — granted permissions ('admin' for SERVER_TOKEN or visitor admin)
  * - authWorkspaceIds: string[] | null — workspace restriction (null = all)
  *
  * Skips OPTIONS requests to allow CORS preflight through.
@@ -23,6 +25,16 @@ export async function tokenAuth(c: Context<{ Bindings: Env; Variables: Variables
     return next();
   }
 
+  // Managed site: visitor JWT with admin role grants full API access
+  const visitor = c.get('visitor');
+  if (visitor?.role === 'admin') {
+    c.set('authPermissions', ['admin']);
+    c.set('authWorkspaceIds', null);
+    await next();
+    return;
+  }
+
+  // Self-hosted: Bearer token required
   const authHeader = c.req.header('Authorization');
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

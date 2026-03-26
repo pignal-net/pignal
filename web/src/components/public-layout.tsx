@@ -205,10 +205,10 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
                           {t('common.admin')}
                         </a>
                       )}
-                      {/* Sign out */}
-                      <a href="https://pignal.net/auth/visitor/logout" class="flex items-center gap-2 px-3 py-1.5 text-sm text-text hover:bg-surface-hover transition-colors">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                        {t('common.signOut')}
+                      {/* Hub profile — logout is centralized through the hub */}
+                      <a href={`https://pignal.net/${visitor.login}`} class="flex items-center gap-2 px-3 py-1.5 text-sm text-text hover:bg-surface-hover transition-colors" target="_blank" rel="noopener">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        {t('common.profile')}
                       </a>
                     </div>
                   </details>

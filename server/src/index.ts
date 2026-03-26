@@ -25,6 +25,7 @@ import { requirePermission, requireByMethod, resolveItemPermission, mcpPermissio
 import { corsMiddleware } from './middleware/cors';
 import { rateLimit } from './middleware/rate-limit';
 import { storeMiddleware } from './middleware/store';
+import { visitorAuth } from './middleware/visitor-auth';
 import type { Env, Variables } from './types';
 
 // Re-export MCP agent class for Cloudflare Workers to instantiate
@@ -34,6 +35,9 @@ const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // Store middleware — creates ItemStore from D1 for every request
 app.use('*', storeMiddleware);
+
+// Visitor authentication (hub SSO — managed sites only, skips if no VISITOR_SITE_SECRET)
+app.use('*', visitorAuth);
 
 // CORS for REST API routes (controlled by CORS_ORIGIN env var)
 app.use('/api/*', corsMiddleware());
