@@ -35,4 +35,5 @@ export type {
   FooterProps,
   FilterBarProps,
   PartialResultsProps,
+  VisitorContext,
 } from './types';

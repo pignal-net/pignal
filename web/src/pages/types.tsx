@@ -1,18 +1,17 @@
 import type { Context } from 'hono';
-import type { ItemStoreRpc, ItemTypeWithActions, TypeGuidance } from '@pignal/db';
-import type { WebEnv } from '../types';
+import type { ItemTypeWithActions, TypeGuidance } from '@pignal/db';
+import type { WebEnv, WebVars } from '../types';
+import type { TFunction } from '../i18n/types';
 import type { BulkAction, TableColumn } from '../components/managed-list';
 import { AppLayout } from '../components/app-layout';
 import { PageHeader } from '../components/page-header';
-import { ManagedList } from '../components/managed-list';
+import { ManagedList, TableResultsWrapper } from '../components/managed-list';
 import type { RowAction } from '../components/feed-item';
 import { TableRow, TableCell, TableActions, RowActions } from '../components/feed-item';
 import { Pagination } from '../components/pagination';
 import { relativeTime } from '../lib/time';
 import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
-
-type WebVars = { store: ItemStoreRpc };
 
 function parseParams(c: Context) {
   const q = c.req.query('q') || '';
@@ -71,15 +70,17 @@ function parseGuidanceFromBody(body: Record<string, unknown>): TypeGuidance | nu
   };
 }
 
-const typeColumns: TableColumn[] = [
-  { key: 'name', label: 'Name' },
-  { key: 'color', label: 'Color' },
-  { key: 'actions', label: 'Validation Actions' },
-  { key: 'guidance', label: 'Guidance' },
-  { key: 'created', label: 'Created', class: 'text-muted whitespace-nowrap' },
-];
+function typeColumns(t: TFunction): TableColumn[] {
+  return [
+    { key: 'name', label: t('types.column.name') },
+    { key: 'color', label: t('types.column.color') },
+    { key: 'actions', label: t('types.column.actions') },
+    { key: 'guidance', label: t('types.column.guidance') },
+    { key: 'created', label: t('types.column.created'), class: 'text-muted whitespace-nowrap' },
+  ];
+}
 
-function TypeTableRow({ type, csrfToken }: { type: ItemTypeWithActions; csrfToken: string }) {
+function TypeTableRow({ type, csrfToken, t }: { type: ItemTypeWithActions; csrfToken: string; t: TFunction }) {
   const actionLabels = type.actions.map((a) => a.label).join(', ');
   const guidancePreview = type.guidance
     ? truncate(type.guidance.whenToUse || type.guidance.pattern || type.guidance.example || '', 60)
@@ -106,13 +107,13 @@ function TypeTableRow({ type, csrfToken }: { type: ItemTypeWithActions; csrfToke
       <TableActions>
         <RowActions actions={[
           ...(!type.isSystem ? [
-            { label: 'Edit', hxGet: `/pignal/types/${type.id}/edit-form` },
+            { label: t('types.action.edit'), hxGet: `/pignal/types/${type.id}/edit-form` },
             {
-              label: 'Delete',
+              label: t('types.action.delete'),
               hxPost: `/pignal/types/${type.id}/delete`,
               hxTarget: `#type-${type.id}`,
               hxSwap: 'delete',
-              hxConfirm: 'Delete this type? Items using it will become uncategorized.',
+              hxConfirm: t('types.confirmDelete'),
               destructive: true,
               csrf: csrfToken,
             },
@@ -123,18 +124,21 @@ function TypeTableRow({ type, csrfToken }: { type: ItemTypeWithActions; csrfToke
   );
 }
 
-function renderTableResults(list: ItemTypeWithActions[], total: number, params: ReturnType<typeof parseParams>, csrfToken: string) {
+function renderTableResults(list: ItemTypeWithActions[], total: number, params: ReturnType<typeof parseParams>, csrfToken: string, t: TFunction) {
   const baseUrl = buildBaseUrl(params);
+  const cols = typeColumns(t);
 
   return (
     <>
-      <tbody id="types-feed" class="managed-table-body">
-        {total === 0 ? (
-          <tr><td colspan={typeColumns.length + 2} class="managed-table-td text-center py-8 text-muted">No types found.</td></tr>
-        ) : (
-          list.map((t) => <TypeTableRow type={t} csrfToken={csrfToken} />)
-        )}
-      </tbody>
+      <TableResultsWrapper id="types" columns={cols} hasBulk>
+        <tbody id="types-feed" class="managed-table-body">
+          {total === 0 ? (
+            <tr><td colspan={cols.length + 2} class="managed-table-td text-center py-8 text-muted">{t('types.empty')}</td></tr>
+          ) : (
+            list.map((tp) => <TypeTableRow type={tp} csrfToken={csrfToken} t={t} />)
+          )}
+        </tbody>
+      </TableResultsWrapper>
       {total > params.limit && (
         <Pagination
           total={total}
@@ -152,6 +156,9 @@ function renderTableResults(list: ItemTypeWithActions[], total: number, params: 
 export async function typesPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const store = c.get('store');
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
+  const locale = c.get('locale');
+  const defaultLocale = c.get('defaultLocale');
   const params = parseParams(c);
 
   c.header('Vary', 'HX-Request');
@@ -163,95 +170,95 @@ export async function typesPage(c: Context<{ Bindings: WebEnv; Variables: WebVar
   const paged = sorted.slice(params.offset, params.offset + params.limit);
 
   if (isHtmxRequest(c)) {
-    return c.html(renderTableResults(paged, total, params, csrfToken));
+    return c.html(renderTableResults(paged, total, params, csrfToken, t));
   }
 
   const sortTabs = [
-    { label: 'Newest', value: 'newest', active: params.sort === 'newest', href: buildBaseUrl({ ...params, sort: 'newest' }) },
-    { label: 'Oldest', value: 'oldest', active: params.sort === 'oldest', href: buildBaseUrl({ ...params, sort: 'oldest' }) },
+    { label: t('common.newest'), value: 'newest', active: params.sort === 'newest', href: buildBaseUrl({ ...params, sort: 'newest' }) },
+    { label: t('common.oldest'), value: 'oldest', active: params.sort === 'oldest', href: buildBaseUrl({ ...params, sort: 'oldest' }) },
   ];
 
   const bulkActions: BulkAction[] = [
-    { label: 'Delete', action: '/pignal/types/bulk/delete', confirm: 'Delete selected types?', destructive: true },
+    { label: t('types.bulk.delete'), action: '/pignal/types/bulk/delete', confirm: t('types.bulk.confirmDelete'), destructive: true },
   ];
 
   return c.html(
-    <AppLayout title="Types" currentPath="/pignal/types" csrfToken={csrfToken}>
-      <PageHeader title="Types" description="Define content categories and validation actions" count={total} />
+    <AppLayout title={t('types.title')} currentPath="/pignal/types" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale}>
+      <PageHeader title={t('types.title')} description={t('types.description')} count={total} />
 
       <ManagedList
         id="types"
         searchEndpoint="/pignal/types"
-        searchPlaceholder="Search types..."
+        searchPlaceholder={t('types.searchPlaceholder')}
         query={params.q}
         sortTabs={sortTabs}
         bulkActions={bulkActions}
         csrfToken={csrfToken}
         totalCount={total}
-        emptyMessage="No types yet. Create one to start categorizing your content."
+        emptyMessage={t('types.emptyMessage')}
         pagination={{ total, limit: params.limit, offset: params.offset, baseUrl: buildBaseUrl(params) }}
         pushUrl
         display="table"
-        columns={typeColumns}
+        columns={typeColumns(t)}
         addButton={
           <button
             class="outline btn-sm"
             hx-get="/pignal/types/add-form"
             hx-target="#app-dialog-content"
           >
-            + Add
+            {t('common.add')}
           </button>
         }
       >
-        {paged.map((t) => <TypeTableRow type={t} csrfToken={csrfToken} />)}
+        {paged.map((tp) => <TypeTableRow type={tp} csrfToken={csrfToken} t={t} />)}
       </ManagedList>
     </AppLayout>
   );
 }
 
-function TypeFormFields({ type }: { type?: ItemTypeWithActions }) {
+function TypeFormFields({ type, t }: { type?: ItemTypeWithActions; t: TFunction }) {
   const actionsText = type ? type.actions.map((a) => a.label).join('\n') : '';
   const hasGuidance = !!type?.guidance;
 
   return (
     <>
       <div class="mb-3">
-        <label class="block text-sm font-medium text-text mb-1">Name</label>
-        <input type="text" name="name" value={type?.name ?? ''} required maxlength={50} placeholder="e.g., Bug Report" />
+        <label class="block text-sm font-medium text-text mb-1">{t('types.create.name')}</label>
+        <input type="text" name="name" value={type?.name ?? ''} required maxlength={50} placeholder={t('types.create.namePlaceholder')} />
       </div>
       <div class="mb-3">
-        <label class="block text-sm font-medium text-text mb-1">Color</label>
+        <label class="block text-sm font-medium text-text mb-1">{t('types.create.color')}</label>
         <input type="color" name="color" value={type?.color ?? '#6B7280'} class="w-full h-10 rounded cursor-pointer" />
       </div>
       <div class="mb-3">
-        <label class="block text-sm font-medium text-text mb-1">Description</label>
-        <textarea name="description" rows={2} maxlength={500} placeholder="When to use this type">{type?.description ?? ''}</textarea>
+        <label class="block text-sm font-medium text-text mb-1">{t('types.create.description')}</label>
+        <textarea name="description" rows={2} maxlength={500} placeholder={t('types.create.descriptionPlaceholder')}>{type?.description ?? ''}</textarea>
       </div>
       <div class="mb-3">
-        <label class="block text-sm font-medium text-text mb-1">Validation Actions</label>
-        <textarea name="actions" rows={3} required placeholder={"Confirmed\nRejected\nNeeds Review"}>{actionsText}</textarea>
-        <small class="text-muted text-xs">One per line. At least one action required.</small>
+        <label class="block text-sm font-medium text-text mb-1">{t('types.create.actions')}</label>
+        <textarea name="actions" rows={3} required placeholder={t('types.create.actionsPlaceholder')}>{actionsText}</textarea>
+        <small class="text-muted text-xs">{t('types.create.actionsHelper')}</small>
       </div>
       <div class="mb-3">
-        <label class="block text-sm font-medium text-text mb-1">Quality Guidance</label>
+        <label class="block text-sm font-medium text-text mb-1">{t('types.create.guidance')}</label>
         <details open={hasGuidance}>
-          <summary class="text-sm cursor-pointer text-muted hover:text-text">{hasGuidance ? 'Edit guidance' : 'Add guidance (optional)'}</summary>
+          <summary class="text-sm cursor-pointer text-muted hover:text-text">{hasGuidance ? t('types.create.guidanceEdit') : t('types.create.guidanceAdd')}</summary>
           <div class="mt-2 space-y-3">
             <label class="block">
-              When to use
-              <input type="text" name="guidance_whenToUse" value={type?.guidance?.whenToUse ?? ''} maxlength={500} placeholder="Describe when this type should be used" />
+              {t('types.create.guidanceWhenToUse')}
+              <input type="text" name="guidance_whenToUse" value={type?.guidance?.whenToUse ?? ''} maxlength={500} placeholder={t('types.create.guidanceWhenToUsePlaceholder')} />
             </label>
             <label class="block">
-              Pattern
-              <input type="text" name="guidance_pattern" value={type?.guidance?.pattern ?? ''} maxlength={500} placeholder="Expected format or pattern" />
+              {t('types.create.guidancePattern')}
+              <input type="text" name="guidance_pattern" value={type?.guidance?.pattern ?? ''} maxlength={500} placeholder={t('types.create.guidancePatternPlaceholder')} />
             </label>
             <label class="block">
-              Example
-              <textarea name="guidance_example" rows={2} placeholder="Example content for this type">{type?.guidance?.example ?? ''}</textarea>
+              {t('types.create.guidanceExample')}
+              <textarea name="guidance_example" rows={2} placeholder={t('types.create.guidanceExamplePlaceholder')}>{type?.guidance?.example ?? ''}</textarea>
             </label>
             <label class="block">
-              Content hints
-              <input type="text" name="guidance_contentHints" value={type?.guidance?.contentHints ?? ''} maxlength={500} placeholder="Hints for content quality" />
+              {t('types.create.guidanceContentHints')}
+              <input type="text" name="guidance_contentHints" value={type?.guidance?.contentHints ?? ''} maxlength={500} placeholder={t('types.create.guidanceContentHintsPlaceholder')} />
             </label>
           </div>
         </details>
@@ -262,11 +269,12 @@ function TypeFormFields({ type }: { type?: ItemTypeWithActions }) {
 
 export async function addTypeFormHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
 
   return c.html(
     <div>
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold">Create Type</h3>
+        <h3 class="text-lg font-semibold">{t('types.create.title')}</h3>
         <button type="button" class="dialog-close" data-close-dialog>&times;</button>
       </div>
       <form
@@ -277,8 +285,8 @@ export async function addTypeFormHandler(c: Context<{ Bindings: WebEnv; Variable
         hx-swap="afterbegin"
       >
         <input type="hidden" name="_csrf" value={csrfToken} />
-        <TypeFormFields />
-        <button type="submit" class="btn mt-4 w-full">Create Type</button>
+        <TypeFormFields t={t} />
+        <button type="submit" class="btn mt-4 w-full">{t('types.create.button')}</button>
       </form>
     </div>
   );
@@ -287,6 +295,7 @@ export async function addTypeFormHandler(c: Context<{ Bindings: WebEnv; Variable
 export async function createTypeHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const store = c.get('store');
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
   const body = await c.req.parseBody();
 
   const name = (body.name as string || '').trim();
@@ -296,7 +305,7 @@ export async function createTypeHandler(c: Context<{ Bindings: WebEnv; Variables
   const guidance = parseGuidanceFromBody(body as Record<string, unknown>);
 
   if (!name || !actionsStr) {
-    c.header('HX-Trigger', toastTrigger('Name and actions are required', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('types.error.nameRequired'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -307,7 +316,7 @@ export async function createTypeHandler(c: Context<{ Bindings: WebEnv; Variables
     .filter((a) => a.label);
 
   if (actions.length === 0) {
-    c.header('HX-Trigger', toastTrigger('At least one action is required', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('types.error.actionsRequired'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -324,9 +333,9 @@ export async function createTypeHandler(c: Context<{ Bindings: WebEnv; Variables
 
     c.header('HX-Trigger', JSON.stringify({
       closeDialog: true,
-      showToast: { message: 'Type created', type: 'success' },
+      showToast: { message: t('types.toast.created'), type: 'success' },
     }));
-    return c.html(<TypeTableRow type={created} csrfToken={csrfToken} />);
+    return c.html(<TypeTableRow type={created} csrfToken={csrfToken} t={t} />);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to create type';
     c.header('HX-Trigger', toastTrigger(msg, 'error'));
@@ -339,17 +348,18 @@ export async function editTypeFormHandler(c: Context<{ Bindings: WebEnv; Variabl
   const store = c.get('store');
   const id = c.req.param('id')!;
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
 
   const type = await store.getType(id);
   if (!type) {
-    c.header('HX-Trigger', toastTrigger('Type not found', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('types.toast.notFound'), 'error'));
     return c.body(null, 204);
   }
 
   return c.html(
     <div>
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold">Edit Type</h3>
+        <h3 class="text-lg font-semibold">{t('types.edit.title')}</h3>
         <button type="button" class="dialog-close" data-close-dialog>&times;</button>
       </div>
       <form
@@ -360,8 +370,8 @@ export async function editTypeFormHandler(c: Context<{ Bindings: WebEnv; Variabl
         hx-swap="outerHTML"
       >
         <input type="hidden" name="_csrf" value={csrfToken} />
-        <TypeFormFields type={type} />
-        <button type="submit" class="btn mt-4 w-full">Save Changes</button>
+        <TypeFormFields type={type} t={t} />
+        <button type="submit" class="btn mt-4 w-full">{t('types.edit.saveChanges')}</button>
       </form>
     </div>
   );
@@ -371,6 +381,7 @@ export async function editTypeHandler(c: Context<{ Bindings: WebEnv; Variables: 
   const store = c.get('store');
   const id = c.req.param('id')!;
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
   const body = await c.req.parseBody();
 
   const name = (body.name as string || '').trim();
@@ -379,7 +390,7 @@ export async function editTypeHandler(c: Context<{ Bindings: WebEnv; Variables: 
   const guidance = parseGuidanceFromBody(body as Record<string, unknown>);
 
   if (!name) {
-    c.header('HX-Trigger', toastTrigger('Name is required', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('types.error.nameRequired'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -393,16 +404,16 @@ export async function editTypeHandler(c: Context<{ Bindings: WebEnv; Variables: 
     });
 
     if (!updated) {
-      c.header('HX-Trigger', toastTrigger('Type not found', 'error'));
+      c.header('HX-Trigger', toastTrigger(t('types.toast.notFound'), 'error'));
       c.header('HX-Reswap', 'none');
       return c.body(null, 204);
     }
 
     c.header('HX-Trigger', JSON.stringify({
       closeDialog: true,
-      showToast: { message: 'Type updated', type: 'success' },
+      showToast: { message: t('types.toast.updated'), type: 'success' },
     }));
-    return c.html(<TypeTableRow type={updated} csrfToken={csrfToken} />);
+    return c.html(<TypeTableRow type={updated} csrfToken={csrfToken} t={t} />);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to update type';
     c.header('HX-Trigger', toastTrigger(msg, 'error'));
@@ -414,15 +425,16 @@ export async function editTypeHandler(c: Context<{ Bindings: WebEnv; Variables: 
 export async function deleteTypeHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const store = c.get('store');
   const id = c.req.param('id')!;
+  const t = c.get('t');
 
   try {
     const deleted = await store.deleteType(id);
     if (!deleted) {
-      c.header('HX-Trigger', toastTrigger('Type not found', 'error'));
+      c.header('HX-Trigger', toastTrigger(t('types.toast.notFound'), 'error'));
       c.header('HX-Reswap', 'none');
       return c.body(null, 204);
     }
-    c.header('HX-Trigger', toastTrigger('Type deleted'));
+    c.header('HX-Trigger', toastTrigger(t('types.toast.deleted')));
     return c.html('');
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to delete type';
@@ -435,6 +447,7 @@ export async function deleteTypeHandler(c: Context<{ Bindings: WebEnv; Variables
 export async function bulkDeleteTypesHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const store = c.get('store');
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
   const body = await c.req.parseBody();
   const ids = Array.isArray(body['ids[]']) ? body['ids[]'] as string[] : [body['ids[]'] as string].filter(Boolean);
 
@@ -444,7 +457,7 @@ export async function bulkDeleteTypesHandler(c: Context<{ Bindings: WebEnv; Vari
     if (result) deleted++;
   }
 
-  c.header('HX-Trigger', toastTrigger(`${deleted} type(s) deleted`));
+  c.header('HX-Trigger', toastTrigger(t('types.bulk.deletedToast', { count: String(deleted) })));
 
   const params = parseParams(c);
   const allTypes = await store.listTypes();
@@ -453,5 +466,5 @@ export async function bulkDeleteTypesHandler(c: Context<{ Bindings: WebEnv; Vari
   const total = sorted.length;
   const paged = sorted.slice(params.offset, params.offset + params.limit);
 
-  return c.html(renderTableResults(paged, total, params, csrfToken));
+  return c.html(renderTableResults(paged, total, params, csrfToken, t));
 }

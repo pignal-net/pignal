@@ -39,7 +39,7 @@ export function ServicesItemPost(props: ItemPostProps) {
       <JsonLd data={jsonLd} />
 
       <div class="max-w-3xl mx-auto px-4 pt-8 pb-16">
-        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
         <article class="min-w-0 max-w-full">
           <header class="mb-6">
@@ -49,7 +49,7 @@ export function ServicesItemPost(props: ItemPostProps) {
                 <a href={`/?workspace=${item.workspaceId}`} class="workspace-badge">{item.workspaceName}</a>
               )}
               {item.validationActionLabel && (
-                <span class="text-[0.7rem] px-2 py-0.5 rounded-full font-semibold bg-green-500/15 text-green-600 whitespace-nowrap">{item.validationActionLabel}</span>
+                <span class="text-[0.7rem] px-2 py-0.5 rounded-full font-semibold bg-success/15 text-success whitespace-nowrap">{item.validationActionLabel}</span>
               )}
             </div>
             <h1>{item.keySummary}</h1>
@@ -73,9 +73,9 @@ export function ServicesItemPost(props: ItemPostProps) {
 
           {item.tags && item.tags.length > 0 && (
             <footer class="mt-10 pt-6 border-t border-border-subtle">
-              <div class="item-tags">
+              <div class="flex flex-wrap gap-2">
                 {item.tags.map((t) => (
-                  <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                  <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                 ))}
               </div>
             </footer>

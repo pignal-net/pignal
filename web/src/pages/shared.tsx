@@ -1,6 +1,5 @@
 import type { Context } from 'hono';
-import type { ItemStoreRpc } from '@pignal/db';
-import type { WebEnv } from '../types';
+import type { WebEnv, WebVars } from '../types';
 import { PublicLayout } from '../components/public-layout';
 import { TypeBadge } from '../components/type-badge';
 import { VisibilityBadge } from '../components/visibility-badge';
@@ -17,8 +16,6 @@ function formatAiSource(sourceAi: string): string | null {
   const parts = sourceAi.split(':');
   return parts.length === 2 ? parts[1] : sourceAi;
 }
-
-type WebVars = { store: ItemStoreRpc };
 
 export async function sharedPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const token = c.req.param('token')!;
@@ -59,16 +56,20 @@ export async function sharedPage(c: Context<{ Bindings: WebEnv; Variables: WebVa
   // Unlisted content should not be CDN-cached — revoked tokens must take effect immediately
   c.header('Cache-Control', 'private, no-store');
 
+  const t = c.get('t');
+  const locale = c.get('locale');
+  const defaultLocale = c.get('defaultLocale');
+
   return c.html(
-    <PublicLayout title={row.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
+    <PublicLayout title={row.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={t} locale={locale} defaultLocale={defaultLocale}>
       <div class="max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-12 w-full">
         <main class="min-w-0 max-w-full break-words">
           <div class="flex items-center gap-2 text-sm text-muted mb-4 p-3 bg-warning-bg border border-warning-border rounded-lg">
-            <VisibilityBadge visibility="unlisted" />
+            <VisibilityBadge visibility="unlisted" t={t} />
             This post was shared via a private link
           </div>
 
-          <SourceActionBar sourceUrl={sourceUrl} showRawLink={false} />
+          <SourceActionBar sourceUrl={sourceUrl} showRawLink={false} t={t} />
 
           <article class="min-w-0 max-w-full">
             <header>

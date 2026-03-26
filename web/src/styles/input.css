@@ -107,6 +107,19 @@
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
   --transition-slow: 300ms ease;
+
+  /* Animation durations (granular) */
+  --duration-micro: 120ms;
+  --duration-fast: 180ms;
+  --duration-normal: 250ms;
+  --duration-slow: 350ms;
+
+  /* Easing curves */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Elevated shadow (modals, popovers) */
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 /* ============================================================
@@ -150,6 +163,7 @@
     --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.4);
     --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
     --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.15);
+    --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -193,6 +207,7 @@
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.4);
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
   --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.15);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 /* ============================================================
@@ -456,12 +471,13 @@
     box-shadow: var(--shadow-sm);
     transform: translateY(-1px);
   }
-  button:active,
-  [type="submit"]:active,
-  [type="button"]:active,
-  [role="button"]:active {
-    transform: translateY(0);
+  button:active:not(:disabled),
+  [type="submit"]:active:not(:disabled),
+  [type="button"]:active:not(:disabled),
+  [role="button"]:active:not(:disabled) {
+    transform: scale(0.97);
     box-shadow: var(--shadow-xs);
+    transition: transform var(--duration-micro, 120ms) ease;
   }
   button:focus-visible,
   [type="submit"]:focus-visible,
@@ -546,7 +562,7 @@
 
   /* Accessible focus */
   :focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-primary-focus);
     outline-offset: 2px;
   }
 
@@ -1168,6 +1184,7 @@
   }
   .native-check {
     accent-color: var(--color-primary);
+    cursor: pointer;
   }
 
   /* Feed tabs */
@@ -1477,12 +1494,127 @@
   .managed-table { width: 100%; text-align: left; font-size: 0.875rem; border-collapse: collapse; }
   .managed-table-th { padding: 0.5rem 0.75rem; font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-muted); border-bottom: 1px solid var(--color-border); white-space: nowrap; }
   .managed-table-td { padding: 0.625rem 0.75rem; vertical-align: middle; color: var(--color-text); }
-  .managed-table-row { border-bottom: 1px solid var(--color-border-subtle); transition: background var(--transition-fast); }
+  .managed-table-row { border-bottom: 1px solid var(--color-border-subtle); transition: background var(--transition-fast), border-color var(--transition-fast); }
   .managed-table-row:last-child { border-bottom: none; }
   .managed-table-row:hover { background: var(--color-surface-hover); }
+  .managed-table-row:has(input[type="checkbox"]:checked) {
+    border-left: 2px solid var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 4%, transparent);
+  }
   .managed-table-check { width: 2.5rem; padding: 0.5rem; text-align: center; }
   .managed-table-actions { text-align: right; white-space: nowrap; }
   .managed-table-actions .outline { margin-left: 0.375rem; }
+
+  /* --------------------------------------------------------
+     Pro Max: Reusable card patterns
+     -------------------------------------------------------- */
+  .card {
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: var(--shadow-card);
+    padding: 1.5rem;
+  }
+  .card-hover {
+    transition: transform var(--duration-normal, 250ms) var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)),
+                box-shadow var(--duration-normal, 250ms) var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* --------------------------------------------------------
+     Pro Max: Skeleton loading shimmer
+     -------------------------------------------------------- */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface) 25%,
+      var(--color-surface-hover) 50%,
+      var(--color-surface) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--radius-md);
+  }
+  .skeleton-line {
+    height: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+  .skeleton-line-short { width: 40%; }
+  .skeleton-line-medium { width: 65%; }
+  .skeleton-line-long { width: 85%; }
+  .skeleton-circle {
+    border-radius: var(--radius-full);
+  }
+
+  /* --------------------------------------------------------
+     Pro Max: HTMX content swap transitions
+     -------------------------------------------------------- */
+  .htmx-swapping {
+    opacity: 0;
+    transition: opacity var(--duration-fast, 180ms) ease;
+  }
+  .htmx-settling {
+    transition: opacity var(--duration-normal, 250ms) ease;
+  }
+
+  /* --------------------------------------------------------
+     Pro Max: Page load fade-in
+     -------------------------------------------------------- */
+  .fade-in-page {
+    animation: fadeInPage var(--duration-slow, 350ms) var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  }
+
+  /* --------------------------------------------------------
+     Pro Max: Dialog/modal entrance animation
+     -------------------------------------------------------- */
+  .confirm-overlay.active .confirm-dialog,
+  .confirm-overlay.active .app-dialog-panel {
+    animation: modalIn var(--duration-normal, 250ms) var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+  }
+
+  /* --------------------------------------------------------
+     Pro Max: Scroll-triggered header border
+     -------------------------------------------------------- */
+  .header-scrolled {
+    border-bottom: 1px solid var(--color-border-subtle);
+    transition: border-color var(--duration-fast, 180ms) ease;
+  }
+
+  /* --------------------------------------------------------
+     Pro Max: Heading anchor links (wiki / docs)
+     -------------------------------------------------------- */
+  .heading-anchor {
+    opacity: 0;
+    transition: opacity var(--duration-micro, 120ms) ease;
+    color: var(--color-muted);
+    margin-left: 0.25em;
+    text-decoration: none;
+    font-weight: 400;
+  }
+  .heading-anchor:hover {
+    color: var(--color-primary);
+  }
+  .content h2:hover .heading-anchor,
+  .content h3:hover .heading-anchor,
+  .content h4:hover .heading-anchor {
+    opacity: 1;
+  }
+
+  /* --------------------------------------------------------
+     Pro Max: Drop cap for editorial templates
+     -------------------------------------------------------- */
+  .drop-cap .content > p:first-of-type::first-letter {
+    float: left;
+    font-size: 3.5em;
+    line-height: 0.8;
+    padding-right: 0.1em;
+    margin-top: 0.05em;
+    font-weight: 700;
+    color: var(--color-primary);
+  }
 
   /* Code theme variants */
   [data-code-theme="github"] .source-article .content pre,
@@ -1518,6 +1650,18 @@
 }
 @keyframes app-spin {
   to { transform: rotate(360deg); }
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 /* ============================================================

@@ -6,6 +6,7 @@ interface LayoutProps {
   title: string;
   head?: string;
   faviconUrl?: string;
+  locale?: string;
   children: Child;
 }
 
@@ -15,11 +16,11 @@ interface LayoutProps {
  */
 const THEME_INIT_SCRIPT = `<script>!function(){try{var t=localStorage.getItem('pignal-theme');'light'===t||'dark'===t?document.documentElement.setAttribute('data-theme',t):document.documentElement.removeAttribute('data-theme')}catch(e){}}()</script>`;
 
-export function Layout({ title, head, faviconUrl, children }: LayoutProps) {
+export function Layout({ title, head, faviconUrl, locale = 'en', children }: LayoutProps) {
   return (
     <>
       {raw('<!DOCTYPE html>')}
-      <html lang="en">
+      <html lang={locale}>
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

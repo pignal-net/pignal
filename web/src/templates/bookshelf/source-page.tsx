@@ -2,6 +2,7 @@ import type { SourcePageProps, Item } from '@pignal/templates';
 import type { TemplateVocabulary } from '@pignal/templates';
 import { Pagination } from '../../components/pagination';
 import { TypeBadge } from '../../components/type-badge';
+import { EmptyState } from '../../components/empty-state';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { formatDate } from '../../lib/time';
@@ -33,16 +34,16 @@ export function BookCard({ item, vocabulary: _vocabulary }: { item: Item; vocabu
   const detailUrl = `/item/${item.slug}`;
 
   return (
-    <article class="border border-border-subtle shadow-card rounded-xl overflow-hidden bg-surface flex flex-col transition-all duration-250 hover:shadow-card-hover">
-      <a href={detailUrl} style="text-decoration: none; color: inherit;">
+    <article class="group card-hover bg-surface rounded-xl border border-border-subtle shadow-card overflow-hidden flex flex-col">
+      <a href={detailUrl} class="block no-underline text-inherit">
         <div class="aspect-[2/3] bg-gradient-to-br from-primary/12 to-primary/28 flex items-center justify-center relative overflow-hidden">
-          <div class="absolute top-2 left-2 z-[1]">
+          <div class="absolute top-2 left-2 z-10">
             <TypeBadge typeName={item.typeName} />
           </div>
           {item.validationActionLabel && (
-            <span class="absolute top-2 right-2 z-[1] text-[0.65rem] font-semibold px-1.5 py-0.5 rounded-lg bg-surface text-primary border border-border-subtle">{item.validationActionLabel}</span>
+            <span class="absolute top-2 right-2 z-10 text-[0.65rem] font-semibold px-1.5 py-0.5 rounded-lg bg-surface text-primary border border-border-subtle">{item.validationActionLabel}</span>
           )}
-          <span class="text-sm font-bold text-primary opacity-70 text-center px-4 leading-snug line-clamp-4">{item.keySummary}</span>
+          <span class="text-sm font-bold text-primary opacity-70 text-center px-4 leading-snug line-clamp-4 transition-transform duration-300 group-hover:scale-[1.03]">{item.keySummary}</span>
         </div>
       </a>
       <div class="px-3 pt-2.5 pb-3 flex-1 flex flex-col">
@@ -54,7 +55,7 @@ export function BookCard({ item, vocabulary: _vocabulary }: { item: Item; vocabu
             {item.tags.slice(0, 2).map((t) => {
               const tagUrl = `/?tag=${encodeURIComponent(t)}`;
               return (
-                <a href={tagUrl} class="item-tag text-[0.65rem] px-1.5 py-0.5" {...hxProps(tagUrl)}>#{t}</a>
+                <a href={tagUrl} class="inline-flex items-center rounded-full text-[0.65rem] px-1.5 py-0.5 no-underline text-muted hover:bg-primary/5 hover:text-primary transition-colors border border-border-subtle" {...hxProps(tagUrl)}>#{t}</a>
               );
             })}
           </div>
@@ -81,6 +82,7 @@ export function BookshelfSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || `My ${vocabulary.itemPlural.charAt(0).toUpperCase() + vocabulary.itemPlural.slice(1)}`;
@@ -147,16 +149,17 @@ export function BookshelfSourcePage(props: SourcePageProps) {
     <BookshelfLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="max-w-7xl mx-auto px-4 pt-8 pb-16 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
+      <div class="max-w-7xl mx-auto px-4 pt-8 pb-16 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start fade-in-page">
         {/* Sidebar: genres + shelves */}
-        <aside class="sticky top-6 text-sm max-lg:static max-lg:flex max-lg:gap-4 max-lg:flex-wrap max-lg:border-b max-lg:border-border-subtle max-lg:pb-4 max-lg:mb-0 lg:bg-surface lg:rounded-xl lg:border lg:border-border-subtle lg:shadow-card lg:p-4">
+        <aside class="lg:sticky lg:top-6 text-sm max-lg:flex max-lg:gap-4 max-lg:flex-wrap max-lg:border-b max-lg:border-border-subtle max-lg:pb-4 lg:bg-surface lg:rounded-xl lg:border lg:border-border-subtle lg:shadow-card lg:p-4" aria-label="Book filters">
           <div class="mb-4 max-lg:mb-0 max-lg:w-full">
             <input
               type="text"
               name="q"
               placeholder={`Search ${vocabulary.itemPlural}...`}
               value={filters.q || ''}
-              class="w-full m-0 h-9 text-sm px-3 py-1"
+              aria-label={`Search ${vocabulary.itemPlural}`}
+              class="w-full m-0 h-9 text-sm px-3 py-1 rounded-lg border border-border bg-surface text-text"
               hx-get="/"
               hx-target={HX_TARGET}
               hx-swap="innerHTML"
@@ -175,9 +178,9 @@ export function BookshelfSourcePage(props: SourcePageProps) {
                   {(() => {
                     const url = buildFilterUrl({ workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                     return (
-                      <a href={url} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-sm transition-colors ${!filters.typeId ? 'bg-primary/10 text-primary font-semibold' : 'text-text hover:bg-primary/8 hover:text-primary'}`} {...hxProps(url)}>
+                      <a href={url} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-sm transition-colors ${!filters.typeId ? 'bg-primary/10 text-primary font-semibold' : 'text-text hover:bg-primary/5 hover:text-primary'}`} {...hxProps(url)}>
                         <span>All</span>
-                        <span class={`text-xs min-w-[1.2em] text-right ${!filters.typeId ? 'text-primary/80' : 'text-muted font-normal'}`}>{counts.total}</span>
+                        <span class={`text-xs min-w-[1.2em] text-right ${!filters.typeId ? 'text-primary/60' : 'text-muted'}`}>{counts.total}</span>
                       </a>
                     );
                   })()}
@@ -186,9 +189,9 @@ export function BookshelfSourcePage(props: SourcePageProps) {
                   const url = buildFilterUrl({ type: type.id, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                   return (
                     <li>
-                      <a href={url} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-sm transition-colors ${filters.typeId === type.id ? 'bg-primary/10 text-primary font-semibold' : 'text-text hover:bg-primary/8 hover:text-primary'}`} {...hxProps(url)}>
+                      <a href={url} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-sm transition-colors ${filters.typeId === type.id ? 'bg-primary/10 text-primary font-semibold' : 'text-text hover:bg-primary/5 hover:text-primary'}`} {...hxProps(url)}>
                         <span>{type.icon ? `${type.icon} ` : ''}{type.name}</span>
-                        <span class={`text-xs min-w-[1.2em] text-right ${filters.typeId === type.id ? 'text-primary/80' : 'text-muted font-normal'}`}>{counts.byType[type.id] ?? 0}</span>
+                        <span class={`text-xs min-w-[1.2em] text-right ${filters.typeId === type.id ? 'text-primary/60' : 'text-muted'}`}>{counts.byType[type.id] ?? 0}</span>
                       </a>
                     </li>
                   );
@@ -205,9 +208,9 @@ export function BookshelfSourcePage(props: SourcePageProps) {
                   const url = buildFilterUrl({ workspace: filters.workspaceId === ws.id ? undefined : ws.id, type: filters.typeId, q: filters.q, sort: sortParam });
                   return (
                     <li>
-                      <a href={url} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-sm transition-colors ${filters.workspaceId === ws.id ? 'bg-primary/10 text-primary font-semibold' : 'text-text hover:bg-primary/8 hover:text-primary'}`} {...hxProps(url)}>
+                      <a href={url} class={`flex justify-between items-center px-2.5 py-1.5 rounded-lg no-underline text-sm transition-colors ${filters.workspaceId === ws.id ? 'bg-primary/10 text-primary font-semibold' : 'text-text hover:bg-primary/5 hover:text-primary'}`} {...hxProps(url)}>
                         <span>{ws.name}</span>
-                        <span class={`text-xs min-w-[1.2em] text-right ${filters.workspaceId === ws.id ? 'text-primary/80' : 'text-muted font-normal'}`}>{counts.byWorkspace[ws.id] ?? 0}</span>
+                        <span class={`text-xs min-w-[1.2em] text-right ${filters.workspaceId === ws.id ? 'text-primary/60' : 'text-muted'}`}>{counts.byWorkspace[ws.id] ?? 0}</span>
                       </a>
                     </li>
                   );
@@ -224,7 +227,7 @@ export function BookshelfSourcePage(props: SourcePageProps) {
               {(() => {
                 const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                 return (
-                  <a href={url} class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.8rem] font-medium no-underline bg-primary text-white" title="Clear tag filter" {...hxProps(url)}>
+                  <a href={url} class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.8rem] font-medium no-underline bg-primary text-primary-inverse hover:bg-primary-hover transition-colors" title="Clear tag filter" {...hxProps(url)}>
                     #{filters.tag} &times;
                   </a>
                 );
@@ -251,15 +254,13 @@ export function BookshelfSourcePage(props: SourcePageProps) {
           <div id="source-loading" class="source-loading htmx-indicator">
             <span class="app-spinner" />
           </div>
-          <div id="source-results">
+          <div id="source-results" aria-live="polite">
             {items.length === 0 ? (
-              <div class="empty-state">
-                <div class="empty-state-icon">
-                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-                </div>
-                <p class="empty-state-title">{`No ${vocabulary.itemPlural} found`}</p>
-                <p class="empty-state-description">Try adjusting your filters or search query.</p>
-              </div>
+              <EmptyState
+                icon="search"
+                title={`No ${vocabulary.itemPlural} found`}
+                description="Try adjusting your filters or search query."
+              />
             ) : (
               <>
                 <div class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] max-sm:grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-6 max-sm:gap-3">
@@ -273,6 +274,7 @@ export function BookshelfSourcePage(props: SourcePageProps) {
                   offset={pagination.offset}
                   baseUrl={paginationBase}
                   htmxTarget={HX_TARGET}
+                  t={t}
                 />
               </>
             )}

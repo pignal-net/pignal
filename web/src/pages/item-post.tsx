@@ -1,15 +1,13 @@
 import type { Context } from 'hono';
 import type { Item } from '@pignal/core';
-import type { ItemWithMeta, ItemStoreRpc, SiteActionSelect } from '@pignal/db';
+import type { ItemWithMeta, SiteActionSelect } from '@pignal/db';
 import type { DirectiveContext } from '@pignal/core/directives/registry';
-import type { WebEnv } from '../types';
+import type { WebEnv, WebVars } from '../types';
 import { renderContentWithDirectives } from '../lib/directives';
 import { getTemplate } from '../templates/registry';
 import { getCtaSettings } from '../components/cta-block';
 import { ActionStore } from '@pignal/core/store/action-store';
 import { drizzle } from 'drizzle-orm/d1';
-
-type WebVars = { store: ItemStoreRpc; templateName: string };
 
 function toItem(row: ItemWithMeta): Item {
   return {
@@ -111,6 +109,10 @@ export async function itemPostPage(c: Context<{ Bindings: WebEnv; Variables: Web
   }
 
   const template = getTemplate(c.get('templateName'));
+  const t = c.get('t');
+  const locale = c.get('locale');
+  const defaultLocale = c.get('defaultLocale');
+  const localePrefix = locale === defaultLocale ? '' : `/${locale}`;
 
   c.header('Cache-Control', 'public, max-age=60');
 
@@ -125,6 +127,10 @@ export async function itemPostPage(c: Context<{ Bindings: WebEnv; Variables: Web
       githubUrl={githubUrl}
       vocabulary={template.vocabulary}
       seo={template.seo}
+      t={t}
+      locale={locale}
+      defaultLocale={defaultLocale}
+      localePrefix={localePrefix}
     />
   );
 }

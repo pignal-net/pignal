@@ -4,6 +4,7 @@ import { GlossarySourcePage } from './source-page';
 import { GlossaryItemPost } from './item-post';
 import { GlossaryLayout } from './layout';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { TypeBadge } from '../../components/type-badge';
 import { stripMarkdown } from '../../lib/markdown';
 
@@ -53,13 +54,11 @@ function groupAlphabetically(items: Item[]): Map<string, Item[]> {
 function GlossaryPartialResults(props: PartialResultsProps) {
   if (props.items.length === 0) {
     return (
-      <div class="empty-state">
-        <div class="empty-state-icon">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-        </div>
-        <p class="empty-state-title">{`No ${props.vocabulary.itemPlural} found`}</p>
-        <p class="empty-state-description">Try adjusting your filters or search query.</p>
-      </div>
+      <EmptyState
+        icon="search"
+        title={`No ${props.vocabulary.itemPlural} found`}
+        description="Try adjusting your filters or search query."
+      />
     );
   }
 
@@ -76,9 +75,9 @@ function GlossaryPartialResults(props: PartialResultsProps) {
                 const termName = getTermName(item.keySummary);
                 const definition = getDefinition(item.content, 100);
                 return (
-                  <a href={`/item/${item.slug}`} class="flex items-start max-sm:flex-col gap-4 max-sm:gap-1 px-2 py-2.5 no-underline text-inherit border-b border-border-subtle transition-colors hover:bg-surface">
+                  <a href={`/item/${item.slug}`} class="flex items-start max-sm:flex-col gap-4 max-sm:gap-1 px-3 py-3 no-underline text-inherit border-b border-border-subtle rounded-lg transition-colors hover:bg-surface-hover">
                     <div class="flex items-center gap-2 shrink-0 min-w-[180px] lg:min-w-[220px] max-sm:min-w-0">
-                      <span class="font-semibold text-text">{termName}</span>
+                      <span class="font-semibold text-lg text-text">{termName}</span>
                       <TypeBadge typeName={item.typeName} />
                     </div>
                     <div class="text-[0.9rem] text-muted leading-relaxed flex-1 max-sm:text-sm">{definition}</div>

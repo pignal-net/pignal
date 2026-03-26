@@ -1,6 +1,7 @@
 import type { SourcePageProps } from '@pignal/templates';
 import type { Item } from '@pignal/templates';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
@@ -80,6 +81,7 @@ export function ResumeSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'My Resume';
@@ -147,7 +149,7 @@ export function ResumeSourcePage(props: SourcePageProps) {
     <ResumeLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="text-center px-4 pt-10 pb-8 border-b-2 border-border-subtle mb-8">
+      <div class="text-center px-4 pt-10 pb-8 border-b-2 border-border-subtle mb-8 fade-in-page">
         {githubUsername && (
           <img
             src={`https://avatars.githubusercontent.com/${githubUsername}?s=192`}
@@ -176,11 +178,11 @@ export function ResumeSourcePage(props: SourcePageProps) {
         </div>
 
         {allSkills.length > 0 && (
-          <div class="flex justify-center flex-wrap gap-1.5 mt-4">
+          <div class="flex justify-center flex-wrap gap-1.5 mt-4" role="list" aria-label="Skills">
             {allSkills.map((skill) => {
               const url = buildFilterUrl({ tag: skill, workspace: filters.workspaceId, sort: sortParam });
               return (
-                <a href={url} class="inline-block px-2.5 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary tracking-wide no-underline" {...hxProps(url)}>{skill}</a>
+                <a href={url} class="inline-block px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary tracking-wide no-underline hover:bg-primary/20 transition-colors" role="listitem" {...hxProps(url)}>{skill}</a>
               );
             })}
           </div>
@@ -193,7 +195,7 @@ export function ResumeSourcePage(props: SourcePageProps) {
           {(() => {
             const url = buildFilterUrl({ type: filters.typeId, tag: filters.tag, q: filters.q, sort: sortParam });
             return (
-              <a href={url} class={`inline-block px-4 py-1.5 text-[0.8rem] font-medium rounded-full border no-underline transition-all ${!filters.workspaceId ? 'bg-primary border-primary text-white' : 'border-border text-muted hover:border-primary hover:text-primary'}`} {...hxProps(url)}>
+              <a href={url} class={`inline-block px-4 py-1.5 text-[0.8rem] font-medium rounded-full border no-underline transition-all ${!filters.workspaceId ? 'bg-primary border-primary text-primary-inverse' : 'border-border text-muted hover:border-primary hover:text-primary'}`} {...hxProps(url)}>
                 All {vocabulary.workspacePlural}
               </a>
             );
@@ -207,7 +209,7 @@ export function ResumeSourcePage(props: SourcePageProps) {
               sort: sortParam,
             });
             return (
-              <a href={url} class={`inline-block px-4 py-1.5 text-[0.8rem] font-medium rounded-full border no-underline transition-all ${filters.workspaceId === ws.id ? 'bg-primary border-primary text-white' : 'border-border text-muted hover:border-primary hover:text-primary'}`} {...hxProps(url)}>
+              <a href={url} class={`inline-block px-4 py-1.5 text-[0.8rem] font-medium rounded-full border no-underline transition-all ${filters.workspaceId === ws.id ? 'bg-primary border-primary text-primary-inverse' : 'border-border text-muted hover:border-primary hover:text-primary'}`} {...hxProps(url)}>
                 {ws.name}
               </a>
             );
@@ -265,6 +267,7 @@ export function ResumeSourcePage(props: SourcePageProps) {
           paginationBase={paginationBase}
           vocabulary={vocabulary}
           filters={filters}
+          t={t}
         />
       </div>
     </ResumeLayout>
@@ -281,19 +284,18 @@ function ResumeResults(props: {
   paginationBase: string;
   vocabulary: SourcePageProps['vocabulary'];
   filters: SourcePageProps['filters'];
+  t?: SourcePageProps['t'];
 }) {
-  const { items, sections, total, limit, offset, paginationBase, vocabulary, filters } = props;
+  const { items, sections, total, limit, offset, paginationBase, vocabulary, filters, t } = props;
   const sortParam = filters.sort === 'oldest' ? 'oldest' : undefined;
 
   if (items.length === 0) {
     return (
-      <div class="empty-state">
-        <div class="empty-state-icon">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-        </div>
-        <p class="empty-state-title">{`No ${vocabulary.itemPlural} found`}</p>
-        <p class="empty-state-description">Try adjusting your filters or search query.</p>
-      </div>
+      <EmptyState
+        icon="inbox"
+        title={`No ${vocabulary.itemPlural} found`}
+        description="Try adjusting your filters or search query."
+      />
     );
   }
 
@@ -307,16 +309,16 @@ function ResumeResults(props: {
               <h2 class="text-xs font-bold uppercase tracking-wider text-primary m-0">{section.typeName}</h2>
               <span class="text-[0.7rem] font-normal text-muted ml-auto">{section.items.length} {section.items.length === 1 ? vocabulary.item : vocabulary.itemPlural}</span>
             </div>
-            <div class="flex flex-col relative pl-5 before:content-[''] before:absolute before:left-[3px] before:top-2 before:bottom-2 before:w-0.5 before:bg-border-subtle">
+            <div class="flex flex-col relative pl-5 before:content-[''] before:absolute before:left-[3px] before:top-2 before:bottom-2 before:w-0.5 before:bg-primary/20">
               {section.items.map((item) => {
                 const description = stripMarkdown(item.content).slice(0, 200);
                 const dateStr = item.vouchedAt || item.createdAt;
                 return (
-                  <div class="relative py-3 pl-3 before:content-[''] before:absolute before:-left-5 before:top-[1.15rem] before:w-2 before:h-2 before:rounded-full before:border-2 before:border-surface before:z-[1] before:bg-border-subtle first:before:bg-primary">
+                  <div class="relative py-3 pl-3 before:content-[''] before:absolute before:-left-5 before:top-[1.15rem] before:w-2.5 before:h-2.5 before:rounded-full before:border-2 before:border-surface before:z-[1] before:bg-border-subtle first:before:bg-primary">
                     <div class="flex justify-between items-baseline gap-3 flex-wrap max-sm:flex-col max-sm:gap-0.5 mb-1">
                       <h3 class="text-[0.95rem] font-semibold m-0 leading-snug text-text">
                         {item.slug ? (
-                          <a href={`/item/${item.slug}`} class="text-inherit no-underline hover:text-primary">{item.keySummary}</a>
+                          <a href={`/item/${item.slug}`} class="text-inherit no-underline hover:text-primary transition-colors">{item.keySummary}</a>
                         ) : (
                           item.keySummary
                         )}
@@ -328,15 +330,15 @@ function ResumeResults(props: {
                     )}
                     <div class="flex items-center gap-2 flex-wrap mt-1.5">
                       {item.validationActionLabel && (
-                        <span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold rounded-xl bg-primary/10 text-primary uppercase tracking-wide">{item.validationActionLabel}</span>
+                        <span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold rounded-full bg-primary/10 text-primary uppercase tracking-wide">{item.validationActionLabel}</span>
                       )}
                       {item.workspaceName && (
-                        <span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold rounded-xl bg-primary/10 text-primary uppercase tracking-wide">{item.workspaceName}</span>
+                        <span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold rounded-full bg-primary/10 text-primary uppercase tracking-wide">{item.workspaceName}</span>
                       )}
                       {item.tags && item.tags.slice(0, 5).map((t) => {
                         const url = buildFilterUrl({ tag: t, type: filters.typeId, workspace: filters.workspaceId, sort: sortParam });
                         return (
-                          <a href={url} class="inline-block px-1.5 py-0.5 text-[0.65rem] rounded-full bg-muted/8 border border-border-subtle text-muted no-underline hover:text-text" {...hxProps(url)}>
+                          <a href={url} class="inline-block px-2 py-0.5 text-[0.65rem] rounded-full bg-primary/10 text-primary no-underline hover:bg-primary/20 transition-colors" {...hxProps(url)}>
                             {t}
                           </a>
                         );
@@ -355,6 +357,7 @@ function ResumeResults(props: {
         offset={offset}
         baseUrl={paginationBase}
         htmxTarget={HX_TARGET}
+        t={t}
       />
     </>
   );

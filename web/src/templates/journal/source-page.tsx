@@ -1,6 +1,7 @@
 import type { SourcePageProps } from '@pignal/templates';
 import { FilterBar } from '../../components/type-sidebar';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
@@ -54,6 +55,7 @@ export function JournalSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'Journal';
@@ -109,18 +111,18 @@ export function JournalSourcePage(props: SourcePageProps) {
       <JsonLd data={jsonLd} />
 
       <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col">
-        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
+        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} t={t} />
 
         <div id="source-loading" class="source-loading htmx-indicator">
           <span class="app-spinner" />
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <div class="empty-state">
-              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-              <p class="empty-state-title">No items found</p>
-              <p class="empty-state-description">No {vocabulary.itemPlural} matching this filter.</p>
-            </div>
+            <EmptyState
+              icon="inbox"
+              title={`No ${vocabulary.itemPlural} found`}
+              description={`No ${vocabulary.itemPlural} matching this filter.`}
+            />
           ) : (
             <>
               {monthGroups.map((group) => (
@@ -132,7 +134,7 @@ export function JournalSourcePage(props: SourcePageProps) {
                       const preview = stripMarkdown(item.content).slice(0, 160);
 
                       return (
-                        <article class="flex gap-3 sm:gap-4 p-2 sm:p-3 rounded-md border border-transparent hover:border-border hover:bg-surface transition-all">
+                        <article class="flex gap-3 sm:gap-4 p-2 sm:p-3 rounded-md border border-transparent hover:border-border hover:bg-surface card-hover">
                           <div class="flex flex-col items-center justify-center shrink-0 w-10 sm:w-12 pt-0.5">
                             <span class="text-xl sm:text-2xl font-semibold leading-none text-text">{jd.day}</span>
                             <span class="text-[0.65rem] uppercase tracking-widest text-muted mt-0.5">{jd.month}</span>
@@ -149,7 +151,7 @@ export function JournalSourcePage(props: SourcePageProps) {
                             {item.tags && item.tags.length > 0 && (
                               <div class="flex flex-wrap gap-1.5 mt-1.5">
                                 {item.tags.map((t) => (
-                                  <a href={`/?tag=${encodeURIComponent(t)}`} class="text-[0.7rem] text-primary hover:underline">#{t}</a>
+                                  <a href={`/?tag=${encodeURIComponent(t)}`} class="text-[0.7rem] px-1.5 py-0.5 rounded-full text-muted no-underline hover:bg-primary/5 hover:text-primary transition-colors">#{t}</a>
                                 ))}
                               </div>
                             )}
@@ -165,6 +167,8 @@ export function JournalSourcePage(props: SourcePageProps) {
                 limit={pagination.limit}
                 offset={pagination.offset}
                 baseUrl={paginationBase}
+                htmxTarget="#source-results"
+                t={t}
               />
             </>
           )}

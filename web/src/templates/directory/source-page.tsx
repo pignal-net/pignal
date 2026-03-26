@@ -1,5 +1,6 @@
 import type { SourcePageProps } from '@pignal/templates';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
@@ -31,11 +32,11 @@ function hxProps(url: string) {
 function getStatusClasses(label: string | null): string {
   if (!label) return '';
   const lower = label.toLowerCase();
-  if (lower.includes('active') || lower.includes('recommended')) return 'bg-green-500/15 text-green-600';
-  if (lower.includes('new')) return 'bg-blue-500/15 text-blue-500';
-  if (lower.includes('archived') || lower.includes('inactive') || lower.includes('stale')) return 'bg-border/50 text-muted';
-  if (lower.includes('deprecated') || lower.includes('shutting')) return 'bg-red-500/15 text-red-600';
-  return 'bg-green-500/15 text-green-600';
+  if (lower.includes('active') || lower.includes('recommended')) return 'bg-success-bg text-success border border-success-border';
+  if (lower.includes('new')) return 'bg-info-bg text-info border border-info-border';
+  if (lower.includes('archived') || lower.includes('inactive') || lower.includes('stale')) return 'bg-surface-raised text-muted border border-border';
+  if (lower.includes('deprecated') || lower.includes('shutting')) return 'bg-error-bg text-error border border-error-border';
+  return 'bg-success-bg text-success border border-success-border';
 }
 
 export function DirectorySourcePage(props: SourcePageProps) {
@@ -50,6 +51,7 @@ export function DirectorySourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'My Resource Directory';
@@ -127,31 +129,35 @@ export function DirectorySourcePage(props: SourcePageProps) {
       <JsonLd data={jsonLd} />
 
       <div class="max-w-5xl mx-auto px-4 pt-8 pb-16">
-        {/* Search */}
-        <div class="mb-4 max-w-md">
-          <input
-            type="text"
-            name="q"
-            placeholder={`Search ${vocabulary.itemPlural}...`}
-            value={filters.q || ''}
-            class="w-full m-0 h-10 text-sm px-3 py-1.5 rounded-lg border border-border bg-surface text-text"
-            hx-get="/"
-            hx-target={HX_TARGET}
-            hx-swap={HX_SWAP}
-            hx-trigger="input changed delay:300ms, keyup[key=='Enter']"
-            hx-push-url="true"
-            hx-indicator={HX_INDICATOR}
-            hx-vals={hxVals}
-          />
+        {/* Prominent search */}
+        <div class="mb-6 max-w-lg">
+          <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+            <input
+              type="text"
+              name="q"
+              placeholder={`Search ${vocabulary.itemPlural}...`}
+              value={filters.q || ''}
+              aria-label={`Search ${vocabulary.itemPlural}`}
+              class="w-full m-0 h-11 text-sm pl-10 pr-3 py-2 rounded-xl border border-border bg-surface text-text shadow-xs focus:border-primary focus:ring-2 focus:ring-primary-focus transition-colors"
+              hx-get="/"
+              hx-target={HX_TARGET}
+              hx-swap={HX_SWAP}
+              hx-trigger="input changed delay:300ms, keyup[key=='Enter']"
+              hx-push-url="true"
+              hx-indicator={HX_INDICATOR}
+              hx-vals={hxVals}
+            />
+          </div>
         </div>
 
         {/* Category filter chips */}
         {typesWithItems.length > 1 && (
-          <div class="flex flex-wrap gap-2 mb-5">
+          <div class="flex flex-wrap gap-2 mb-5" role="group" aria-label={`Filter by ${vocabulary.type}`}>
             {(() => {
               const allUrl = buildFilterUrl({ workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={allUrl} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${!filters.typeId ? 'bg-primary text-white border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(allUrl)}>
+                <a href={allUrl} class={`filter-chip ${!filters.typeId ? 'active' : ''}`} {...hxProps(allUrl)}>
                   All {vocabulary.typePlural}
                 </a>
               );
@@ -159,7 +165,7 @@ export function DirectorySourcePage(props: SourcePageProps) {
             {typesWithItems.map((type) => {
               const url = buildFilterUrl({ type: filters.typeId === type.id ? undefined : type.id, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${filters.typeId === type.id ? 'bg-primary text-white border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(url)}>
+                <a href={url} class={`filter-chip ${filters.typeId === type.id ? 'active' : ''}`} {...hxProps(url)}>
                   {type.icon ? `${type.icon} ` : ''}{type.name}
                   <span class="text-[0.72rem] opacity-70">{counts.byType[type.id] ?? 0}</span>
                 </a>
@@ -170,11 +176,11 @@ export function DirectorySourcePage(props: SourcePageProps) {
 
         {/* Collection filter chips */}
         {workspacesWithItems.length > 0 && (
-          <div class="flex flex-wrap gap-2 mb-5">
+          <div class="flex flex-wrap gap-2 mb-5" role="group" aria-label={`Filter by ${vocabulary.workspace}`}>
             {(() => {
               const allUrl = buildFilterUrl({ type: filters.typeId, q: filters.q, sort: sortParam });
               return (
-                <a href={allUrl} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${!filters.workspaceId ? 'bg-primary text-white border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(allUrl)}>
+                <a href={allUrl} class={`filter-chip ${!filters.workspaceId ? 'active' : ''}`} {...hxProps(allUrl)}>
                   All {vocabulary.workspacePlural}
                 </a>
               );
@@ -182,7 +188,7 @@ export function DirectorySourcePage(props: SourcePageProps) {
             {workspacesWithItems.map((ws) => {
               const url = buildFilterUrl({ workspace: filters.workspaceId === ws.id ? undefined : ws.id, type: filters.typeId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${filters.workspaceId === ws.id ? 'bg-primary text-white border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(url)}>
+                <a href={url} class={`filter-chip ${filters.workspaceId === ws.id ? 'active' : ''}`} {...hxProps(url)}>
                   {ws.name}
                   <span class="text-[0.72rem] opacity-70">{counts.byWorkspace[ws.id] ?? 0}</span>
                 </a>
@@ -197,7 +203,7 @@ export function DirectorySourcePage(props: SourcePageProps) {
             {(() => {
               const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} title="Clear tag filter" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium no-underline bg-primary text-white" {...hxProps(url)}>
+                <a href={url} title="Clear tag filter" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium no-underline bg-primary text-primary-inverse" {...hxProps(url)}>
                   #{filters.tag} &times;
                 </a>
               );
@@ -212,7 +218,7 @@ export function DirectorySourcePage(props: SourcePageProps) {
             {activeType && <> in {activeType.name}</>}
             {activeWorkspace && <> in {activeWorkspace.name}</>}
           </span>
-          <div class="flex">
+          <div class="flex" role="group" aria-label="Sort order">
             <a href={newestUrl} class={`text-[0.82rem] px-3 py-1 no-underline transition-colors ${filters.sort === 'newest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(newestUrl)}>
               Newest
             </a>
@@ -225,26 +231,40 @@ export function DirectorySourcePage(props: SourcePageProps) {
         <div id="source-loading" class="source-loading htmx-indicator">
           <span class="app-spinner" />
         </div>
-        <div id="source-results">
+        <div id="source-results" aria-live="polite">
           {items.length === 0 ? (
-            <div class="empty-state">
-              <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-              <p>{`No ${vocabulary.itemPlural} found.`}</p>
-            </div>
+            <EmptyState
+              icon="search"
+              title={`No ${vocabulary.itemPlural} found`}
+              description="Try adjusting your search or filters."
+            />
           ) : (
             <>
+              {/* A-Z jump links */}
+              {sortedLetters.length > 1 && (
+                <nav class="flex flex-wrap gap-1 mb-6" aria-label="Alphabetical navigation">
+                  {sortedLetters.map((letter) => (
+                    <a
+                      href={`#letter-${letter}`}
+                      class="filter-chip"
+                    >
+                      {letter}
+                    </a>
+                  ))}
+                </nav>
+              )}
               <div class="flex flex-col">
                 {sortedLetters.map((letter) => (
                   <>
-                    <div class="text-xl font-bold text-primary pt-2 pb-1 mt-6 first:mt-0 mb-3 border-b-2 border-primary">{letter}</div>
+                    <div class="text-lg font-bold text-primary pt-2 pb-1 mt-5 first:mt-0 mb-2 border-b-2 border-primary" id={`letter-${letter}`}>{letter}</div>
                     {grouped[letter].map((item) => {
                       const desc = stripMarkdown(item.content).slice(0, 140);
                       const statusClasses = getStatusClasses(item.validationActionLabel);
                       return (
-                        <div class="flex items-start gap-3 py-3 border-b border-border-subtle transition-colors hover:bg-primary/[0.03] max-sm:flex-col max-sm:gap-1">
+                        <a href={`/item/${item.slug}`} class="card-hover flex items-start gap-3 py-3 px-3 rounded-lg border-b border-border-subtle no-underline text-inherit transition-colors hover:bg-primary/4 max-sm:flex-col max-sm:gap-1">
                           <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-0.5 flex-wrap">
-                              <a href={`/item/${item.slug}`} class="no-underline text-text font-semibold text-[0.95rem] hover:text-primary after:content-['\\2197'] after:text-xs after:ml-1 after:opacity-40">{item.keySummary}</a>
+                              <span class="text-text font-semibold text-[0.95rem]">{item.keySummary}</span>
                               {item.typeName && <span class="text-[0.7rem] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium whitespace-nowrap">{item.typeName}</span>}
                               {item.validationActionLabel && (
                                 <span class={`text-[0.68rem] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${statusClasses}`}>{item.validationActionLabel}</span>
@@ -257,7 +277,8 @@ export function DirectorySourcePage(props: SourcePageProps) {
                               </div>
                             )}
                           </div>
-                        </div>
+                          <svg class="shrink-0 w-4 h-4 mt-1 text-muted opacity-40 max-sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17l9.2-9.2M17 17V7H7" /></svg>
+                        </a>
                       );
                     })}
                   </>
@@ -269,6 +290,7 @@ export function DirectorySourcePage(props: SourcePageProps) {
                 offset={pagination.offset}
                 baseUrl={paginationBase}
                 htmxTarget={HX_TARGET}
+                t={t}
               />
             </>
           )}

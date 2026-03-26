@@ -58,16 +58,16 @@ export function PodcastItemPost(props: ItemPostProps) {
     <PodcastLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full fade-in-page">
         <main class="min-w-0 max-w-full break-words">
-          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
           <article class="source-article min-w-0 max-w-full">
             <header class="mb-4">
-              <div class="mb-4">
+              <div class="mb-4 flex items-center gap-2 flex-wrap">
                 <TypeBadge typeName={item.typeName} />
                 {item.workspaceName && (
-                  <a href={`/?workspace=${item.workspaceId}`} class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary ml-2">{item.workspaceName}</a>
+                  <a href={`/?workspace=${item.workspaceId}`} class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary no-underline hover:bg-primary/15 transition-colors">{item.workspaceName}</a>
                 )}
               </div>
               <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight mb-4">{item.keySummary}</h1>
@@ -83,8 +83,8 @@ export function PodcastItemPost(props: ItemPostProps) {
                   {formatDate(item.vouchedAt || item.createdAt)}
                 </time>
                 {duration && (
-                  <span class="inline-flex items-center gap-1 text-sm font-medium text-primary">
-                    <span class="w-1.5 h-1.5 rounded-full bg-primary/50" />
+                  <span class="inline-flex items-center gap-1 text-sm font-medium text-primary" aria-label={`Duration: ${duration}`}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     {duration}
                   </span>
                 )}
@@ -96,8 +96,8 @@ export function PodcastItemPost(props: ItemPostProps) {
               </div>
             </header>
 
-            <div class="flex items-center gap-3 p-4 mb-6 bg-surface border border-border-subtle shadow-card rounded-xl text-sm text-muted">
-              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white shrink-0 text-base">&#9654;</div>
+            <div class="flex items-center gap-3 p-4 mb-6 bg-surface-raised border border-border-subtle shadow-card rounded-xl text-sm text-muted">
+              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-inverse shrink-0 text-base" aria-hidden="true">&#9654;</div>
               <span>Audio player not available in preview</span>
             </div>
 
@@ -109,7 +109,7 @@ export function PodcastItemPost(props: ItemPostProps) {
               <footer class="mt-10 pt-6 border-t border-border-subtle">
                 <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag text-sm text-primary hover:underline">#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-flex items-center rounded-full text-sm px-2.5 py-0.5 no-underline text-muted hover:bg-primary/5 hover:text-primary transition-colors border border-border-subtle">#{t}</a>
                   ))}
                 </div>
               </footer>

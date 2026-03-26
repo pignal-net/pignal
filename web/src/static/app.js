@@ -1054,6 +1054,39 @@ document.addEventListener('click', function (e) {
   }, true);
 })();
 
+/* pignal - HTMX accessibility — announce content updates to screen readers */
+(function () {
+  var liveRegion = document.createElement('div');
+  liveRegion.setAttribute('aria-live', 'polite');
+  liveRegion.setAttribute('role', 'status');
+  liveRegion.className = 'sr-only';
+  liveRegion.style.cssText = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0';
+  document.body.appendChild(liveRegion);
+
+  var clearTimer;
+  document.body.addEventListener('htmx:afterSettle', function () {
+    clearTimeout(clearTimer);
+    liveRegion.textContent = 'Content updated';
+    clearTimer = setTimeout(function () { liveRegion.textContent = ''; }, 3000);
+  });
+})();
+
+/* pignal - header scroll border */
+(function () {
+  var header = document.querySelector('.source-header') || document.querySelector('header');
+  if (!header) return;
+  var ticking = false;
+  window.addEventListener('scroll', function () {
+    if (!ticking) {
+      requestAnimationFrame(function () {
+        header.classList.toggle('header-scrolled', window.scrollY > 20);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+})();
+
 /* pignal - source page filter bar active state management */
 (function () {
   document.addEventListener('click', function (e) {

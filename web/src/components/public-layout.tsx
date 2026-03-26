@@ -1,11 +1,15 @@
 import type { Child } from 'hono/jsx';
 import type { SettingsMap } from '@pignal/db';
+import type { VisitorContext } from '@pignal/templates';
+import type { TFunction } from '../i18n/types';
 import { Layout } from './layout';
 import { buildThemeStyleTag, buildFontTags } from '../lib/theme';
 import { sanitizeCss } from '../lib/css-sanitize';
 import { APP_JS_URL, HTMX_JS_URL, LOGO_SVG_URL } from '../lib/static-versions';
 import { IconGitHub, IconTwitter, IconRSS, IconLinkedIn, IconMastodon, IconYouTube, IconWebsite } from '../components/icons';
 import { getCtaSettings, StickyCta } from './cta-block';
+import { LanguageSwitcher } from './language-switcher';
+import { buildHreflangTags, localePath } from '../i18n/utils';
 
 interface PublicLayoutProps {
   title: string;
@@ -13,7 +17,13 @@ interface PublicLayoutProps {
   sourceTitle: string;
   sourceUrl: string;
   settings?: SettingsMap;
+  t?: TFunction;
+  locale?: string;
+  defaultLocale?: string;
+  currentPath?: string;
   children: Child;
+  /** Visitor identity from hub SSO (null if not authenticated). */
+  visitor?: VisitorContext;
 }
 
 /** Only allow http/https URLs — block javascript:, data:, file:, etc. */
@@ -27,7 +37,12 @@ function safeUrl(url: string | undefined): string | undefined {
   }
 }
 
-export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {}, children }: PublicLayoutProps) {
+const identity = (key: string) => key;
+
+export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {}, t: tProp, locale = 'en', defaultLocale: defaultLocaleProp = 'en', currentPath = '/', children, visitor }: PublicLayoutProps) {
+  const t = tProp ?? identity;
+  const dl = defaultLocaleProp as import('../i18n/types').Locale;
+  const lp = (path: string) => localePath(path, locale as import('../i18n/types').Locale, dl);
   const githubUrl = safeUrl(settings.source_social_github);
   const twitterUrl = safeUrl(settings.source_social_twitter);
   const customFooter = settings.source_custom_footer;
@@ -51,20 +66,27 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
   // HTML/scripts (analytics, fonts, etc.) and is only settable by the SERVER_TOKEN admin.
   const customHeadHtml = customHead || '';
 
-  const headContent = (head || `<title>${title} | ${sourceTitle}</title>`) + themeStyle + fontTags + customCssTag + customHeadHtml;
+  const hreflangTags = defaultLocaleProp
+    ? buildHreflangTags(currentPath, sourceUrl, defaultLocaleProp as import('../i18n/types').Locale)
+    : '';
+  const headContent = (head || `<title>${title} | ${sourceTitle}</title>`) + themeStyle + fontTags + customCssTag + customHeadHtml + hreflangTags;
 
   const codeThemeAttr = codeTheme && codeTheme !== 'default' ? codeTheme : undefined;
 
   return (
-    <Layout title={title} head={headContent} faviconUrl={faviconUrl}>
+    <Layout title={title} head={headContent} faviconUrl={faviconUrl} locale={locale}>
       <div {...(codeThemeAttr ? { 'data-code-theme': codeThemeAttr } : {})}>
+        <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:bg-primary focus:text-primary-inverse focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-semibold">
+          {t('common.skipToMainContent')}
+        </a>
+
         {/* Navigation */}
         <header class="sticky top-0 z-40 border-b border-border bg-bg-page/60 backdrop-blur-md">
           <div class="max-w-5xl mx-auto w-full px-4 sm:px-6">
             <nav class="flex items-center justify-between h-14" aria-label="Source navigation">
               {/* Left: Logo + site name */}
               <div class="flex items-center">
-                <a href="/" class="inline-flex items-center gap-1.5 text-base font-bold text-text no-underline hover:text-primary transition-colors">
+                <a href={lp('/')} class="inline-flex items-center gap-1.5 text-base font-bold text-text no-underline hover:text-primary transition-colors">
                   {logoUrl
                     ? <img src={logoUrl} alt="" height="20" class="rounded" />
                     : <img src={LOGO_SVG_URL} alt="" width="20" height="20" class="rounded" />
@@ -81,7 +103,7 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
                     target="_blank"
                     rel="noopener"
                     class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
-                    aria-label="GitHub"
+                    aria-label={t('common.social.github')}
                   >
                     <IconGitHub size={16} />
                   </a>
@@ -92,7 +114,7 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
                     target="_blank"
                     rel="noopener"
                     class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
-                    aria-label="Twitter"
+                    aria-label={t('common.social.twitter')}
                   >
                     <IconTwitter size={16} />
                   </a>
@@ -103,7 +125,7 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
                     target="_blank"
                     rel="noopener"
                     class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
-                    aria-label="LinkedIn"
+                    aria-label={t('common.social.linkedin')}
                   >
                     <IconLinkedIn size={16} />
                   </a>
@@ -114,7 +136,7 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
                     target="_blank"
                     rel="noopener"
                     class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
-                    aria-label="Mastodon"
+                    aria-label={t('common.social.mastodon')}
                   >
                     <IconMastodon size={16} />
                   </a>
@@ -125,7 +147,7 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
                     target="_blank"
                     rel="noopener"
                     class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
-                    aria-label="YouTube"
+                    aria-label={t('common.social.youtube')}
                   >
                     <IconYouTube size={16} />
                   </a>
@@ -136,24 +158,69 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
                     target="_blank"
                     rel="noopener"
                     class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
-                    aria-label="Website"
+                    aria-label={t('common.social.website')}
                   >
                     <IconWebsite size={16} />
                   </a>
                 )}
                 <a
-                  href="/feed.xml"
+                  href={lp('/feed.xml')}
                   class="p-2 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
-                  aria-label="RSS Feed"
+                  aria-label={t('common.social.rssFeed')}
                 >
                   <IconRSS size={16} />
                 </a>
 
+                {/* Visitor login / identity (hub SSO) */}
+                {settings.visitor_login_enabled === 'true' && !visitor && (
+                  <a
+                    href={`https://pignal.net/auth/visitor?return_to=${encodeURIComponent(sourceUrl + currentPath)}`}
+                    class="px-2.5 py-1 rounded-md text-xs font-medium text-muted hover:text-text hover:bg-surface-hover transition-colors"
+                  >
+                    {t('common.login')}
+                  </a>
+                )}
+                {visitor && (
+                  <div class="flex items-center gap-1">
+                    <img
+                      src={`https://github.com/${visitor.login}.png?size=32`}
+                      alt=""
+                      width="20"
+                      height="20"
+                      class="rounded-full"
+                    />
+                    <span class="text-xs text-muted max-w-[80px] truncate hidden sm:inline">{visitor.name}</span>
+                    {visitor.role === 'admin' && (
+                      <a
+                        href="/pignal"
+                        class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      >
+                        Admin
+                      </a>
+                    )}
+                    <a
+                      href="https://pignal.net/auth/visitor/logout"
+                      class="p-1 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
+                      aria-label={t('common.logout')}
+                      title={t('common.logout')}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    </a>
+                  </div>
+                )}
+
                 {/* Vertical divider */}
                 <div class="w-px h-5 bg-border mx-1" />
 
+                {/* Language switcher */}
+                <LanguageSwitcher
+                  currentLocale={(locale ?? 'en') as import('../i18n/types').Locale}
+                  defaultLocale={(defaultLocaleProp ?? 'en') as import('../i18n/types').Locale}
+                  currentPath={currentPath}
+                />
+
                 {/* Theme toggle */}
-                <button class="theme-toggle" type="button" aria-label="Toggle theme">
+                <button class="theme-toggle" type="button" aria-label={t('common.toggleTheme')}>
                 </button>
               </div>
             </nav>
@@ -166,7 +233,7 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
         </div>
 
         {/* Main content */}
-        <main id="main-content" class="flex-1">
+        <main id="main-content" class="flex-1 fade-in-page">
           {children}
         </main>
 
@@ -178,7 +245,7 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
               <span>
                 {customFooter || (
                   <>
-                    Powered by{' '}
+                    {t('public.poweredBy')}{' '}
                     <a href="https://github.com/pignal-net/pignal" rel="noopener" class="inline-flex items-center gap-1 text-muted hover:text-primary transition-colors">
                       <img src={LOGO_SVG_URL} alt="" width="14" height="14" class="rounded-sm" />
                       pignal
@@ -190,9 +257,9 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
               {/* Right: Links */}
               <div class="flex items-center gap-4">
                 {sourceUrl && (
-                  <a href={`${sourceUrl}/llms.txt`} class="text-muted hover:text-primary transition-colors">llms.txt</a>
+                  <a href={`${sourceUrl}/llms.txt`} class="text-muted hover:text-primary transition-colors">{t('public.llmsTxt')}</a>
                 )}
-                <a href="/feed.xml" class="text-muted hover:text-primary transition-colors">RSS</a>
+                <a href={lp('/feed.xml')} class="text-muted hover:text-primary transition-colors">{t('public.rss')}</a>
               </div>
             </div>
           </div>
@@ -207,6 +274,7 @@ export function PublicLayout({ title, head, sourceTitle, sourceUrl, settings = {
                 buttonText={stickyCta.buttonText}
                 buttonUrl={stickyCta.buttonUrl}
                 actionSlug={stickyCta.actionSlug}
+                t={t}
               />
             );
           }

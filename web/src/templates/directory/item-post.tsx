@@ -11,11 +11,11 @@ import { DirectoryLayout } from './layout';
 function getStatusClasses(label: string | null): string {
   if (!label) return '';
   const lower = label.toLowerCase();
-  if (lower.includes('active') || lower.includes('recommended')) return 'bg-green-500/15 text-green-600';
-  if (lower.includes('new')) return 'bg-blue-500/15 text-blue-500';
-  if (lower.includes('archived') || lower.includes('inactive') || lower.includes('stale')) return 'bg-border/50 text-muted';
-  if (lower.includes('deprecated') || lower.includes('shutting')) return 'bg-red-500/15 text-red-600';
-  return 'bg-green-500/15 text-green-600';
+  if (lower.includes('active') || lower.includes('recommended')) return 'bg-success-bg text-success border border-success-border';
+  if (lower.includes('new')) return 'bg-info-bg text-info border border-info-border';
+  if (lower.includes('archived') || lower.includes('inactive') || lower.includes('stale')) return 'bg-surface-raised text-muted border border-border';
+  if (lower.includes('deprecated') || lower.includes('shutting')) return 'bg-error-bg text-error border border-error-border';
+  return 'bg-success-bg text-success border border-success-border';
 }
 
 export function DirectoryItemPost(props: ItemPostProps) {
@@ -50,7 +50,7 @@ export function DirectoryItemPost(props: ItemPostProps) {
       <JsonLd data={jsonLd} />
 
       <div class="max-w-3xl mx-auto px-4 pt-8 pb-16">
-        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
         <article class="min-w-0 max-w-full">
           <header class="mb-6">
@@ -84,9 +84,9 @@ export function DirectoryItemPost(props: ItemPostProps) {
 
           {item.tags && item.tags.length > 0 && (
             <footer class="mt-10 pt-6 border-t border-border-subtle">
-              <div class="item-tags">
+              <div class="flex flex-wrap gap-2">
                 {item.tags.map((t) => (
-                  <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                  <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                 ))}
               </div>
             </footer>

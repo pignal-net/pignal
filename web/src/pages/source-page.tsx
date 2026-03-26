@@ -1,11 +1,9 @@
 import type { Context } from 'hono';
 import type { Item } from '@pignal/core';
-import type { ItemWithMeta, ItemStoreRpc } from '@pignal/db';
-import type { WebEnv } from '../types';
+import type { ItemWithMeta } from '@pignal/db';
+import type { WebEnv, WebVars } from '../types';
 import { isHtmxRequest } from '../lib/htmx';
 import { getTemplate } from '../templates/registry';
-
-type WebVars = { store: ItemStoreRpc; templateName: string };
 
 function toItem(row: ItemWithMeta): Item {
   return {
@@ -92,6 +90,11 @@ export async function sourcePageFeed(c: Context<{ Bindings: WebEnv; Variables: W
 
   c.header('Cache-Control', 'public, max-age=60');
 
+  const t = c.get('t');
+  const locale = c.get('locale');
+  const defaultLocale = c.get('defaultLocale');
+  const localePrefix = locale === defaultLocale ? '' : `/${locale}`;
+
   return c.html(
     <template.SourcePage
       items={items}
@@ -101,11 +104,15 @@ export async function sourcePageFeed(c: Context<{ Bindings: WebEnv; Variables: W
       settings={settings}
       filters={{ typeId, workspaceId, tag, q, sort }}
       pagination={{ limit, offset, total: result.total }}
-      paginationBase={paginationBase}
+      paginationBase={`${localePrefix}${paginationBase}`}
       sourceUrl={sourceUrl}
       isHtmxRequest={false}
       vocabulary={template.vocabulary}
       seo={template.seo}
+      t={t}
+      locale={locale}
+      defaultLocale={defaultLocale}
+      localePrefix={localePrefix}
     />
   );
 }

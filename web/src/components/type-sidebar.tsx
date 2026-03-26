@@ -1,4 +1,5 @@
 import type { ItemTypeWithActions, WorkspaceSelect } from '@pignal/db';
+import type { TFunction } from '../i18n/types';
 
 interface FilterCounts {
   total: number;
@@ -26,6 +27,7 @@ interface FilterBarProps {
   isArchived?: boolean;
   /** Total result count to display */
   totalResults?: number;
+  t?: TFunction;
 }
 
 function buildUrl(basePath: string, params: Record<string, string | undefined>): string {
@@ -37,6 +39,8 @@ function buildUrl(basePath: string, params: Record<string, string | undefined>):
   return s ? `${basePath}?${s}` : basePath;
 }
 
+const identity = (key: string) => key;
+
 export function FilterBar({
   types, activeTypeId, workspaces, activeWorkspaceId, activeTag,
   sort = 'newest', counts, query,
@@ -45,7 +49,9 @@ export function FilterBar({
   htmxIndicator = '#source-loading',
   isArchived,
   totalResults,
+  t: tProp,
 }: FilterBarProps) {
+  const t = tProp ?? identity;
   const hasWorkspaces = workspaces && workspaces.length > 0;
   const sortParam = sort === 'oldest' ? 'oldest' : undefined;
   const isAdmin = basePath !== '/';
@@ -77,6 +83,8 @@ export function FilterBar({
   // For admin, search hits the list partial endpoint
   const searchUrl = isAdmin ? `${basePath}/list` : basePath;
 
+  const searchPlaceholder = `${t('common.search')}...`;
+
   return (
     <nav class="source-filter-bar flex flex-col gap-0 mb-6" aria-label="Filters">
       {activeTag && (
@@ -94,7 +102,7 @@ export function FilterBar({
           type="text"
           name="q"
           class="feed-search flex-1 sm:max-w-[50%] h-10 m-0 px-2.5 py-1 text-sm border border-border rounded-lg bg-surface text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary-focus"
-          placeholder="Search items..."
+          placeholder={searchPlaceholder}
           value={query || ''}
           hx-get={searchUrl}
           hx-target={htmxTarget}
@@ -107,11 +115,11 @@ export function FilterBar({
         <div class="feed-tabs flex bg-surface-hover rounded-lg p-0.5 border border-border shrink-0">
           <a href={newestUrl} class={`feed-tab px-3 py-1.5 rounded-md text-xs font-medium transition-all ${sort === 'newest' ? 'feed-tab-active bg-surface text-text shadow-xs' : 'text-muted hover:text-text'}`}
             hx-get={newestUrl} hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}>
-            Newest
+            {t('common.newest')}
           </a>
           <a href={oldestUrl} class={`feed-tab px-3 py-1.5 rounded-md text-xs font-medium transition-all ${sort === 'oldest' ? 'feed-tab-active bg-surface text-text shadow-xs' : 'text-muted hover:text-text'}`}
             hx-get={oldestUrl} hx-target={htmxTarget} hx-swap="innerHTML" hx-push-url="true" hx-indicator={htmxIndicator}>
-            Oldest
+            {t('common.oldest')}
           </a>
         </div>
       </div>
@@ -134,7 +142,7 @@ export function FilterBar({
         {/* Workspace chips with hover dropdowns — hide empty workspaces */}
         {workspaces!.map((ws) => {
           const wsTypes = counts?.byWorkspaceType[ws.id] ?? {};
-          const typesWithSignals = types.filter((t) => (wsTypes[t.id] ?? 0) > 0);
+          const typesWithSignals = types.filter((tp) => (wsTypes[tp.id] ?? 0) > 0);
 
           // Skip workspaces with no types that have signals
           if (typesWithSignals.length === 0) return null;

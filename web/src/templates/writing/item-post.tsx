@@ -39,9 +39,9 @@ export function WritingItemPost(props: ItemPostProps) {
 
       <div class="max-w-[740px] mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
         <main class="min-w-0 max-w-full break-words">
-          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
-          <article class="source-article min-w-0 max-w-full">
+          <article class="source-article min-w-0 max-w-full drop-cap">
             <header class="text-center mb-8 pb-6 border-b border-border-subtle">
               <h1 class="font-serif text-3xl sm:text-4xl font-normal leading-tight mb-4 tracking-tight">{item.keySummary}</h1>
               <div class="flex items-center justify-center gap-2.5 flex-wrap text-sm text-muted">
@@ -70,7 +70,7 @@ export function WritingItemPost(props: ItemPostProps) {
               <footer class="mt-10 pt-6 border-t border-border-subtle">
                 <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag text-sm text-primary hover:underline">#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                   ))}
                 </div>
               </footer>

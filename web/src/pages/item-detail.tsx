@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
-import type { ItemStoreRpc } from '@pignal/db';
-import type { WebEnv } from '../types';
+import type { WebEnv, WebVars } from '../types';
 import type { TypeActionSelect } from '@pignal/db';
+import type { TFunction } from '../i18n/types';
 import { AppLayout } from '../components/app-layout';
 import { TypeBadge } from '../components/type-badge';
 import { VisibilityBadge } from '../components/visibility-badge';
@@ -12,11 +12,9 @@ import { formatDate } from '../lib/time';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
 import { raw } from 'hono/html';
 
-type WebVars = { store: ItemStoreRpc };
-
 /* --- Sidebar panel components (returned as HTMX partials) --- */
 
-function ItemSidebar({ id, actions, currentActionLabel, visibility, shareToken, slug, sourceUrl, csrfToken, workspaceVisibility, workspaceName, isArchived, isPinned }: {
+function ItemSidebar({ id, actions, currentActionLabel, visibility, shareToken, slug, sourceUrl, csrfToken, workspaceVisibility, workspaceName, isArchived, isPinned, t }: {
   id: string;
   actions: TypeActionSelect[];
   currentActionLabel: string | null;
@@ -29,26 +27,27 @@ function ItemSidebar({ id, actions, currentActionLabel, visibility, shareToken, 
   workspaceName: string | null;
   isArchived: boolean;
   isPinned: boolean;
+  t: TFunction;
 }) {
   // Build validation options for dropdown
   const validationOptions = [
-    { value: '', label: 'Not validated' },
+    { value: '', label: t('itemDetail.notValidated') },
     ...actions.map((a) => ({ value: a.id, label: a.label })),
   ];
   const currentValidationValue = actions.find((a) => a.label === currentActionLabel)?.id ?? '';
 
   // Build visibility options
   const visibilityOptions = [
-    { value: 'private', label: 'Private' },
-    { value: 'unlisted', label: 'Unlisted' },
-    { value: 'vouched', label: 'Vouched' },
+    { value: 'private', label: t('itemDetail.visibilityPrivate') },
+    { value: 'unlisted', label: t('itemDetail.visibilityUnlisted') },
+    { value: 'vouched', label: t('itemDetail.visibilityVouched') },
   ];
 
   return (
     <div id="item-sidebar" class="bg-surface rounded-xl border border-border-subtle shadow-card p-5">
       {/* Validation */}
       <div class="mb-5">
-        <label class="text-xs font-semibold text-muted uppercase tracking-wide block mb-2">Validation</label>
+        <label class="text-xs font-semibold text-muted uppercase tracking-wide block mb-2">{t('itemDetail.validation')}</label>
         <div class="form-dropdown form-dropdown-compact">
           <button type="button" class="form-dropdown-trigger" aria-haspopup="listbox">
             <span class="form-dropdown-label">{currentActionLabel ?? 'Not validated'}</span>
@@ -75,10 +74,10 @@ function ItemSidebar({ id, actions, currentActionLabel, visibility, shareToken, 
 
       {/* Visibility */}
       <div class="mb-5">
-        <label class="text-xs font-semibold text-muted uppercase tracking-wide block mb-2">Visibility</label>
+        <label class="text-xs font-semibold text-muted uppercase tracking-wide block mb-2">{t('itemDetail.visibility')}</label>
         <div class="form-dropdown form-dropdown-compact">
           <button type="button" class="form-dropdown-trigger" aria-haspopup="listbox">
-            <span class="form-dropdown-label">{visibilityOptions.find((o) => o.value === visibility)?.label ?? 'Private'}</span>
+            <span class="form-dropdown-label">{visibilityOptions.find((o) => o.value === visibility)?.label ?? t('itemDetail.visibilityPrivate')}</span>
           </button>
           <ul role="listbox" class="form-dropdown-list">
             {visibilityOptions.map((opt) => (
@@ -117,17 +116,17 @@ function ItemSidebar({ id, actions, currentActionLabel, visibility, shareToken, 
           hx-post={`/pignal/items/${id}/${isPinned ? 'unpin' : 'pin'}`}
           hx-vals={JSON.stringify({ _csrf: csrfToken })}
           hx-target="#item-sidebar"
-          hx-swap="outerHTML">{isPinned ? 'Unpin' : 'Pin'}</a>
+          hx-swap="outerHTML">{isPinned ? t('itemDetail.unpin') : t('itemDetail.pin')}</a>
         <a href="#" class="outline btn-sm"
           hx-post={`/pignal/items/${id}/${isArchived ? 'unarchive' : 'archive'}`}
           hx-vals={JSON.stringify({ _csrf: csrfToken })}
           hx-target="#item-sidebar"
-          hx-swap="outerHTML">{isArchived ? 'Unarchive' : 'Archive'}</a>
+          hx-swap="outerHTML">{isArchived ? t('itemDetail.unarchive') : t('itemDetail.archive')}</a>
         <a href="#" class="outline btn-sm text-error"
           hx-post={`/pignal/items/${id}/delete`}
           hx-vals={JSON.stringify({ _csrf: csrfToken })}
-          hx-confirm="Delete this item permanently? This cannot be undone."
-          hx-swap="none">Delete</a>
+          hx-confirm={t('itemDetail.confirmDelete')}
+          hx-swap="none">{t('itemDetail.deleteItem')}</a>
       </div>
     </div>
   );
@@ -138,12 +137,15 @@ function ItemSidebar({ id, actions, currentActionLabel, visibility, shareToken, 
 export async function itemDetailPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
   const store = c.get('store');
+  const t = c.get('t');
+  const locale = c.get('locale');
+  const defaultLocale = c.get('defaultLocale');
   const [item, types] = await Promise.all([store.get(id), store.listTypes()]);
 
   if (!item) {
     return c.html(<p>Item not found.</p>, 404);
   }
-  const currentType = types.find((t) => t.id === item.typeId);
+  const currentType = types.find((tp) => tp.id === item.typeId);
   const actions = currentType?.actions ?? [];
   const csrfToken = getCsrfToken(c);
   const sourceUrl = new URL(c.req.url).origin;
@@ -151,12 +153,12 @@ export async function itemDetailPage(c: Context<{ Bindings: WebEnv; Variables: W
   const renderedContent = renderMarkdown(item.content);
 
   return c.html(
-    <AppLayout title={item.keySummary} currentPath="/pignal/items" csrfToken={csrfToken}>
+    <AppLayout title={item.keySummary} currentPath="/pignal/items" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale}>
       {/* Back navigation */}
       <nav class="mb-6">
         <a href="/pignal/items" class="inline-flex items-center gap-1 text-sm text-muted hover:text-primary transition-colors px-3 py-1.5 rounded-full hover:bg-surface-hover">
           <IconChevronLeft size={14} />
-          Back to items
+          {t('common.back')}
         </a>
       </nav>
 
@@ -166,7 +168,7 @@ export async function itemDetailPage(c: Context<{ Bindings: WebEnv; Variables: W
           {/* Metadata badges */}
           <div class="flex items-center gap-2 text-xs text-muted flex-wrap mb-3">
             <TypeBadge typeName={item.typeName} />
-            <VisibilityBadge visibility={item.visibility ?? 'private'} />
+            <VisibilityBadge visibility={item.visibility ?? 'private'} t={t} />
             {item.workspaceName && <span>{item.workspaceName}</span>}
             <time datetime={item.createdAt}>{formatDate(item.createdAt)}</time>
             <span>Source: {item.sourceAi}</span>
@@ -207,6 +209,7 @@ export async function itemDetailPage(c: Context<{ Bindings: WebEnv; Variables: W
             workspaceName={item.workspaceName}
             isArchived={item.isArchived === 1}
             isPinned={!!item.pinnedAt}
+            t={t}
           />
         </aside>
       </div>
@@ -219,9 +222,10 @@ export async function itemDetailPage(c: Context<{ Bindings: WebEnv; Variables: W
 /** Helper: re-render the full sidebar after any action. */
 async function renderSidebar(c: Context<{ Bindings: WebEnv; Variables: WebVars }>, id: string) {
   const store = c.get('store');
+  const t = c.get('t');
   const [item, types] = await Promise.all([store.get(id), store.listTypes()]);
   if (!item) return c.text('Not found', 404);
-  const currentType = types.find((t) => t.id === item.typeId);
+  const currentType = types.find((tp) => tp.id === item.typeId);
   const typeActions = currentType?.actions ?? [];
   const csrfToken = getCsrfToken(c);
   const sourceUrl = new URL(c.req.url).origin;
@@ -241,6 +245,7 @@ async function renderSidebar(c: Context<{ Bindings: WebEnv; Variables: WebVars }
       workspaceName={item.workspaceName}
       isArchived={item.isArchived === 1}
       isPinned={!!item.pinnedAt}
+      t={t}
     />
   );
 }
@@ -248,12 +253,13 @@ async function renderSidebar(c: Context<{ Bindings: WebEnv; Variables: WebVars }
 export async function validateHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
   const store = c.get('store');
+  const t = c.get('t');
   const body = await c.req.parseBody();
   const actionId = (body.actionId as string) || null;
   await store.validate(id, actionId || null);
 
   if (isHtmxRequest(c)) {
-    c.header('HX-Trigger', toastTrigger(actionId ? 'Validation updated' : 'Validation cleared'));
+    c.header('HX-Trigger', toastTrigger(t('itemDetail.toast.validated')));
     return renderSidebar(c, id);
   }
   return c.redirect(`/pignal/items/${id}`);
@@ -261,9 +267,10 @@ export async function validateHandler(c: Context<{ Bindings: WebEnv; Variables: 
 
 export async function archiveHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
+  const t = c.get('t');
   await c.get('store').archive(id);
   if (isHtmxRequest(c)) {
-    c.header('HX-Trigger', toastTrigger('Item archived'));
+    c.header('HX-Trigger', toastTrigger(t('itemDetail.toast.archived')));
     return renderSidebar(c, id);
   }
   return c.redirect(`/pignal/items/${id}`);
@@ -271,9 +278,10 @@ export async function archiveHandler(c: Context<{ Bindings: WebEnv; Variables: W
 
 export async function unarchiveHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
+  const t = c.get('t');
   await c.get('store').unarchive(id);
   if (isHtmxRequest(c)) {
-    c.header('HX-Trigger', toastTrigger('Item unarchived'));
+    c.header('HX-Trigger', toastTrigger(t('itemDetail.toast.unarchived')));
     return renderSidebar(c, id);
   }
   return c.redirect(`/pignal/items/${id}`);
@@ -281,9 +289,10 @@ export async function unarchiveHandler(c: Context<{ Bindings: WebEnv; Variables:
 
 export async function pinHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
+  const t = c.get('t');
   await c.get('store').pin(id);
   if (isHtmxRequest(c)) {
-    c.header('HX-Trigger', toastTrigger('Item pinned'));
+    c.header('HX-Trigger', toastTrigger(t('itemDetail.toast.pinned')));
     return renderSidebar(c, id);
   }
   return c.redirect(`/pignal/items/${id}`);
@@ -291,9 +300,10 @@ export async function pinHandler(c: Context<{ Bindings: WebEnv; Variables: WebVa
 
 export async function unpinHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
+  const t = c.get('t');
   await c.get('store').unpin(id);
   if (isHtmxRequest(c)) {
-    c.header('HX-Trigger', toastTrigger('Item unpinned'));
+    c.header('HX-Trigger', toastTrigger(t('itemDetail.toast.unpinned')));
     return renderSidebar(c, id);
   }
   return c.redirect(`/pignal/items/${id}`);
@@ -302,6 +312,7 @@ export async function unpinHandler(c: Context<{ Bindings: WebEnv; Variables: Web
 export async function visibilityHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const id = c.req.param('id')!;
   const store = c.get('store');
+  const t = c.get('t');
   const body = await c.req.parseBody();
   const rawVisibility = body.visibility as string;
   if (!['private', 'unlisted', 'vouched'].includes(rawVisibility)) {
@@ -316,7 +327,7 @@ export async function visibilityHandler(c: Context<{ Bindings: WebEnv; Variables
   await store.vouch(id, { visibility: rawVisibility as 'private' | 'unlisted' | 'vouched' });
 
   if (isHtmxRequest(c)) {
-    c.header('HX-Trigger', toastTrigger('Visibility updated'));
+    c.header('HX-Trigger', toastTrigger(t('itemDetail.toast.visibilityUpdated')));
     return renderSidebar(c, id);
   }
   return c.redirect(`/pignal/items/${id}`);

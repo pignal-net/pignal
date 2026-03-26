@@ -1,5 +1,6 @@
 import type { SourcePageProps } from '@pignal/templates';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
@@ -7,8 +8,10 @@ import { AwesomeListLayout } from './layout';
 
 const HX_TARGET = '#source-results';
 const HX_INDICATOR = '#source-loading';
+const HX_SWAP = 'innerHTML';
+
 function hxProps(url: string) {
-  return { 'hx-get': url, 'hx-target': HX_TARGET, 'hx-swap': 'innerHTML', 'hx-push-url': 'true', 'hx-indicator': HX_INDICATOR };
+  return { 'hx-get': url, 'hx-target': HX_TARGET, 'hx-swap': HX_SWAP, 'hx-push-url': 'true', 'hx-indicator': HX_INDICATOR };
 }
 
 /**
@@ -45,6 +48,7 @@ export function AwesomeListSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'Awesome List';
@@ -105,12 +109,12 @@ export function AwesomeListSourcePage(props: SourcePageProps) {
       <JsonLd data={jsonLd} />
 
       <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
-        {/* Category navigation bar */}
+        {/* Category navigation bar with filter-chip styling */}
         {publicWorkspaces.length > 0 && (
-          <nav class="flex flex-wrap gap-1 py-3 mb-4 border-b border-border-subtle">
+          <nav class="flex flex-wrap gap-1.5 py-3 mb-5 border-b border-border-subtle" aria-label={`Filter by ${vocabulary.workspace}`}>
             <a
               href="/"
-              class={`inline-block px-2.5 py-1 text-xs rounded transition-colors ${!filters.workspaceId ? 'bg-primary text-white' : 'text-muted hover:bg-surface hover:text-text'}`}
+              class={`filter-chip ${!filters.workspaceId ? 'active' : ''}`}
               {...hxProps('/')}
             >
               All
@@ -118,7 +122,7 @@ export function AwesomeListSourcePage(props: SourcePageProps) {
             {publicWorkspaces.map((ws) => (
               <a
                 href={`/?workspace=${ws.id}`}
-                class={`inline-block px-2.5 py-1 text-xs rounded transition-colors ${filters.workspaceId === ws.id ? 'bg-primary text-white' : 'text-muted hover:bg-surface hover:text-text'}`}
+                class={`filter-chip ${filters.workspaceId === ws.id ? 'active' : ''}`}
                 {...hxProps(`/?workspace=${ws.id}`)}
               >
                 {ws.name}
@@ -130,24 +134,27 @@ export function AwesomeListSourcePage(props: SourcePageProps) {
         <div id="source-loading" class="source-loading htmx-indicator">
           <span class="app-spinner" />
         </div>
-        <div id="source-results">
+        <div id="source-results" aria-live="polite">
           {items.length === 0 ? (
-            <div class="empty-state">
-              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-              <p class="empty-state-title">No items found</p>
-              <p class="empty-state-description">No {vocabulary.itemPlural} matching this filter.</p>
-            </div>
+            <EmptyState
+              icon="search"
+              title={`No ${vocabulary.itemPlural} found`}
+              description="Try adjusting your search or filters."
+            />
           ) : (
             <>
               {/* Table of contents for sections */}
               {hasSections && !filters.workspaceId && (
-                <nav class="mb-6 p-3 sm:p-4 bg-surface border border-border-subtle shadow-card rounded-xl">
+                <nav class="mb-6 p-3 sm:p-4 bg-surface border border-border-subtle shadow-card rounded-xl" aria-label="Table of contents">
                   <strong class="text-xs uppercase tracking-widest text-muted">Contents</strong>
                   <ul class="mt-2 pl-5 list-none">
                     {sections.map((section) => {
                       const anchor = section.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
                       return (
-                        <li class="text-sm leading-relaxed text-muted"><a href={`#section-${anchor}`} class="text-primary no-underline hover:underline">{section.name}</a> ({section.items.length})</li>
+                        <li class="text-sm leading-relaxed text-muted">
+                          <a href={`#section-${anchor}`} class="text-primary no-underline hover:underline transition-colors">{section.name}</a>
+                          <span class="text-xs ml-1 opacity-70">({section.items.length})</span>
+                        </li>
                       );
                     })}
                   </ul>
@@ -168,14 +175,17 @@ export function AwesomeListSourcePage(props: SourcePageProps) {
                         const desc = stripMarkdown(item.content).slice(0, 120);
                         const isLast = index === section.items.length - 1;
                         return (
-                          <li class={`py-1.5 md:py-2 leading-relaxed ${!isLast ? 'border-b border-dotted border-border-subtle' : ''}`}>
+                          <li class={`card-hover py-2 md:py-2.5 px-2 rounded-lg leading-relaxed transition-colors hover:bg-primary/4 ${!isLast ? 'border-b border-dotted border-border-subtle' : ''}`}>
                             {item.slug ? (
-                              <a href={`/item/${item.slug}`} class="font-medium text-primary text-sm no-underline hover:underline">{item.keySummary}</a>
+                              <a href={`/item/${item.slug}`} class="font-medium text-primary text-sm no-underline hover:underline inline-flex items-center gap-1">
+                                {item.keySummary}
+                                <svg class="w-3 h-3 opacity-40 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17l9.2-9.2M17 17V7H7" /></svg>
+                              </a>
                             ) : (
                               <span class="font-medium text-primary text-sm">{item.keySummary}</span>
                             )}
                             {desc && (
-                              <span class="text-sm text-muted"> — {desc}{item.content.length > 120 ? '...' : ''}</span>
+                              <span class="text-sm text-muted"> — {desc}</span>
                             )}
                             {item.tags && item.tags.length > 0 && (
                               <span class="inline-flex gap-1 ml-1.5">
@@ -196,6 +206,8 @@ export function AwesomeListSourcePage(props: SourcePageProps) {
                 limit={pagination.limit}
                 offset={pagination.offset}
                 baseUrl={paginationBase}
+                htmxTarget={HX_TARGET}
+                t={t}
               />
             </>
           )}

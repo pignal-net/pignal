@@ -41,12 +41,14 @@ export function ShopItemPost(props: ItemPostProps) {
       <JsonLd data={jsonLd} />
 
       <div class="max-w-3xl mx-auto px-4 pt-8 pb-16">
-        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
         {/* Hero section: image + info side by side */}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 items-start">
-          <div class="aspect-square bg-gradient-to-br from-primary/5 to-primary/15 rounded-xl flex items-center justify-center text-6xl text-primary opacity-50 border border-border-subtle shadow-card">
-            <span>{icon}</span>
+          <div class="overflow-hidden rounded-xl border border-border-subtle shadow-card">
+            <div class="aspect-square bg-gradient-to-br from-primary/5 to-primary/15 flex items-center justify-center text-6xl text-primary opacity-50">
+              <span>{icon}</span>
+            </div>
           </div>
           <div>
             <h1 class="text-3xl sm:text-4xl font-bold leading-tight mb-4">{item.keySummary}</h1>
@@ -71,9 +73,9 @@ export function ShopItemPost(props: ItemPostProps) {
             </div>
             <p class="text-[0.95rem] text-muted leading-relaxed mb-4">{excerpt}{item.content.length > 300 ? '...' : ''}</p>
             {item.tags && item.tags.length > 0 && (
-              <div class="item-tags">
+              <div class="flex flex-wrap gap-2">
                 {item.tags.map((t) => (
-                  <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                  <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                 ))}
               </div>
             )}

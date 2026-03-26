@@ -38,14 +38,14 @@ export function AwesomeListItemPost(props: ItemPostProps) {
 
       <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
         <main class="min-w-0 max-w-full break-words">
-          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
           <article class="source-article min-w-0 max-w-full">
             <header>
               <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight mb-4">{item.keySummary}</h1>
               <div class="flex items-center gap-2.5 flex-wrap text-xs text-muted">
                 {item.workspaceName && (
-                  <a href={`/?workspace=${item.workspaceId}`} class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">{item.workspaceName}</a>
+                  <a href={`/?workspace=${item.workspaceId}`} class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary no-underline hover:bg-primary/20 transition-colors">{item.workspaceName}</a>
                 )}
                 {githubUrl ? (
                   <a href={githubUrl} target="_blank" rel="noopener" class="font-medium text-text hover:text-primary transition-colors">
@@ -58,7 +58,7 @@ export function AwesomeListItemPost(props: ItemPostProps) {
                   {formatDate(item.vouchedAt || item.createdAt)}
                 </time>
                 {item.validationActionLabel && (
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-success/80 bg-success/10">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success-bg text-success border border-success-border">
                     {item.validationActionLabel} by {sourceAuthor}
                   </span>
                 )}
@@ -71,7 +71,7 @@ export function AwesomeListItemPost(props: ItemPostProps) {
               <footer class="mt-10 pt-6 border-t border-border-subtle">
                 <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag text-sm text-primary hover:underline">#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                   ))}
                 </div>
               </footer>

@@ -1,11 +1,14 @@
 import type { Context } from 'hono';
-import type { ApiKeyInfo, ItemStoreRpc, WorkspaceSelect } from '@pignal/db';
+import type { ApiKeyInfo, WorkspaceSelect } from '@pignal/db';
 import type { ApiKeyStore } from '@pignal/core/store/api-keys';
-import type { WebEnv } from '../types';
+import type { WebEnv, WebVars } from '../types';
+import type { TFunction } from '../i18n/types';
 import { VALID_PERMISSIONS } from '@pignal/core/auth/permissions';
+
+type PageVars = WebVars & { apiKeyStore: ApiKeyStore };
 import { AppLayout } from '../components/app-layout';
 import { PageHeader } from '../components/page-header';
-import { ManagedList } from '../components/managed-list';
+import { ManagedList, TableResultsWrapper } from '../components/managed-list';
 import type { SortTab, BulkAction, TableColumn } from '../components/managed-list';
 import type { RowAction } from '../components/feed-item';
 import { TableRow, TableCell, TableActions, RowActions } from '../components/feed-item';
@@ -14,21 +17,21 @@ import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
 import { relativeTime } from '../lib/time';
 
-type WebVars = { store: ItemStoreRpc; apiKeyStore: ApiKeyStore };
-
-/** Human-readable labels for each permission. */
-const PERMISSION_META: Record<string, { label: string; desc: string }> = {
-  save_item: { label: 'Save Item', desc: 'Create new items via REST API or MCP' },
-  list_items: { label: 'List Items', desc: 'List, view, and search items' },
-  edit_item: { label: 'Edit Item', desc: 'Update, archive/unarchive, and vouch items' },
-  delete_item: { label: 'Delete Item', desc: 'Permanently delete items' },
-  validate_item: { label: 'Validate Item', desc: 'Apply validation actions to items' },
-  get_metadata: { label: 'Get Metadata', desc: 'View types, workspaces, stats, and settings' },
-  manage_types: { label: 'Manage Types', desc: 'Create, update, and delete item types' },
-  manage_workspaces: { label: 'Manage Workspaces', desc: 'Create, update, and delete workspaces' },
-  manage_settings: { label: 'Manage Settings', desc: 'Modify server settings' },
-  manage_actions: { label: 'Manage Actions', desc: 'Create and manage forms and submissions' },
-};
+/** Human-readable labels for each permission, using i18n. */
+function getPermissionMeta(t: TFunction): Record<string, { label: string; desc: string }> {
+  return {
+    save_item: { label: t('apiKeys.permission.saveItem'), desc: t('apiKeys.permission.saveItemDesc') },
+    list_items: { label: t('apiKeys.permission.listItems'), desc: t('apiKeys.permission.listItemsDesc') },
+    edit_item: { label: t('apiKeys.permission.editItem'), desc: t('apiKeys.permission.editItemDesc') },
+    delete_item: { label: t('apiKeys.permission.deleteItem'), desc: t('apiKeys.permission.deleteItemDesc') },
+    validate_item: { label: t('apiKeys.permission.validateItem'), desc: t('apiKeys.permission.validateItemDesc') },
+    get_metadata: { label: t('apiKeys.permission.getMetadata'), desc: t('apiKeys.permission.getMetadataDesc') },
+    manage_types: { label: t('apiKeys.permission.manageTypes'), desc: t('apiKeys.permission.manageTypesDesc') },
+    manage_workspaces: { label: t('apiKeys.permission.manageWorkspaces'), desc: t('apiKeys.permission.manageWorkspacesDesc') },
+    manage_settings: { label: t('apiKeys.permission.manageSettings'), desc: t('apiKeys.permission.manageSettingsDesc') },
+    manage_actions: { label: t('apiKeys.permission.manageActions'), desc: t('apiKeys.permission.manageActionsDesc') },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -47,16 +50,18 @@ function sortKeys(keys: ApiKeyInfo[], sort: string): ApiKeyInfo[] {
 // Feed row
 // ---------------------------------------------------------------------------
 
-const API_KEY_COLUMNS: TableColumn[] = [
-  { key: 'name', label: 'Name' },
-  { key: 'permissions', label: 'Permissions' },
-  { key: 'workspace', label: 'Workspace' },
-  { key: 'created', label: 'Created', class: 'text-muted whitespace-nowrap' },
-  { key: 'lastUsed', label: 'Last Used', class: 'text-muted whitespace-nowrap' },
-  { key: 'expires', label: 'Expires', class: 'text-muted whitespace-nowrap' },
-];
+function getApiKeyColumns(t: TFunction): TableColumn[] {
+  return [
+    { key: 'name', label: t('apiKeys.column.name') },
+    { key: 'permissions', label: t('apiKeys.column.permissions') },
+    { key: 'workspace', label: t('apiKeys.column.workspace') },
+    { key: 'created', label: t('apiKeys.column.created'), class: 'text-muted whitespace-nowrap' },
+    { key: 'lastUsed', label: t('apiKeys.column.lastUsed'), class: 'text-muted whitespace-nowrap' },
+    { key: 'expires', label: t('apiKeys.column.expires'), class: 'text-muted whitespace-nowrap' },
+  ];
+}
 
-function ApiKeyTableRow({ apiKey, csrfToken }: { apiKey: ApiKeyInfo; csrfToken: string }) {
+function ApiKeyTableRow({ apiKey, csrfToken, t }: { apiKey: ApiKeyInfo; csrfToken: string; t: TFunction }) {
   const perms = apiKey.scopes.split(',').filter(Boolean);
   const isExpired = apiKey.expiresAt && new Date(apiKey.expiresAt) < new Date();
   const permsSummary = perms.length <= 3
@@ -67,16 +72,16 @@ function ApiKeyTableRow({ apiKey, csrfToken }: { apiKey: ApiKeyInfo; csrfToken: 
     <TableRow id={`key-${apiKey.id}`} bulkValue={apiKey.id}>
       <TableCell>
         <span class="font-medium">{apiKey.name}</span>
-        {isExpired && <span class="text-xs text-error ml-1">(expired)</span>}
+        {isExpired && <span class="text-xs text-error ml-1">{t('common.expired')}</span>}
       </TableCell>
       <TableCell class="text-xs">{permsSummary}</TableCell>
-      <TableCell class="text-xs text-muted">{apiKey.workspaceIds ? 'Restricted' : 'All'}</TableCell>
+      <TableCell class="text-xs text-muted">{apiKey.workspaceIds ? t('apiKeys.workspaceRestricted') : t('apiKeys.workspaceAll')}</TableCell>
       <TableCell class="text-muted whitespace-nowrap">{relativeTime(apiKey.createdAt)}</TableCell>
       <TableCell class="text-muted whitespace-nowrap">{apiKey.lastUsedAt ? relativeTime(apiKey.lastUsedAt) : '\u2014'}</TableCell>
-      <TableCell class="text-muted whitespace-nowrap">{apiKey.expiresAt ? new Date(apiKey.expiresAt).toLocaleDateString() : 'Never'}</TableCell>
+      <TableCell class="text-muted whitespace-nowrap">{apiKey.expiresAt ? new Date(apiKey.expiresAt).toLocaleDateString() : t('apiKeys.neverExpires')}</TableCell>
       <TableActions>
         <RowActions actions={[
-          { label: 'Revoke', hxPost: `/pignal/api-keys/${apiKey.id}/delete`, hxTarget: `#key-${apiKey.id}`, hxSwap: 'delete', hxConfirm: 'Revoke this API key? This cannot be undone.', destructive: true, csrf: csrfToken },
+          { label: t('apiKeys.action.revoke'), hxPost: `/pignal/api-keys/${apiKey.id}/delete`, hxTarget: `#key-${apiKey.id}`, hxSwap: 'delete', hxConfirm: t('apiKeys.bulk.confirmRevoke'), destructive: true, csrf: csrfToken },
         ] satisfies RowAction[]} />
       </TableActions>
     </TableRow>
@@ -90,21 +95,26 @@ function ApiKeyTableRow({ apiKey, csrfToken }: { apiKey: ApiKeyInfo; csrfToken: 
 function ApiKeyTableResults({
   keys,
   csrfToken,
+  t,
 }: {
   keys: ApiKeyInfo[];
   csrfToken: string;
+  t: TFunction;
 }) {
-  const colCount = API_KEY_COLUMNS.length + 2; // +1 bulk checkbox, +1 actions
+  const columns = getApiKeyColumns(t);
+  const colCount = columns.length + 2; // +1 bulk checkbox, +1 actions
   return (
-    <tbody id="keys-feed" class="managed-table-body">
-      {keys.length === 0 ? (
-        <tr><td colspan={colCount} class="managed-table-td text-center py-8 text-muted">No API keys created yet.</td></tr>
-      ) : (
-        keys.map((k) => (
-          <ApiKeyTableRow apiKey={k} csrfToken={csrfToken} />
-        ))
-      )}
-    </tbody>
+    <TableResultsWrapper id="keys" columns={columns} hasBulk>
+      <tbody id="keys-feed" class="managed-table-body">
+        {keys.length === 0 ? (
+          <tr><td colspan={colCount} class="managed-table-td text-center py-8 text-muted">{t('apiKeys.empty')}</td></tr>
+        ) : (
+          keys.map((k) => (
+            <ApiKeyTableRow apiKey={k} csrfToken={csrfToken} t={t} />
+          ))
+        )}
+      </tbody>
+    </TableResultsWrapper>
   );
 }
 
@@ -112,7 +122,10 @@ function ApiKeyTableResults({
 // Main page handler
 // ---------------------------------------------------------------------------
 
-export async function apiKeysPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function apiKeysPage(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
+  const t = c.get('t');
+  const locale = c.get('locale');
+  const defaultLocale = c.get('defaultLocale');
   const csrfToken = getCsrfToken(c);
   const apiKeyStore = c.get('apiKeyStore');
   const sort = c.req.query('sort') || 'newest';
@@ -124,23 +137,25 @@ export async function apiKeysPage(c: Context<{ Bindings: WebEnv; Variables: WebV
 
   // HTMX partial
   if (isHtmxRequest(c)) {
-    return c.html(<ApiKeyTableResults keys={sorted} csrfToken={csrfToken} />);
+    return c.html(<ApiKeyTableResults keys={sorted} csrfToken={csrfToken} t={t} />);
   }
 
+  const columns = getApiKeyColumns(t);
+
   const sortTabs: SortTab[] = [
-    { label: 'Newest', value: 'newest', active: sort === 'newest', href: '/pignal/api-keys' },
-    { label: 'Oldest', value: 'oldest', active: sort === 'oldest', href: '/pignal/api-keys?sort=oldest' },
+    { label: t('common.newest'), value: 'newest', active: sort === 'newest', href: '/pignal/api-keys' },
+    { label: t('common.oldest'), value: 'oldest', active: sort === 'oldest', href: '/pignal/api-keys?sort=oldest' },
   ];
 
   const bulkActions: BulkAction[] = [
-    { label: 'Revoke', action: '/pignal/api-keys/bulk-revoke', confirm: 'Revoke all selected API keys? This cannot be undone.', destructive: true },
+    { label: t('apiKeys.bulk.revoke'), action: '/pignal/api-keys/bulk-revoke', confirm: t('apiKeys.bulk.confirmRevoke'), destructive: true },
   ];
 
   return c.html(
-    <AppLayout title="API Keys" currentPath="/pignal/api-keys" csrfToken={csrfToken}>
+    <AppLayout title={t('apiKeys.title')} currentPath="/pignal/api-keys" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale}>
       <PageHeader
-        title="API Keys"
-        description="Manage access tokens for the REST API and MCP."
+        title={t('apiKeys.title')}
+        description={t('apiKeys.description')}
         count={keys.length}
       />
 
@@ -150,22 +165,22 @@ export async function apiKeysPage(c: Context<{ Bindings: WebEnv; Variables: WebV
         bulkActions={bulkActions}
         csrfToken={csrfToken}
         totalCount={sorted.length}
-        emptyMessage="No API keys created yet. Create one to get started with programmatic access."
+        emptyMessage={t('apiKeys.emptyMessage')}
         pushUrl
         display="table"
-        columns={API_KEY_COLUMNS}
+        columns={columns}
         addButton={
           <button
             class="outline btn-sm ml-auto"
             hx-get="/pignal/api-keys/add-form"
             hx-target="#app-dialog-content"
           >
-            + Add
+            {t('common.add')}
           </button>
         }
       >
         {sorted.map((k) => (
-          <ApiKeyTableRow apiKey={k} csrfToken={csrfToken} />
+          <ApiKeyTableRow apiKey={k} csrfToken={csrfToken} t={t} />
         ))}
       </ManagedList>
     </AppLayout>,
@@ -176,13 +191,14 @@ export async function apiKeysPage(c: Context<{ Bindings: WebEnv; Variables: WebV
 // Add form dialog
 // ---------------------------------------------------------------------------
 
-function PermissionCheckboxes() {
+function PermissionCheckboxes({ t }: { t: TFunction }) {
+  const permissionMeta = getPermissionMeta(t);
   return (
     <fieldset class="border border-border rounded-xl p-4 mt-3">
-      <legend class="text-sm font-semibold px-1">Permissions</legend>
+      <legend class="text-sm font-semibold px-1">{t('apiKeys.create.permissions')}</legend>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
         {VALID_PERMISSIONS.map((perm) => {
-          const meta = PERMISSION_META[perm] ?? { label: perm, desc: '' };
+          const meta = permissionMeta[perm] ?? { label: perm, desc: '' };
           return (
             <label class="flex items-start gap-2 cursor-pointer mb-0">
               <input type="checkbox" name="permissions" value={perm} checked class="mt-0.5" />
@@ -198,11 +214,11 @@ function PermissionCheckboxes() {
   );
 }
 
-function WorkspaceSelector({ workspaces }: { workspaces: WorkspaceSelect[] }) {
+function WorkspaceSelector({ workspaces, t }: { workspaces: WorkspaceSelect[]; t: TFunction }) {
   if (workspaces.length === 0) return null;
   return (
     <fieldset class="border border-border rounded-xl p-4 mt-3">
-      <legend class="text-sm font-semibold px-1">Workspace Access</legend>
+      <legend class="text-sm font-semibold px-1">{t('apiKeys.create.workspaceAccess')}</legend>
       <input type="hidden" name="totalWorkspaces" value={String(workspaces.length)} />
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-2">
         {workspaces.map((ws) => (
@@ -219,7 +235,8 @@ function WorkspaceSelector({ workspaces }: { workspaces: WorkspaceSelect[] }) {
   );
 }
 
-export async function addApiKeyFormHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function addApiKeyFormHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
+  const t = c.get('t');
   const csrfToken = getCsrfToken(c);
   const store = c.get('store');
   const workspaces = await store.listWorkspaces();
@@ -227,7 +244,7 @@ export async function addApiKeyFormHandler(c: Context<{ Bindings: WebEnv; Variab
   return c.html(
     <div>
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold">Create API Key</h3>
+        <h3 class="text-lg font-semibold">{t('apiKeys.create.title')}</h3>
         <button type="button" class="dialog-close" data-close-dialog>&times;</button>
       </div>
       <form
@@ -238,28 +255,28 @@ export async function addApiKeyFormHandler(c: Context<{ Bindings: WebEnv; Variab
         <input type="hidden" name="_csrf" value={csrfToken} />
         <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4">
           <label>
-            Key Name
-            <input type="text" name="name" required maxlength={100} placeholder="e.g., federation, claude-desktop" />
+            {t('apiKeys.create.keyName')}
+            <input type="text" name="name" required maxlength={100} placeholder={t('apiKeys.create.keyNamePlaceholder')} />
           </label>
           <label>
-            Expiry
+            {t('apiKeys.create.expiry')}
             <FormDropdown
               name="expiryDays"
               value="90"
               options={[
-                { value: '30', label: '30 days' },
-                { value: '90', label: '90 days' },
-                { value: '365', label: '1 year' },
-                { value: '', label: 'No expiry' },
+                { value: '30', label: t('apiKeys.create.expiry30Days') },
+                { value: '90', label: t('apiKeys.create.expiry90Days') },
+                { value: '365', label: t('apiKeys.create.expiry1Year') },
+                { value: '', label: t('apiKeys.create.expiryNever') },
               ]}
             />
           </label>
         </div>
 
-        <PermissionCheckboxes />
-        <WorkspaceSelector workspaces={workspaces} />
+        <PermissionCheckboxes t={t} />
+        <WorkspaceSelector workspaces={workspaces} t={t} />
 
-        <button type="submit" class="btn mt-4 w-full">Create Key</button>
+        <button type="submit" class="btn mt-4 w-full">{t('apiKeys.create.button')}</button>
       </form>
     </div>,
   );
@@ -269,14 +286,15 @@ export async function addApiKeyFormHandler(c: Context<{ Bindings: WebEnv; Variab
 // Create API key handler — shows raw key in dialog
 // ---------------------------------------------------------------------------
 
-export async function createApiKeyHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function createApiKeyHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
+  const t = c.get('t');
   const body = await c.req.parseBody({ all: true });
   const name = (body.name as string)?.trim();
   const expiryDays = body.expiryDays ? parseInt(body.expiryDays as string, 10) : undefined;
 
   if (!name) {
-    c.header('HX-Trigger', toastTrigger('Key name is required', 'error'));
-    return c.html(<p class="text-error text-sm">Key name is required.</p>);
+    c.header('HX-Trigger', toastTrigger(t('apiKeys.error.nameRequired'), 'error'));
+    return c.html(<p class="text-error text-sm">{t('apiKeys.error.nameRequired')}</p>);
   }
 
   const rawPermissions = body.permissions;
@@ -287,8 +305,8 @@ export async function createApiKeyHandler(c: Context<{ Bindings: WebEnv; Variabl
       : [];
 
   if (selectedPermissions.length === 0) {
-    c.header('HX-Trigger', toastTrigger('At least one permission is required', 'error'));
-    return c.html(<p class="text-error text-sm">At least one permission is required.</p>);
+    c.header('HX-Trigger', toastTrigger(t('apiKeys.error.permissionRequired'), 'error'));
+    return c.html(<p class="text-error text-sm">{t('apiKeys.error.permissionRequired')}</p>);
   }
 
   const rawWorkspaceIds = body.workspaceIds;
@@ -316,38 +334,38 @@ export async function createApiKeyHandler(c: Context<{ Bindings: WebEnv; Variabl
     allWorkspacesSelected || selectedWorkspaceIds.length === 0 ? null : selectedWorkspaceIds,
   );
 
-  c.header('HX-Trigger', toastTrigger('API key created'));
+  c.header('HX-Trigger', toastTrigger(t('apiKeys.success.title')));
 
   return c.html(
     <div>
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold">API Key Created</h3>
+        <h3 class="text-lg font-semibold">{t('apiKeys.success.title')}</h3>
         <button type="button" class="dialog-close" data-close-dialog>&times;</button>
       </div>
       <div class="bg-success-bg border border-success-border rounded-lg p-4">
-        <p class="font-semibold">Copy this key now — it won't be shown again.</p>
+        <p class="font-semibold">{t('apiKeys.success.message')}</p>
         <div class="flex items-center gap-2 mt-3">
           <code id="raw-key-value" class="flex-1 break-all text-sm bg-surface-raised px-3 py-2 rounded">{rawKey}</code>
           <button
             type="button"
             class="outline btn-sm"
-            onclick="navigator.clipboard.writeText(document.getElementById('raw-key-value').textContent).then(()=>{this.textContent='Copied!'})"
+            onclick={`navigator.clipboard.writeText(document.getElementById('raw-key-value').textContent).then(()=>{this.textContent='${t('apiKeys.success.copied')}'})`}
           >
-            Copy
+            {t('apiKeys.success.copy')}
           </button>
         </div>
         <p class="text-sm text-muted mt-3">
-          Use as Bearer token: <code>Authorization: Bearer {rawKey.slice(0, 12)}...</code>
+          {t('apiKeys.success.usage', { key: rawKey.slice(0, 12) })}
         </p>
         <div class="text-sm text-muted mt-1">
-          Permissions: {selectedPermissions.join(', ')}
+          {t('apiKeys.success.permissions', { permissions: selectedPermissions.join(', ') })}
           {!allWorkspacesSelected && selectedWorkspaceIds.length > 0 && (
-            <span> | Workspaces: {selectedWorkspaceIds.length} restricted</span>
+            <span> | {t('apiKeys.success.workspaceRestriction', { count: selectedWorkspaceIds.length })}</span>
           )}
         </div>
       </div>
       <p class="text-sm text-muted mt-4 text-center">
-        <a href="/pignal/api-keys">Refresh page</a> to see the key in the list.
+        <a href="/pignal/api-keys">{t('apiKeys.success.refreshPage')}</a>
       </p>
     </div>,
   );
@@ -357,15 +375,16 @@ export async function createApiKeyHandler(c: Context<{ Bindings: WebEnv; Variabl
 // Delete single key
 // ---------------------------------------------------------------------------
 
-export async function deleteApiKeyHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function deleteApiKeyHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
+  const t = c.get('t');
   const id = c.req.param('id')!;
   const apiKeyStore = c.get('apiKeyStore');
 
   const deleted = await apiKeyStore.delete(id);
   if (deleted) {
-    c.header('HX-Trigger', toastTrigger('API key revoked'));
+    c.header('HX-Trigger', toastTrigger(t('apiKeys.toast.revoked')));
   } else {
-    c.header('HX-Trigger', toastTrigger('Key not found', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('apiKeys.toast.notFound'), 'error'));
   }
   return c.html('');
 }
@@ -374,14 +393,15 @@ export async function deleteApiKeyHandler(c: Context<{ Bindings: WebEnv; Variabl
 // Bulk revoke
 // ---------------------------------------------------------------------------
 
-export async function bulkRevokeApiKeysHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function bulkRevokeApiKeysHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
+  const t = c.get('t');
   const apiKeyStore = c.get('apiKeyStore');
   const body = await c.req.parseBody({ all: true });
   const rawIds = body['ids[]'];
   const ids: string[] = Array.isArray(rawIds) ? rawIds as string[] : rawIds ? [rawIds as string] : [];
 
   if (ids.length === 0) {
-    c.header('HX-Trigger', toastTrigger('No keys selected', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('common.noResults'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -396,11 +416,11 @@ export async function bulkRevokeApiKeysHandler(c: Context<{ Bindings: WebEnv; Va
     }
   }
 
-  c.header('HX-Trigger', toastTrigger(`Revoked ${revoked} key${revoked !== 1 ? 's' : ''}`));
+  c.header('HX-Trigger', toastTrigger(t('apiKeys.bulk.revokedToast', { count: revoked })));
 
   // Re-render the full list
   const csrfToken = getCsrfToken(c);
   const keys = await apiKeyStore.list();
   const sorted = sortKeys(keys, 'newest');
-  return c.html(<ApiKeyTableResults keys={sorted} csrfToken={csrfToken} />);
+  return c.html(<ApiKeyTableResults keys={sorted} csrfToken={csrfToken} t={t} />);
 }

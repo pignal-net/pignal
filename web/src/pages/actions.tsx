@@ -1,10 +1,11 @@
 import type { Context } from 'hono';
-import type { SiteActionSelect, ItemStoreRpc, ActionStoreRpc } from '@pignal/db';
-import type { WebEnv } from '../types';
+import type { SiteActionSelect, ActionStoreRpc } from '@pignal/db';
+import type { WebEnv, WebVars } from '../types';
+import type { TFunction } from '../i18n/types';
 import { AppLayout } from '../components/app-layout';
 import { PageHeader } from '../components/page-header';
 import { StatusBadge } from '../components/status-badge';
-import { ManagedList } from '../components/managed-list';
+import { ManagedList, TableResultsWrapper } from '../components/managed-list';
 import type { SortTab, FilterDropdown, BulkAction, TableColumn } from '../components/managed-list';
 import type { RowAction } from '../components/feed-item';
 import { TableRow, TableCell, TableActions, RowActions } from '../components/feed-item';
@@ -13,7 +14,7 @@ import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
 import { relativeTime } from '../lib/time';
 
-type WebVars = { store: ItemStoreRpc; actionStore: ActionStoreRpc };
+type PageVars = WebVars & { actionStore: ActionStoreRpc };
 
 const PAGE_SIZE = 20;
 
@@ -65,16 +66,18 @@ function countByStatus(actions: SiteActionSelect[]): Record<string, number> {
 // Feed row
 // ---------------------------------------------------------------------------
 
-const ACTION_COLUMNS: TableColumn[] = [
-  { key: 'name', label: 'Name' },
-  { key: 'status', label: 'Status' },
-  { key: 'submissions', label: 'Submissions', class: 'text-right' },
-  { key: 'slug', label: 'Slug', class: 'font-mono text-xs' },
-  { key: 'fields', label: 'Fields', class: 'text-right' },
-  { key: 'created', label: 'Created', class: 'text-muted whitespace-nowrap' },
-];
+function actionColumns(t: TFunction): TableColumn[] {
+  return [
+    { key: 'name', label: t('actions.column.name') },
+    { key: 'status', label: t('actions.column.status') },
+    { key: 'submissions', label: t('actions.column.submissions'), class: 'text-right' },
+    { key: 'slug', label: t('actions.column.slug'), class: 'font-mono text-xs' },
+    { key: 'fields', label: t('actions.column.fields'), class: 'text-right' },
+    { key: 'created', label: t('actions.column.created'), class: 'text-muted whitespace-nowrap' },
+  ];
+}
 
-function ActionTableRow({ action, csrfToken }: { action: SiteActionSelect; csrfToken: string }) {
+function ActionTableRow({ action, csrfToken, t }: { action: SiteActionSelect; csrfToken: string; t: TFunction }) {
   let fieldCount = 0;
   try {
     const fields = JSON.parse(action.fields);
@@ -96,14 +99,14 @@ function ActionTableRow({ action, csrfToken }: { action: SiteActionSelect; csrfT
       <TableCell class="text-muted whitespace-nowrap">{relativeTime(action.createdAt)}</TableCell>
       <TableActions>
         <RowActions actions={[
-          { label: 'Edit', hxGet: `/pignal/actions/${action.id}/edit-form` },
-          { label: 'CSV', href: `/pignal/actions/${action.id}/export?format=csv` },
+          { label: t('actions.action.edit'), hxGet: `/pignal/actions/${action.id}/edit-form` },
+          { label: t('actions.action.export'), href: `/pignal/actions/${action.id}/export?format=csv` },
           ...(action.status === 'active' ? [
-            { label: 'Pause', hxPost: `/pignal/actions/${action.id}/toggle-status`, hxTarget: `#action-${action.id}`, csrf: csrfToken },
+            { label: t('actions.action.pause'), hxPost: `/pignal/actions/${action.id}/toggle-status`, hxTarget: `#action-${action.id}`, csrf: csrfToken },
           ] satisfies RowAction[] : action.status === 'paused' ? [
-            { label: 'Activate', hxPost: `/pignal/actions/${action.id}/toggle-status`, hxTarget: `#action-${action.id}`, csrf: csrfToken },
+            { label: t('actions.action.activate'), hxPost: `/pignal/actions/${action.id}/toggle-status`, hxTarget: `#action-${action.id}`, csrf: csrfToken },
           ] satisfies RowAction[] : []),
-          { label: 'Delete', hxPost: `/pignal/actions/${action.id}/delete`, hxTarget: `#action-${action.id}`, hxSwap: 'delete', hxConfirm: 'Delete this action and all its submissions?', destructive: true, csrf: csrfToken },
+          { label: t('actions.action.delete'), hxPost: `/pignal/actions/${action.id}/delete`, hxTarget: `#action-${action.id}`, hxSwap: 'delete', hxConfirm: t('actions.confirmDelete'), destructive: true, csrf: csrfToken },
         ]} />
       </TableActions>
     </TableRow>
@@ -121,6 +124,7 @@ function ActionTableResults({
   offset,
   baseUrl,
   csrfToken,
+  t,
 }: {
   actions: SiteActionSelect[];
   total: number;
@@ -128,19 +132,23 @@ function ActionTableResults({
   offset: number;
   baseUrl: string;
   csrfToken: string;
+  t: TFunction;
 }) {
-  const colCount = ACTION_COLUMNS.length + 2; // +1 bulk checkbox, +1 actions
+  const cols = actionColumns(t);
+  const colCount = cols.length + 2; // +1 bulk checkbox, +1 actions
   return (
     <>
-      <tbody id="actions-feed" class="managed-table-body">
-        {actions.length === 0 ? (
-          <tr><td colspan={colCount} class="managed-table-td text-center py-8 text-muted">No actions found.</td></tr>
-        ) : (
-          actions.map((action) => (
-            <ActionTableRow action={action} csrfToken={csrfToken} />
-          ))
-        )}
-      </tbody>
+      <TableResultsWrapper id="actions" columns={cols} hasBulk>
+        <tbody id="actions-feed" class="managed-table-body">
+          {actions.length === 0 ? (
+            <tr><td colspan={colCount} class="managed-table-td text-center py-8 text-muted">{t('actions.empty')}</td></tr>
+          ) : (
+            actions.map((action) => (
+              <ActionTableRow action={action} csrfToken={csrfToken} t={t} />
+            ))
+          )}
+        </tbody>
+      </TableResultsWrapper>
       {total > limit && (
         <Pagination
           total={total}
@@ -159,9 +167,12 @@ function ActionTableResults({
 // Main page handler
 // ---------------------------------------------------------------------------
 
-export async function actionsPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function actionsPage(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const actionStore = c.get('actionStore');
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
+  const locale = c.get('locale');
+  const defaultLocale = c.get('defaultLocale');
 
   const q = (c.req.query('q') || '').trim();
   const sort = c.req.query('sort') || 'newest';
@@ -188,6 +199,7 @@ export async function actionsPage(c: Context<{ Bindings: WebEnv; Variables: WebV
         offset={offset}
         baseUrl={baseUrl}
         csrfToken={csrfToken}
+        t={t}
       />,
     );
   }
@@ -197,51 +209,51 @@ export async function actionsPage(c: Context<{ Bindings: WebEnv; Variables: WebV
   const totalAll = allActions.length;
 
   const sortTabs: SortTab[] = [
-    { label: 'Newest', value: 'newest', active: sort === 'newest', href: buildUrl({ q: q || undefined, sort: undefined, status }) },
-    { label: 'Oldest', value: 'oldest', active: sort === 'oldest', href: buildUrl({ q: q || undefined, sort: 'oldest', status }) },
+    { label: t('common.newest'), value: 'newest', active: sort === 'newest', href: buildUrl({ q: q || undefined, sort: undefined, status }) },
+    { label: t('common.oldest'), value: 'oldest', active: sort === 'oldest', href: buildUrl({ q: q || undefined, sort: 'oldest', status }) },
   ];
 
   const filterDropdowns: FilterDropdown[] = [
     {
-      label: 'Status',
+      label: t('actions.filter.status'),
       name: 'status',
       options: [
-        { label: `All (${totalAll})`, href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined }), active: !status },
-        { label: `Active (${statusCounts.active ?? 0})`, href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined, status: 'active' }), active: status === 'active' },
-        { label: `Paused (${statusCounts.paused ?? 0})`, href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined, status: 'paused' }), active: status === 'paused' },
-        { label: `Archived (${statusCounts.archived ?? 0})`, href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined, status: 'archived' }), active: status === 'archived' },
+        { label: `${t('common.all')} (${totalAll})`, href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined }), active: !status },
+        { label: `${t('actions.filter.active')} (${statusCounts.active ?? 0})`, href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined, status: 'active' }), active: status === 'active' },
+        { label: `${t('actions.filter.paused')} (${statusCounts.paused ?? 0})`, href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined, status: 'paused' }), active: status === 'paused' },
+        { label: `${t('actions.filter.archived')} (${statusCounts.archived ?? 0})`, href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined, status: 'archived' }), active: status === 'archived' },
       ],
     },
   ];
 
   const bulkActions: BulkAction[] = [
-    { label: 'Pause', action: '/pignal/actions/bulk-pause' },
-    { label: 'Activate', action: '/pignal/actions/bulk-activate' },
-    { label: 'Delete', action: '/pignal/actions/bulk-delete', confirm: 'Delete all selected actions and their submissions?', destructive: true },
+    { label: t('actions.bulk.pause'), action: '/pignal/actions/bulk-pause' },
+    { label: t('actions.bulk.activate'), action: '/pignal/actions/bulk-activate' },
+    { label: t('actions.bulk.delete'), action: '/pignal/actions/bulk-delete', confirm: t('actions.bulk.confirmDelete'), destructive: true },
   ];
 
   return c.html(
-    <AppLayout title="Actions" currentPath="/pignal/actions" csrfToken={csrfToken}>
+    <AppLayout title={t('actions.title')} currentPath="/pignal/actions" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale}>
       <PageHeader
-        title="Actions"
-        description="Create forms for lead capture, contact, newsletter signup, and more."
+        title={t('actions.title')}
+        description={t('actions.description')}
         count={totalAll}
       />
 
       <ManagedList
         id="actions"
         searchEndpoint="/pignal/actions"
-        searchPlaceholder="Search actions..."
+        searchPlaceholder={t('actions.searchPlaceholder')}
         query={q}
         sortTabs={sortTabs}
         filterDropdowns={filterDropdowns}
         bulkActions={bulkActions}
         csrfToken={csrfToken}
         totalCount={paged.length}
-        emptyMessage="No actions yet. Click '+ Add' to create your first form."
+        emptyMessage={t('actions.emptyMessage')}
         pushUrl
         display="table"
-        columns={ACTION_COLUMNS}
+        columns={actionColumns(t)}
         pagination={{ total, limit: PAGE_SIZE, offset, baseUrl }}
         addButton={
           <button
@@ -249,12 +261,12 @@ export async function actionsPage(c: Context<{ Bindings: WebEnv; Variables: WebV
             hx-get="/pignal/actions/add-form"
             hx-target="#app-dialog-content"
           >
-            + Add
+            {t('common.add')}
           </button>
         }
       >
         {paged.map((action) => (
-          <ActionTableRow action={action} csrfToken={csrfToken} />
+          <ActionTableRow action={action} csrfToken={csrfToken} t={t} />
         ))}
       </ManagedList>
     </AppLayout>,
@@ -265,12 +277,13 @@ export async function actionsPage(c: Context<{ Bindings: WebEnv; Variables: WebV
 // Add form dialog
 // ---------------------------------------------------------------------------
 
-export async function addActionFormHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function addActionFormHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
   return c.html(
     <div>
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold">Create Action</h3>
+        <h3 class="text-lg font-semibold">{t('actions.create.title')}</h3>
         <button type="button" class="dialog-close" data-close-dialog>&times;</button>
       </div>
       <form
@@ -281,21 +294,21 @@ export async function addActionFormHandler(c: Context<{ Bindings: WebEnv; Variab
         <input type="hidden" name="_csrf" value={csrfToken} />
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label>
-            Name
-            <input type="text" name="name" required maxlength={100} placeholder="e.g., Contact Form" />
+            {t('actions.create.name')}
+            <input type="text" name="name" required maxlength={100} placeholder={t('actions.create.namePlaceholder')} />
           </label>
           <label>
-            Slug
-            <input type="text" name="slug" required maxlength={100} placeholder="e.g., contact" pattern="[a-z0-9-]+" />
-            <small class="text-muted">Lowercase letters, numbers, and hyphens only</small>
+            {t('actions.create.slug')}
+            <input type="text" name="slug" required maxlength={100} placeholder={t('actions.create.slugPlaceholder')} pattern="[a-z0-9-]+" />
+            <small class="text-muted">{t('actions.create.slugHelper')}</small>
           </label>
         </div>
         <label class="mt-3">
-          Description (optional)
-          <input type="text" name="description" maxlength={500} placeholder="Brief description of this form" />
+          {t('actions.create.description')}
+          <input type="text" name="description" maxlength={500} placeholder={t('actions.create.descriptionPlaceholder')} />
         </label>
         <label class="mt-3">
-          Fields (JSON)
+          {t('actions.create.fields')}
           <textarea
             name="fields"
             rows={6}
@@ -303,24 +316,24 @@ export async function addActionFormHandler(c: Context<{ Bindings: WebEnv; Variab
             placeholder={'[\n  { "name": "email", "type": "email", "label": "Email", "required": true },\n  { "name": "message", "type": "textarea", "label": "Message", "required": true }\n]'}
           />
           <small class="text-muted">
-            JSON array. Each field: name, type (text/email/textarea/select/url/tel/number/checkbox), label, required?, placeholder?, maxLength?, options? (for select).
+            {t('actions.create.fieldsHelper')}
           </small>
         </label>
         <label class="mt-3">
-          Success Message (optional)
-          <input type="text" name="success_message" maxlength={500} placeholder="Thank you! We'll be in touch soon." />
+          {t('actions.create.successMessage')}
+          <input type="text" name="success_message" maxlength={500} placeholder={t('actions.create.successMessagePlaceholder')} />
         </label>
         <label class="mt-3">
-          Webhook URL (optional)
-          <input type="url" name="webhook_url" maxlength={500} placeholder="https://hooks.example.com/..." />
+          {t('actions.create.webhookUrl')}
+          <input type="url" name="webhook_url" maxlength={500} placeholder={t('actions.create.webhookUrlPlaceholder')} />
         </label>
         <div class="mt-3">
           <label class="inline-flex items-center gap-2 cursor-pointer mb-0">
             <input type="checkbox" name="require_honeypot" value="true" checked />
-            <span class="text-sm">Enable honeypot spam protection</span>
+            <span class="text-sm">{t('actions.create.honeypot')}</span>
           </label>
         </div>
-        <button type="submit" class="btn mt-4 w-full">Create Action</button>
+        <button type="submit" class="btn mt-4 w-full">{t('actions.create.button')}</button>
       </form>
     </div>,
   );
@@ -330,8 +343,9 @@ export async function addActionFormHandler(c: Context<{ Bindings: WebEnv; Variab
 // Create action handler
 // ---------------------------------------------------------------------------
 
-export async function createActionHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function createActionHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const actionStore = c.get('actionStore');
+  const t = c.get('t');
   const body = await c.req.parseBody();
 
   const name = (body.name as string || '').trim();
@@ -343,13 +357,13 @@ export async function createActionHandler(c: Context<{ Bindings: WebEnv; Variabl
   const requireHoneypot = body.require_honeypot === 'true';
 
   if (!name) {
-    c.header('HX-Trigger', toastTrigger('Name is required', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('actions.error.nameRequired'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
 
   if (!slug || !/^[a-z0-9-]+$/.test(slug)) {
-    c.header('HX-Trigger', toastTrigger('Slug must be lowercase letters, numbers, and hyphens', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('actions.error.slugRequired'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -362,7 +376,7 @@ export async function createActionHandler(c: Context<{ Bindings: WebEnv; Variabl
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Invalid JSON';
-    c.header('HX-Trigger', toastTrigger(`Invalid fields: ${msg}`, 'error'));
+    c.header('HX-Trigger', toastTrigger(t('actions.error.fieldsInvalid', { error: msg }), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -382,8 +396,8 @@ export async function createActionHandler(c: Context<{ Bindings: WebEnv; Variabl
     });
 
     const csrfToken = getCsrfToken(c);
-    c.header('HX-Trigger', toastTrigger('Action created'));
-    return c.html(<ActionTableRow action={created} csrfToken={csrfToken} />);
+    c.header('HX-Trigger', toastTrigger(t('actions.toast.created')));
+    return c.html(<ActionTableRow action={created} csrfToken={csrfToken} t={t} />);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to create action';
     c.header('HX-Trigger', toastTrigger(msg, 'error'));
@@ -396,12 +410,13 @@ export async function createActionHandler(c: Context<{ Bindings: WebEnv; Variabl
 // Edit form dialog
 // ---------------------------------------------------------------------------
 
-export async function editActionFormHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function editActionFormHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const id = c.req.param('id')!;
   const actionStore = c.get('actionStore');
+  const t = c.get('t');
   const action = await actionStore.getAction(id);
   if (!action) {
-    c.header('HX-Trigger', toastTrigger('Action not found', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('actions.toast.notFound'), 'error'));
     return c.html('');
   }
 
@@ -416,7 +431,7 @@ export async function editActionFormHandler(c: Context<{ Bindings: WebEnv; Varia
   return c.html(
     <div>
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold">Edit Action</h3>
+        <h3 class="text-lg font-semibold">{t('actions.edit.title')}</h3>
         <button type="button" class="dialog-close" data-close-dialog>&times;</button>
       </div>
       <form
@@ -427,37 +442,37 @@ export async function editActionFormHandler(c: Context<{ Bindings: WebEnv; Varia
         <input type="hidden" name="_csrf" value={csrfToken} />
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label>
-            Name
+            {t('actions.edit.name')}
             <input type="text" name="name" required maxlength={100} value={action.name} />
           </label>
           <label>
-            Slug
+            {t('actions.edit.slug')}
             <input type="text" name="slug" required maxlength={100} value={action.slug} pattern="[a-z0-9-]+" />
           </label>
         </div>
         <label class="mt-3">
-          Description
+          {t('actions.edit.description')}
           <input type="text" name="description" maxlength={500} value={action.description ?? ''} />
         </label>
         <label class="mt-3">
-          Fields (JSON)
+          {t('actions.edit.fields')}
           <textarea name="fields" rows={6}>{action.fields}</textarea>
         </label>
         <label class="mt-3">
-          Success Message
+          {t('actions.edit.successMessage')}
           <input type="text" name="success_message" maxlength={500} value={(parsedSettings.success_message as string) ?? ''} />
         </label>
         <label class="mt-3">
-          Webhook URL
+          {t('actions.edit.webhookUrl')}
           <input type="url" name="webhook_url" maxlength={500} value={(parsedSettings.webhook_url as string) ?? ''} />
         </label>
         <div class="mt-3">
           <label class="inline-flex items-center gap-2 cursor-pointer mb-0">
             <input type="checkbox" name="require_honeypot" value="true" checked={!!parsedSettings.require_honeypot} />
-            <span class="text-sm">Enable honeypot spam protection</span>
+            <span class="text-sm">{t('actions.edit.honeypot')}</span>
           </label>
         </div>
-        <button type="submit" class="btn mt-4 w-full">Save Changes</button>
+        <button type="submit" class="btn mt-4 w-full">{t('actions.edit.saveChanges')}</button>
       </form>
     </div>,
   );
@@ -467,9 +482,10 @@ export async function editActionFormHandler(c: Context<{ Bindings: WebEnv; Varia
 // Edit action handler
 // ---------------------------------------------------------------------------
 
-export async function editActionHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function editActionHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const id = c.req.param('id')!;
   const actionStore = c.get('actionStore');
+  const t = c.get('t');
   const body = await c.req.parseBody();
 
   const name = body.name as string | undefined;
@@ -489,7 +505,7 @@ export async function editActionHandler(c: Context<{ Bindings: WebEnv; Variables
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Invalid JSON';
-      c.header('HX-Trigger', toastTrigger(`Invalid fields: ${msg}`, 'error'));
+      c.header('HX-Trigger', toastTrigger(t('actions.error.fieldsInvalid', { error: msg }), 'error'));
       c.header('HX-Reswap', 'none');
       return c.body(null, 204);
     }
@@ -517,14 +533,14 @@ export async function editActionHandler(c: Context<{ Bindings: WebEnv; Variables
     });
 
     if (!updated) {
-      c.header('HX-Trigger', toastTrigger('Action not found', 'error'));
+      c.header('HX-Trigger', toastTrigger(t('actions.toast.notFound'), 'error'));
       c.header('HX-Reswap', 'none');
       return c.body(null, 204);
     }
 
     const csrfToken = getCsrfToken(c);
-    c.header('HX-Trigger', toastTrigger('Action updated'));
-    return c.html(<ActionTableRow action={updated} csrfToken={csrfToken} />);
+    c.header('HX-Trigger', toastTrigger(t('actions.toast.updated')));
+    return c.html(<ActionTableRow action={updated} csrfToken={csrfToken} t={t} />);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to update action';
     c.header('HX-Trigger', toastTrigger(msg, 'error'));
@@ -537,18 +553,19 @@ export async function editActionHandler(c: Context<{ Bindings: WebEnv; Variables
 // Delete action handler
 // ---------------------------------------------------------------------------
 
-export async function deleteActionHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function deleteActionHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const id = c.req.param('id')!;
   const actionStore = c.get('actionStore');
+  const t = c.get('t');
 
   try {
     const deleted = await actionStore.deleteAction(id);
     if (!deleted) {
-      c.header('HX-Trigger', toastTrigger('Action not found', 'error'));
+      c.header('HX-Trigger', toastTrigger(t('actions.toast.notFound'), 'error'));
       c.header('HX-Reswap', 'none');
       return c.body(null, 204);
     }
-    c.header('HX-Trigger', toastTrigger('Action deleted'));
+    c.header('HX-Trigger', toastTrigger(t('actions.toast.deleted')));
     return c.html('');
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to delete action';
@@ -562,13 +579,14 @@ export async function deleteActionHandler(c: Context<{ Bindings: WebEnv; Variabl
 // Toggle status handler (active <-> paused)
 // ---------------------------------------------------------------------------
 
-export async function toggleActionStatusHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function toggleActionStatusHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const id = c.req.param('id')!;
   const actionStore = c.get('actionStore');
+  const t = c.get('t');
 
   const action = await actionStore.getAction(id);
   if (!action) {
-    c.header('HX-Trigger', toastTrigger('Action not found', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('actions.toast.notFound'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -578,14 +596,14 @@ export async function toggleActionStatusHandler(c: Context<{ Bindings: WebEnv; V
   try {
     const updated = await actionStore.updateAction(id, { status: newStatus });
     if (!updated) {
-      c.header('HX-Trigger', toastTrigger('Failed to update status', 'error'));
+      c.header('HX-Trigger', toastTrigger(t('actions.error.statusUpdateFailed'), 'error'));
       c.header('HX-Reswap', 'none');
       return c.body(null, 204);
     }
 
     const csrfToken = getCsrfToken(c);
-    c.header('HX-Trigger', toastTrigger(`Action ${newStatus}`));
-    return c.html(<ActionTableRow action={updated} csrfToken={csrfToken} />);
+    c.header('HX-Trigger', toastTrigger(newStatus === 'paused' ? t('actions.toast.paused') : t('actions.toast.activated')));
+    return c.html(<ActionTableRow action={updated} csrfToken={csrfToken} t={t} />);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to toggle status';
     c.header('HX-Trigger', toastTrigger(msg, 'error'));
@@ -598,9 +616,10 @@ export async function toggleActionStatusHandler(c: Context<{ Bindings: WebEnv; V
 // Export CSV handler
 // ---------------------------------------------------------------------------
 
-export async function exportActionSubmissionsHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function exportActionSubmissionsHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const id = c.req.param('id')!;
   const actionStore = c.get('actionStore');
+
   const format = (c.req.query('format') || 'csv') as 'csv' | 'json';
 
   try {
@@ -627,9 +646,10 @@ async function parseBulkIds(c: Context): Promise<string[]> {
   return Array.isArray(rawIds) ? rawIds as string[] : rawIds ? [rawIds as string] : [];
 }
 
-async function reRenderActionList(c: Context<{ Bindings: WebEnv; Variables: WebVars }>): Promise<Response> {
+async function reRenderActionList(c: Context<{ Bindings: WebEnv; Variables: PageVars }>): Promise<Response> {
   const actionStore = c.get('actionStore');
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
   const actions = await actionStore.listActions();
   const sorted = sortActions(actions, 'newest');
   return c.html(
@@ -640,16 +660,18 @@ async function reRenderActionList(c: Context<{ Bindings: WebEnv; Variables: WebV
       offset={0}
       baseUrl="/pignal/actions"
       csrfToken={csrfToken}
+      t={t}
     />,
   );
 }
 
-export async function bulkPauseActionsHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function bulkPauseActionsHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const actionStore = c.get('actionStore');
+  const t = c.get('t');
   const ids = await parseBulkIds(c);
 
   if (ids.length === 0) {
-    c.header('HX-Trigger', toastTrigger('No actions selected', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('actions.error.noSelected'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -664,16 +686,17 @@ export async function bulkPauseActionsHandler(c: Context<{ Bindings: WebEnv; Var
     }
   }
 
-  c.header('HX-Trigger', toastTrigger(`Paused ${updated} action${updated !== 1 ? 's' : ''}`));
+  c.header('HX-Trigger', toastTrigger(t('actions.bulk.pausedToast', { count: String(updated) })));
   return reRenderActionList(c);
 }
 
-export async function bulkActivateActionsHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function bulkActivateActionsHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const actionStore = c.get('actionStore');
+  const t = c.get('t');
   const ids = await parseBulkIds(c);
 
   if (ids.length === 0) {
-    c.header('HX-Trigger', toastTrigger('No actions selected', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('actions.error.noSelected'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -688,16 +711,17 @@ export async function bulkActivateActionsHandler(c: Context<{ Bindings: WebEnv; 
     }
   }
 
-  c.header('HX-Trigger', toastTrigger(`Activated ${updated} action${updated !== 1 ? 's' : ''}`));
+  c.header('HX-Trigger', toastTrigger(t('actions.bulk.activatedToast', { count: String(updated) })));
   return reRenderActionList(c);
 }
 
-export async function bulkDeleteActionsHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function bulkDeleteActionsHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const actionStore = c.get('actionStore');
+  const t = c.get('t');
   const ids = await parseBulkIds(c);
 
   if (ids.length === 0) {
-    c.header('HX-Trigger', toastTrigger('No actions selected', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('actions.error.noSelected'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -712,6 +736,6 @@ export async function bulkDeleteActionsHandler(c: Context<{ Bindings: WebEnv; Va
     }
   }
 
-  c.header('HX-Trigger', toastTrigger(`Deleted ${deleted} action${deleted !== 1 ? 's' : ''}`));
+  c.header('HX-Trigger', toastTrigger(t('actions.bulk.deletedToast', { count: String(deleted) })));
   return reRenderActionList(c);
 }

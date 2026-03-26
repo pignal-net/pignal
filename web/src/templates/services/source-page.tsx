@@ -1,6 +1,7 @@
 import type { SourcePageProps } from '@pignal/templates';
 import { Pagination } from '../../components/pagination';
 import { JsonLd } from '../../components/json-ld';
+import { EmptyState } from '../../components/empty-state';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
 import { ServicesLayout } from './layout';
@@ -40,6 +41,7 @@ export function ServicesSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'My Services';
@@ -150,7 +152,7 @@ export function ServicesSourcePage(props: SourcePageProps) {
             {(() => {
               const allUrl = buildFilterUrl({ type: filters.typeId, q: filters.q, sort: sortParam });
               return (
-                <a href={allUrl} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${!filters.workspaceId ? 'bg-primary text-white border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(allUrl)}>
+                <a href={allUrl} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${!filters.workspaceId ? 'bg-primary text-primary-inverse border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(allUrl)}>
                   All {vocabulary.workspacePlural}
                 </a>
               );
@@ -158,7 +160,7 @@ export function ServicesSourcePage(props: SourcePageProps) {
             {workspacesWithItems.map((ws) => {
               const url = buildFilterUrl({ workspace: filters.workspaceId === ws.id ? undefined : ws.id, type: filters.typeId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${filters.workspaceId === ws.id ? 'bg-primary text-white border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(url)}>
+                <a href={url} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${filters.workspaceId === ws.id ? 'bg-primary text-primary-inverse border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(url)}>
                   {ws.name}
                   <span class="text-[0.72rem] opacity-70">{counts.byWorkspace[ws.id] ?? 0}</span>
                 </a>
@@ -173,7 +175,7 @@ export function ServicesSourcePage(props: SourcePageProps) {
             {(() => {
               const allUrl = buildFilterUrl({ workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={allUrl} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${!filters.typeId ? 'bg-primary text-white border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(allUrl)}>
+                <a href={allUrl} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${!filters.typeId ? 'bg-primary text-primary-inverse border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(allUrl)}>
                   All {vocabulary.typePlural}
                 </a>
               );
@@ -181,7 +183,7 @@ export function ServicesSourcePage(props: SourcePageProps) {
             {typesWithItems.map((type) => {
               const url = buildFilterUrl({ type: filters.typeId === type.id ? undefined : type.id, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${filters.typeId === type.id ? 'bg-primary text-white border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(url)}>
+                <a href={url} class={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.82rem] font-medium no-underline border transition-colors ${filters.typeId === type.id ? 'bg-primary text-primary-inverse border-primary font-semibold' : 'border-border text-text bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5'}`} {...hxProps(url)}>
                   {type.icon ? `${type.icon} ` : ''}{type.name}
                   <span class="text-[0.72rem] opacity-70">{counts.byType[type.id] ?? 0}</span>
                 </a>
@@ -196,7 +198,7 @@ export function ServicesSourcePage(props: SourcePageProps) {
             {(() => {
               const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} title="Clear tag filter" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium no-underline bg-primary text-white" {...hxProps(url)}>
+                <a href={url} title="Clear tag filter" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium no-underline bg-primary text-primary-inverse" {...hxProps(url)}>
                   #{filters.tag} &times;
                 </a>
               );
@@ -226,10 +228,11 @@ export function ServicesSourcePage(props: SourcePageProps) {
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <div class="empty-state">
-              <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-              <p>{`No ${vocabulary.itemPlural} found.`}</p>
-            </div>
+            <EmptyState
+              icon="search"
+              title={`No ${vocabulary.itemPlural} found`}
+              description="Try adjusting your filters or search terms."
+            />
           ) : (
             <>
               {/* Grouped by tier */}
@@ -243,7 +246,7 @@ export function ServicesSourcePage(props: SourcePageProps) {
                     {grouped[type.id].items.map((item) => {
                       const desc = stripMarkdown(item.content).slice(0, 150);
                       return (
-                        <div class="border border-border-subtle border-t-[3px] border-t-primary rounded-xl bg-surface p-5 flex flex-col shadow-card transition-shadow duration-200 hover:shadow-card-hover">
+                        <div class="border border-border-subtle border-t-[3px] border-t-primary rounded-xl bg-surface p-5 flex flex-col shadow-card card-hover">
                           <div class="flex items-start justify-between gap-2 mb-2">
                             <h3 class="m-0 text-base font-semibold leading-snug flex-1">
                               <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary transition-colors">{item.keySummary}</a>
@@ -257,7 +260,7 @@ export function ServicesSourcePage(props: SourcePageProps) {
                             </div>
                             <div class="flex items-center gap-2">
                               {item.validationActionLabel && (
-                                <span class="text-[0.7rem] px-2 py-0.5 rounded-full font-semibold bg-green-500/15 text-green-600 whitespace-nowrap">{item.validationActionLabel}</span>
+                                <span class="text-[0.7rem] px-2 py-0.5 rounded-full font-semibold bg-success/15 text-success whitespace-nowrap">{item.validationActionLabel}</span>
                               )}
                               <a href={`/item/${item.slug}`} class="text-primary no-underline font-semibold text-[0.82rem] hover:underline">Details</a>
                             </div>
@@ -275,7 +278,7 @@ export function ServicesSourcePage(props: SourcePageProps) {
                     {ungrouped.map((item) => {
                       const desc = stripMarkdown(item.content).slice(0, 150);
                       return (
-                        <div class="border border-border-subtle border-t-[3px] border-t-primary rounded-xl bg-surface p-5 flex flex-col shadow-card transition-shadow duration-200 hover:shadow-card-hover">
+                        <div class="border border-border-subtle border-t-[3px] border-t-primary rounded-xl bg-surface p-5 flex flex-col shadow-card card-hover">
                           <div class="flex items-start justify-between gap-2 mb-2">
                             <h3 class="m-0 text-base font-semibold leading-snug flex-1">
                               <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary transition-colors">{item.keySummary}</a>
@@ -300,6 +303,7 @@ export function ServicesSourcePage(props: SourcePageProps) {
                 offset={pagination.offset}
                 baseUrl={paginationBase}
                 htmxTarget={HX_TARGET}
+                t={t}
               />
             </>
           )}

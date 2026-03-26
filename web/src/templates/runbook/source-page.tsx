@@ -1,5 +1,6 @@
 import type { SourcePageProps } from '@pignal/templates';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { RunbookLayout } from './layout';
@@ -39,6 +40,7 @@ export function RunbookSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'My Runbook';
@@ -120,7 +122,7 @@ export function RunbookSourcePage(props: SourcePageProps) {
 
       <div class="max-w-7xl mx-auto px-4 pt-8 pb-16 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
         {/* System sidebar */}
-        <aside class="sticky top-6 text-sm max-h-[calc(100vh-3rem)] overflow-y-auto max-lg:static max-lg:max-h-none max-lg:flex max-lg:gap-4 max-lg:flex-wrap max-lg:border-b max-lg:border-border-subtle max-lg:pb-4 max-lg:mb-0 lg:bg-surface lg:rounded-xl lg:border lg:border-border-subtle lg:shadow-card lg:p-4">
+        <aside class="sticky top-6 text-sm max-h-[calc(100vh-3rem)] overflow-y-auto max-lg:static max-lg:max-h-none max-lg:flex max-lg:gap-4 max-lg:flex-wrap max-lg:border-b max-lg:border-border-subtle max-lg:pb-4 max-lg:mb-0 lg:bg-surface lg:rounded-xl lg:border lg:border-border-subtle lg:shadow-card lg:p-4" role="navigation" aria-label="Runbook navigation">
           <div class="mb-4 max-lg:mb-0 max-lg:w-full">
             <input
               type="text"
@@ -135,6 +137,7 @@ export function RunbookSourcePage(props: SourcePageProps) {
               hx-push-url="true"
               hx-indicator={HX_INDICATOR}
               hx-vals={hxVals}
+              aria-label={`Search ${vocabulary.itemPlural}`}
             />
           </div>
 
@@ -198,7 +201,7 @@ export function RunbookSourcePage(props: SourcePageProps) {
               {(() => {
                 const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                 return (
-                  <a href={url} class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.8rem] font-medium no-underline bg-primary text-white" title="Clear tag filter" {...hxProps(url)}>
+                  <a href={url} class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.8rem] font-medium no-underline bg-primary text-primary-inverse transition-colors hover:bg-primary-hover" title="Clear tag filter" {...hxProps(url)}>
                     #{filters.tag} &times;
                   </a>
                 );
@@ -225,30 +228,29 @@ export function RunbookSourcePage(props: SourcePageProps) {
           <div id="source-loading" class="source-loading htmx-indicator">
             <span class="app-spinner" />
           </div>
-          <div id="source-results">
+          <div id="source-results" aria-live="polite">
             {items.length === 0 ? (
-              <div class="empty-state">
-                <div class="empty-state-icon">
-                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-                </div>
-                <p class="empty-state-title">{`No ${vocabulary.itemPlural} found`}</p>
-                <p class="empty-state-description">Try adjusting your filters or search query.</p>
-              </div>
+              <EmptyState
+                icon="file"
+                title={`No ${vocabulary.itemPlural} found`}
+                description="Try adjusting your filters or search query."
+              />
             ) : (
               <>
                 <div class="flex flex-col gap-2">
                   {groupNames.map((name) => (
                     <>
                       <div class="text-sm font-bold text-muted uppercase tracking-wide py-2 mt-6 first:mt-0 mb-2 border-b border-border-subtle">{name}</div>
-                      {grouped[name].map((item) => (
-                        <div class="flex items-center gap-3 px-4 py-3 border border-border-subtle shadow-card rounded-xl bg-surface transition-all border-l-[3px] border-l-transparent hover:shadow-card-hover hover:border-l-primary">
+                      {grouped[name].map((item, idx) => (
+                        <div class="card-hover flex items-center gap-3 px-4 py-3 border border-border-subtle shadow-card rounded-xl bg-surface transition-all border-l-[3px] border-l-transparent hover:border-l-primary">
+                          <div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-bold shrink-0">{idx + 1}</div>
                           <div class="flex-1 min-w-0">
                             <h3 class="m-0 mb-0.5 text-[0.95rem] font-semibold leading-snug">
-                              <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary">{item.keySummary}</a>
+                              <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary transition-colors">{item.keySummary}</a>
                             </h3>
                             <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
                               {item.typeName && <span class="text-[0.72rem] px-2 py-0.5 rounded-full bg-primary/12 text-primary font-medium whitespace-nowrap">{item.typeName}</span>}
-                              {item.validationActionLabel && <span class="text-[0.68rem] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap bg-green-500/15 text-green-600">{item.validationActionLabel}</span>}
+                              {item.validationActionLabel && <span class="text-[0.68rem] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap bg-success-bg text-success border border-success-border">{item.validationActionLabel}</span>}
                             </div>
                           </div>
                         </div>
@@ -258,15 +260,16 @@ export function RunbookSourcePage(props: SourcePageProps) {
                   {ungrouped.length > 0 && (
                     <>
                       {groupNames.length > 0 && <div class="text-sm font-bold text-muted uppercase tracking-wide py-2 mt-6 mb-2 border-b border-border-subtle">Uncategorized</div>}
-                      {ungrouped.map((item) => (
-                        <div class="flex items-center gap-3 px-4 py-3 border border-border-subtle shadow-card rounded-xl bg-surface transition-all border-l-[3px] border-l-transparent hover:shadow-card-hover hover:border-l-primary">
+                      {ungrouped.map((item, idx) => (
+                        <div class="card-hover flex items-center gap-3 px-4 py-3 border border-border-subtle shadow-card rounded-xl bg-surface transition-all border-l-[3px] border-l-transparent hover:border-l-primary">
+                          <div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-bold shrink-0">{idx + 1}</div>
                           <div class="flex-1 min-w-0">
                             <h3 class="m-0 mb-0.5 text-[0.95rem] font-semibold leading-snug">
-                              <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary">{item.keySummary}</a>
+                              <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary transition-colors">{item.keySummary}</a>
                             </h3>
                             <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
                               {item.typeName && <span class="text-[0.72rem] px-2 py-0.5 rounded-full bg-primary/12 text-primary font-medium whitespace-nowrap">{item.typeName}</span>}
-                              {item.validationActionLabel && <span class="text-[0.68rem] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap bg-green-500/15 text-green-600">{item.validationActionLabel}</span>}
+                              {item.validationActionLabel && <span class="text-[0.68rem] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap bg-success-bg text-success border border-success-border">{item.validationActionLabel}</span>}
                             </div>
                           </div>
                         </div>
@@ -280,6 +283,7 @@ export function RunbookSourcePage(props: SourcePageProps) {
                   offset={pagination.offset}
                   baseUrl={paginationBase}
                   htmxTarget={HX_TARGET}
+                  t={t}
                 />
               </>
             )}

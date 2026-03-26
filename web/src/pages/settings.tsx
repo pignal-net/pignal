@@ -1,14 +1,12 @@
 import type { Context } from 'hono';
 import type { Child } from 'hono/jsx';
-import type { ItemStoreRpc } from '@pignal/db';
-import type { WebEnv } from '../types';
+import type { TFunction } from '../i18n/types';
+import type { WebEnv, WebVars } from '../types';
 import { AppLayout } from '../components/app-layout';
 import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
 import { FONT_OPTIONS, isValidHexColor } from '../lib/theme';
 import { raw } from 'hono/html';
-
-type WebVars = { store: ItemStoreRpc };
 
 /* --- Default values (from seed migration) --- */
 
@@ -54,19 +52,17 @@ interface FieldConfig {
   maxLength?: number;
 }
 
-/* --- Settings categories --- */
+/* --- Static category definitions (keys only, for ALLOWED_KEYS) --- */
 
-const CATEGORIES = [
+const CATEGORY_DEFS = [
   {
-    title: 'Identity',
     slug: 'identity',
-    description: 'Your name and site metadata',
+    i18nKey: 'identity',
     keys: ['owner_name', 'source_title', 'source_description'],
   },
   {
-    title: 'Branding',
     slug: 'branding',
-    description: 'Logo, favicon, fonts, and Open Graph image',
+    i18nKey: 'branding',
     keys: [
       'source_logo_text',
       'source_logo_url',
@@ -77,9 +73,8 @@ const CATEGORIES = [
     ],
   },
   {
-    title: 'Social Links',
     slug: 'social',
-    description: 'Social profiles shown in the navigation bar',
+    i18nKey: 'social',
     keys: [
       'source_social_github',
       'source_social_twitter',
@@ -90,15 +85,13 @@ const CATEGORIES = [
     ],
   },
   {
-    title: 'Theme',
     slug: 'theme',
-    description: 'Brand color for links, buttons, and accents. Dark mode is generated automatically.',
+    i18nKey: 'theme',
     keys: ['source_color_accent'],
   },
   {
-    title: 'Layout',
     slug: 'layout',
-    description: 'Display preferences and content rendering',
+    i18nKey: 'layout',
     keys: [
       'source_posts_per_page',
       'source_show_reading_time',
@@ -107,15 +100,13 @@ const CATEGORIES = [
     ],
   },
   {
-    title: 'Advanced',
     slug: 'advanced',
-    description: 'Custom CSS and HTML injection for source pages',
+    i18nKey: 'advanced',
     keys: ['source_custom_css', 'source_custom_head'],
   },
   {
-    title: 'Call to Action',
     slug: 'cta',
-    description: 'Configure CTA blocks on source and post pages to drive visitor engagement',
+    i18nKey: 'cta',
     keys: [
       'cta_hero_enabled',
       'cta_hero_title',
@@ -137,348 +128,356 @@ const CATEGORIES = [
     ],
   },
   {
-    title: 'Content Quality',
     slug: 'content-quality',
-    description: 'Validation rules and limits for MCP clients',
+    i18nKey: 'contentQuality',
     keys: ['quality_guidelines', 'validation_limits', 'max_actions_per_type'],
   },
-];
-
-const FIELDS: Record<string, FieldConfig> = {
-  owner_name: {
-    label: 'Display Name',
-    description: 'Author name shown on posts, in JSON-LD metadata, and in the federation discovery endpoint (/.well-known/pignal).',
-    type: 'text',
-    placeholder: 'Jane Doe',
-    maxLength: 200,
-  },
-  source_title: {
-    label: 'Source Title',
-    description: 'Shown in the nav bar, page titles, and meta tags.',
-    type: 'text',
-    placeholder: 'My Pignal',
-    maxLength: 200,
-  },
-  source_description: {
-    label: 'Source Description',
-    description: 'Subtitle shown on the source feed and used in meta description.',
-    type: 'text',
-    placeholder: 'A self-hosted content platform powered by Cloudflare',
-    maxLength: 500,
-  },
-  source_logo_text: {
-    label: 'Logo Text',
-    description: 'Custom text for the nav brand. Leave empty to use the source title.',
-    type: 'text',
-    placeholder: 'My Source',
-    maxLength: 100,
-  },
-  source_social_github: {
-    label: 'GitHub URL',
-    description: 'GitHub profile link shown in the nav bar. Also used for federation discovery — your GitHub username is extracted from this URL.',
-    type: 'url',
-    placeholder: 'https://github.com/username',
-    maxLength: 2000,
-  },
-  source_social_twitter: {
-    label: 'Twitter/X URL',
-    description: 'Twitter/X profile link shown in the source nav bar. Leave empty to hide.',
-    type: 'url',
-    placeholder: 'https://x.com/username',
-    maxLength: 2000,
-  },
-  source_custom_footer: {
-    label: 'Custom Footer Text',
-    description: 'Replaces the default "Powered by pignal" footer. Supports plain text.',
-    type: 'textarea',
-    placeholder: 'Built with care by my team',
-    maxLength: 10_000,
-  },
-  source_posts_per_page: {
-    label: 'Posts Per Page',
-    description: 'Number of posts shown per page on the source feed.',
-    type: 'number',
-    placeholder: '20',
-    min: 1,
-    max: 100,
-  },
-  source_show_reading_time: {
-    label: 'Show Reading Time',
-    description: 'Display estimated reading time on posts and feed cards.',
-    type: 'select',
-    options: [
-      { value: 'true', label: 'Enabled' },
-      { value: 'false', label: 'Disabled' },
-    ],
-  },
-  source_code_theme: {
-    label: 'Code Theme',
-    description: 'Color scheme for code blocks in source posts.',
-    type: 'select',
-    options: [
-      { value: 'default', label: 'Default — system default' },
-      { value: 'github', label: 'GitHub — light gray background' },
-      { value: 'monokai', label: 'Monokai — dark background' },
-    ],
-  },
-  source_custom_css: {
-    label: 'Custom CSS',
-    description: 'CSS injected on all source pages. Use to customize fonts, colors, spacing, etc.',
-    type: 'textarea',
-    placeholder: '.source-article .content p {\n  font-size: 1.05rem;\n}',
-    maxLength: 50_000,
-  },
-  source_custom_head: {
-    label: 'Custom Head HTML',
-    description: 'Raw HTML injected into <head> on source pages. Use for analytics, fonts, or meta tags. Warning: this has full script access.',
-    type: 'textarea',
-    placeholder: '<script defer data-domain="example.com" src="https://plausible.io/js/script.js"></script>',
-    maxLength: 50_000,
-  },
-  quality_guidelines: {
-    label: 'Quality Guidelines',
-    description: 'JSON configuration for signal content quality rules. Used by MCP tool validation.',
-    type: 'textarea',
-    maxLength: 50_000,
-  },
-  validation_limits: {
-    label: 'Validation Limits',
-    description: 'JSON configuration for field length limits (keySummary, content, sourceAi).',
-    type: 'textarea',
-    maxLength: 10_000,
-  },
-  max_actions_per_type: {
-    label: 'Max Actions Per Type',
-    description: 'Maximum number of validation actions allowed per signal type.',
-    type: 'number',
-    placeholder: '3',
-    min: 1,
-    max: 10,
-  },
-  source_logo_url: {
-    label: 'Logo Image URL',
-    description: 'URL to your logo image. Shown in the navigation bar. Leave empty for default.',
-    type: 'url',
-    placeholder: 'https://example.com/logo.png',
-    maxLength: 2000,
-  },
-  source_favicon_url: {
-    label: 'Favicon URL',
-    description: 'URL to your favicon. Leave empty for default pignal icon.',
-    type: 'url',
-    placeholder: 'https://example.com/favicon.ico',
-    maxLength: 2000,
-  },
-  source_og_image_url: {
-    label: 'Open Graph Image URL',
-    description: 'Default image used in social media previews. Leave empty to use GitHub avatar.',
-    type: 'url',
-    placeholder: 'https://example.com/og-image.png',
-    maxLength: 2000,
-  },
-  source_font_heading: {
-    label: 'Heading Font',
-    description: 'Font for headings. Loaded automatically from Google Fonts.',
-    type: 'select',
-    options: [
-      { value: '', label: 'System Default' },
-      ...Object.entries(FONT_OPTIONS).map(([id, f]) => ({ value: id, label: `${f.label} (${f.category})` })),
-    ],
-  },
-  source_font_body: {
-    label: 'Body Font',
-    description: 'Font for body text. Loaded automatically from Google Fonts.',
-    type: 'select',
-    options: [
-      { value: '', label: 'System Default' },
-      ...Object.entries(FONT_OPTIONS).map(([id, f]) => ({ value: id, label: `${f.label} (${f.category})` })),
-    ],
-  },
-  source_social_linkedin: {
-    label: 'LinkedIn URL',
-    description: 'LinkedIn profile link shown in the source nav bar.',
-    type: 'url',
-    placeholder: 'https://linkedin.com/in/username',
-    maxLength: 2000,
-  },
-  source_social_mastodon: {
-    label: 'Mastodon URL',
-    description: 'Mastodon/fediverse profile link shown in the source nav bar.',
-    type: 'url',
-    placeholder: 'https://mastodon.social/@username',
-    maxLength: 2000,
-  },
-  source_social_youtube: {
-    label: 'YouTube URL',
-    description: 'YouTube channel link shown in the source nav bar.',
-    type: 'url',
-    placeholder: 'https://youtube.com/@channel',
-    maxLength: 2000,
-  },
-  source_social_website: {
-    label: 'Website URL',
-    description: 'Personal website link shown in the source nav bar.',
-    type: 'url',
-    placeholder: 'https://example.com',
-    maxLength: 2000,
-  },
-  source_color_accent: {
-    label: 'Accent Color',
-    description: 'Brand color for links, buttons, and interactive elements. Leave empty for default blue (#1095C1).',
-    type: 'color',
-    placeholder: '#1095C1',
-  },
-  // CTA Hero settings
-  cta_hero_enabled: {
-    label: 'Hero CTA Enabled',
-    description: 'Show a full-width banner CTA at the top of the source feed page.',
-    type: 'select',
-    options: [
-      { value: 'true', label: 'Enabled' },
-      { value: 'false', label: 'Disabled' },
-    ],
-  },
-  cta_hero_title: {
-    label: 'Hero CTA Title',
-    description: 'Heading text for the hero CTA banner.',
-    type: 'text',
-    placeholder: 'Subscribe to our newsletter',
-    maxLength: 200,
-  },
-  cta_hero_description: {
-    label: 'Hero CTA Description',
-    description: 'Optional subtext shown below the title.',
-    type: 'text',
-    placeholder: 'Get the latest posts delivered straight to your inbox.',
-    maxLength: 500,
-  },
-  cta_hero_button_text: {
-    label: 'Hero CTA Button Text',
-    description: 'Label for the CTA button.',
-    type: 'text',
-    placeholder: 'Subscribe',
-    maxLength: 100,
-  },
-  cta_hero_button_url: {
-    label: 'Hero CTA Button URL',
-    description: 'External link for the CTA button. Leave empty if using an action form.',
-    type: 'url',
-    placeholder: 'https://example.com/subscribe',
-    maxLength: 2000,
-  },
-  cta_hero_action_slug: {
-    label: 'Hero CTA Action Slug',
-    description: 'Slug of a site action form to load inline. Mutually exclusive with button URL.',
-    type: 'text',
-    placeholder: 'newsletter',
-    maxLength: 100,
-  },
-  // CTA Post settings
-  cta_post_enabled: {
-    label: 'Post CTA Enabled',
-    description: 'Show a CTA card after article content on item post pages.',
-    type: 'select',
-    options: [
-      { value: 'true', label: 'Enabled' },
-      { value: 'false', label: 'Disabled' },
-    ],
-  },
-  cta_post_title: {
-    label: 'Post CTA Title',
-    description: 'Heading text for the post CTA card.',
-    type: 'text',
-    placeholder: 'Enjoyed this post?',
-    maxLength: 200,
-  },
-  cta_post_description: {
-    label: 'Post CTA Description',
-    description: 'Optional subtext shown below the title.',
-    type: 'text',
-    placeholder: 'Share it with your friends or subscribe for more.',
-    maxLength: 500,
-  },
-  cta_post_button_text: {
-    label: 'Post CTA Button Text',
-    description: 'Label for the CTA button.',
-    type: 'text',
-    placeholder: 'Subscribe',
-    maxLength: 100,
-  },
-  cta_post_button_url: {
-    label: 'Post CTA Button URL',
-    description: 'External link for the CTA button. Leave empty if using an action form.',
-    type: 'url',
-    placeholder: 'https://example.com/subscribe',
-    maxLength: 2000,
-  },
-  cta_post_action_slug: {
-    label: 'Post CTA Action Slug',
-    description: 'Slug of a site action form to load inline. Mutually exclusive with button URL.',
-    type: 'text',
-    placeholder: 'newsletter',
-    maxLength: 100,
-  },
-  // CTA Sticky settings
-  cta_sticky_enabled: {
-    label: 'Sticky CTA Enabled',
-    description: 'Show a persistent CTA bar at the bottom of all public pages.',
-    type: 'select',
-    options: [
-      { value: 'true', label: 'Enabled' },
-      { value: 'false', label: 'Disabled' },
-    ],
-  },
-  cta_sticky_text: {
-    label: 'Sticky CTA Text',
-    description: 'Message shown in the sticky bottom bar.',
-    type: 'text',
-    placeholder: 'Stay up to date with our latest posts.',
-    maxLength: 200,
-  },
-  cta_sticky_button_text: {
-    label: 'Sticky CTA Button Text',
-    description: 'Label for the sticky CTA button.',
-    type: 'text',
-    placeholder: 'Subscribe',
-    maxLength: 100,
-  },
-  cta_sticky_button_url: {
-    label: 'Sticky CTA Button URL',
-    description: 'External link for the sticky CTA button. Leave empty if using an action form.',
-    type: 'url',
-    placeholder: 'https://example.com/subscribe',
-    maxLength: 2000,
-  },
-  cta_sticky_action_slug: {
-    label: 'Sticky CTA Action Slug',
-    description: 'Slug of a site action form to load inline. Mutually exclusive with button URL.',
-    type: 'text',
-    placeholder: 'newsletter',
-    maxLength: 100,
-  },
-};
+] as const;
 
 /** All known setting keys — used as an allowlist for writes. */
-const ALLOWED_KEYS = new Set(CATEGORIES.flatMap((cat) => cat.keys));
+const ALLOWED_KEYS: Set<string> = new Set(CATEGORY_DEFS.flatMap((cat) => cat.keys));
 
-function getFieldConfig(key: string): FieldConfig {
-  return FIELDS[key] || { label: key, type: 'text' };
+/* --- Localized categories builder --- */
+
+function getCategories(t: TFunction) {
+  return CATEGORY_DEFS.map((def) => ({
+    title: t(`settings.category.${def.i18nKey}`),
+    slug: def.slug,
+    description: t(`settings.category.${def.i18nKey}Description`),
+    keys: [...def.keys],
+  }));
+}
+
+/* --- Localized fields builder --- */
+
+function getFields(t: TFunction): Record<string, FieldConfig> {
+  const enabledDisabledOptions: SelectOption[] = [
+    { value: 'true', label: t('settings.field.enabled') },
+    { value: 'false', label: t('settings.field.disabled') },
+  ];
+
+  return {
+    owner_name: {
+      label: t('settings.field.ownerName'),
+      description: t('settings.field.ownerNameDescription'),
+      type: 'text',
+      placeholder: t('settings.field.ownerNamePlaceholder'),
+      maxLength: 200,
+    },
+    source_title: {
+      label: t('settings.field.sourceTitle'),
+      description: t('settings.field.sourceTitleDescription'),
+      type: 'text',
+      placeholder: t('settings.field.sourceTitlePlaceholder'),
+      maxLength: 200,
+    },
+    source_description: {
+      label: t('settings.field.sourceDescription'),
+      description: t('settings.field.sourceDescriptionDescription'),
+      type: 'text',
+      placeholder: t('settings.field.sourceDescriptionPlaceholder'),
+      maxLength: 500,
+    },
+    source_logo_text: {
+      label: t('settings.field.logoText'),
+      description: t('settings.field.logoTextDescription'),
+      type: 'text',
+      placeholder: t('settings.field.logoTextPlaceholder'),
+      maxLength: 100,
+    },
+    source_social_github: {
+      label: t('settings.field.githubUrl'),
+      description: t('settings.field.githubUrlDescription'),
+      type: 'url',
+      placeholder: t('settings.field.githubUrlPlaceholder'),
+      maxLength: 2000,
+    },
+    source_social_twitter: {
+      label: t('settings.field.twitterUrl'),
+      description: t('settings.field.twitterUrlDescription'),
+      type: 'url',
+      placeholder: t('settings.field.twitterUrlPlaceholder'),
+      maxLength: 2000,
+    },
+    source_custom_footer: {
+      label: t('settings.field.customFooter'),
+      description: t('settings.field.customFooterDescription'),
+      type: 'textarea',
+      placeholder: t('settings.field.customFooterPlaceholder'),
+      maxLength: 10_000,
+    },
+    source_posts_per_page: {
+      label: t('settings.field.postsPerPage'),
+      description: t('settings.field.postsPerPageDescription'),
+      type: 'number',
+      placeholder: t('settings.field.postsPerPagePlaceholder'),
+      min: 1,
+      max: 100,
+    },
+    source_show_reading_time: {
+      label: t('settings.field.showReadingTime'),
+      description: t('settings.field.showReadingTimeDescription'),
+      type: 'select',
+      options: enabledDisabledOptions,
+    },
+    source_code_theme: {
+      label: t('settings.field.codeTheme'),
+      description: t('settings.field.codeThemeDescription'),
+      type: 'select',
+      options: [
+        { value: 'default', label: t('settings.field.codeThemeDefault') },
+        { value: 'github', label: t('settings.field.codeThemeGithub') },
+        { value: 'monokai', label: t('settings.field.codeThemeMonokai') },
+      ],
+    },
+    source_custom_css: {
+      label: t('settings.field.customCss'),
+      description: t('settings.field.customCssDescription'),
+      type: 'textarea',
+      placeholder: '.source-article .content p {\n  font-size: 1.05rem;\n}',
+      maxLength: 50_000,
+    },
+    source_custom_head: {
+      label: t('settings.field.customHead'),
+      description: t('settings.field.customHeadDescription'),
+      type: 'textarea',
+      placeholder: '<script defer data-domain="example.com" src="https://plausible.io/js/script.js"></script>',
+      maxLength: 50_000,
+    },
+    quality_guidelines: {
+      label: t('settings.field.qualityGuidelines'),
+      description: t('settings.field.qualityGuidelinesDescription'),
+      type: 'textarea',
+      maxLength: 50_000,
+    },
+    validation_limits: {
+      label: t('settings.field.validationLimits'),
+      description: t('settings.field.validationLimitsDescription'),
+      type: 'textarea',
+      maxLength: 10_000,
+    },
+    max_actions_per_type: {
+      label: t('settings.field.maxActionsPerType'),
+      description: t('settings.field.maxActionsPerTypeDescription'),
+      type: 'number',
+      placeholder: t('settings.field.maxActionsPerTypePlaceholder'),
+      min: 1,
+      max: 10,
+    },
+    source_logo_url: {
+      label: t('settings.field.logoUrl'),
+      description: t('settings.field.logoUrlDescription'),
+      type: 'url',
+      placeholder: t('settings.field.logoUrlPlaceholder'),
+      maxLength: 2000,
+    },
+    source_favicon_url: {
+      label: t('settings.field.faviconUrl'),
+      description: t('settings.field.faviconUrlDescription'),
+      type: 'url',
+      placeholder: t('settings.field.faviconUrlPlaceholder'),
+      maxLength: 2000,
+    },
+    source_og_image_url: {
+      label: t('settings.field.ogImageUrl'),
+      description: t('settings.field.ogImageUrlDescription'),
+      type: 'url',
+      placeholder: t('settings.field.ogImageUrlPlaceholder'),
+      maxLength: 2000,
+    },
+    source_font_heading: {
+      label: t('settings.field.headingFont'),
+      description: t('settings.field.headingFontDescription'),
+      type: 'select',
+      options: [
+        { value: '', label: t('settings.field.systemDefault') },
+        ...Object.entries(FONT_OPTIONS).map(([id, f]) => ({ value: id, label: `${f.label} (${f.category})` })),
+      ],
+    },
+    source_font_body: {
+      label: t('settings.field.bodyFont'),
+      description: t('settings.field.bodyFontDescription'),
+      type: 'select',
+      options: [
+        { value: '', label: t('settings.field.systemDefault') },
+        ...Object.entries(FONT_OPTIONS).map(([id, f]) => ({ value: id, label: `${f.label} (${f.category})` })),
+      ],
+    },
+    source_social_linkedin: {
+      label: t('settings.field.linkedinUrl'),
+      description: t('settings.field.linkedinUrlDescription'),
+      type: 'url',
+      placeholder: t('settings.field.linkedinUrlPlaceholder'),
+      maxLength: 2000,
+    },
+    source_social_mastodon: {
+      label: t('settings.field.mastodonUrl'),
+      description: t('settings.field.mastodonUrlDescription'),
+      type: 'url',
+      placeholder: t('settings.field.mastodonUrlPlaceholder'),
+      maxLength: 2000,
+    },
+    source_social_youtube: {
+      label: t('settings.field.youtubeUrl'),
+      description: t('settings.field.youtubeUrlDescription'),
+      type: 'url',
+      placeholder: t('settings.field.youtubeUrlPlaceholder'),
+      maxLength: 2000,
+    },
+    source_social_website: {
+      label: t('settings.field.websiteUrl'),
+      description: t('settings.field.websiteUrlDescription'),
+      type: 'url',
+      placeholder: t('settings.field.websiteUrlPlaceholder'),
+      maxLength: 2000,
+    },
+    source_color_accent: {
+      label: t('settings.field.accentColor'),
+      description: t('settings.field.accentColorDescription'),
+      type: 'color',
+      placeholder: t('settings.field.accentColorPlaceholder'),
+    },
+    // CTA Hero settings
+    cta_hero_enabled: {
+      label: t('settings.cta.heroEnabled'),
+      description: t('settings.cta.heroEnabledDescription'),
+      type: 'select',
+      options: enabledDisabledOptions,
+    },
+    cta_hero_title: {
+      label: t('settings.cta.heroTitle'),
+      description: t('settings.cta.heroTitleDescription'),
+      type: 'text',
+      placeholder: t('settings.cta.heroTitlePlaceholder'),
+      maxLength: 200,
+    },
+    cta_hero_description: {
+      label: t('settings.cta.heroDescription'),
+      description: t('settings.cta.heroDescriptionDescription'),
+      type: 'text',
+      placeholder: t('settings.cta.heroDescriptionPlaceholder'),
+      maxLength: 500,
+    },
+    cta_hero_button_text: {
+      label: t('settings.cta.heroButtonText'),
+      description: t('settings.cta.heroButtonTextDescription'),
+      type: 'text',
+      placeholder: t('settings.cta.heroButtonTextPlaceholder'),
+      maxLength: 100,
+    },
+    cta_hero_button_url: {
+      label: t('settings.cta.heroButtonUrl'),
+      description: t('settings.cta.heroButtonUrlDescription'),
+      type: 'url',
+      placeholder: t('settings.cta.heroButtonUrlPlaceholder'),
+      maxLength: 2000,
+    },
+    cta_hero_action_slug: {
+      label: t('settings.cta.heroActionSlug'),
+      description: t('settings.cta.heroActionSlugDescription'),
+      type: 'text',
+      placeholder: t('settings.cta.heroActionSlugPlaceholder'),
+      maxLength: 100,
+    },
+    // CTA Post settings
+    cta_post_enabled: {
+      label: t('settings.cta.postEnabled'),
+      description: t('settings.cta.postEnabledDescription'),
+      type: 'select',
+      options: enabledDisabledOptions,
+    },
+    cta_post_title: {
+      label: t('settings.cta.postTitle'),
+      description: t('settings.cta.postTitleDescription'),
+      type: 'text',
+      placeholder: t('settings.cta.postTitlePlaceholder'),
+      maxLength: 200,
+    },
+    cta_post_description: {
+      label: t('settings.cta.postDescription'),
+      description: t('settings.cta.postDescriptionDescription'),
+      type: 'text',
+      placeholder: t('settings.cta.postDescriptionPlaceholder'),
+      maxLength: 500,
+    },
+    cta_post_button_text: {
+      label: t('settings.cta.postButtonText'),
+      description: t('settings.cta.postButtonTextDescription'),
+      type: 'text',
+      placeholder: t('settings.cta.postButtonTextPlaceholder'),
+      maxLength: 100,
+    },
+    cta_post_button_url: {
+      label: t('settings.cta.postButtonUrl'),
+      description: t('settings.cta.postButtonUrlDescription'),
+      type: 'url',
+      placeholder: t('settings.cta.postButtonUrlPlaceholder'),
+      maxLength: 2000,
+    },
+    cta_post_action_slug: {
+      label: t('settings.cta.postActionSlug'),
+      description: t('settings.cta.postActionSlugDescription'),
+      type: 'text',
+      placeholder: t('settings.cta.postActionSlugPlaceholder'),
+      maxLength: 100,
+    },
+    // CTA Sticky settings
+    cta_sticky_enabled: {
+      label: t('settings.cta.stickyEnabled'),
+      description: t('settings.cta.stickyEnabledDescription'),
+      type: 'select',
+      options: enabledDisabledOptions,
+    },
+    cta_sticky_text: {
+      label: t('settings.cta.stickyText'),
+      description: t('settings.cta.stickyTextDescription'),
+      type: 'text',
+      placeholder: t('settings.cta.stickyTextPlaceholder'),
+      maxLength: 200,
+    },
+    cta_sticky_button_text: {
+      label: t('settings.cta.stickyButtonText'),
+      description: t('settings.cta.stickyButtonTextDescription'),
+      type: 'text',
+      placeholder: t('settings.cta.stickyButtonTextPlaceholder'),
+      maxLength: 100,
+    },
+    cta_sticky_button_url: {
+      label: t('settings.cta.stickyButtonUrl'),
+      description: t('settings.cta.stickyButtonUrlDescription'),
+      type: 'url',
+      placeholder: t('settings.cta.stickyButtonUrlPlaceholder'),
+      maxLength: 2000,
+    },
+    cta_sticky_action_slug: {
+      label: t('settings.cta.stickyActionSlug'),
+      description: t('settings.cta.stickyActionSlugDescription'),
+      type: 'text',
+      placeholder: t('settings.cta.stickyActionSlugPlaceholder'),
+      maxLength: 100,
+    },
+  };
+}
+
+function getFieldConfig(key: string, t: TFunction): FieldConfig {
+  const fields = getFields(t);
+  return fields[key] || { label: key, type: 'text' };
 }
 
 /* --- Field validation (pure function, shared by single + batch) --- */
 
-function validateSettingField(key: string, value: string): string | null {
+function validateSettingField(key: string, value: string, t: TFunction): string | null {
   if (!ALLOWED_KEYS.has(key)) {
-    return 'Unknown setting key';
+    return t('settings.validation.unknownKey');
   }
 
-  const config = getFieldConfig(key);
+  const config = getFieldConfig(key, t);
 
   if (config.maxLength && value.length > config.maxLength) {
-    return `Value too long. Maximum ${config.maxLength.toLocaleString()} characters.`;
+    return t('settings.validation.valueTooLong', { max: config.maxLength.toLocaleString() });
   }
   if (config.type === 'color' && value && !isValidHexColor(value)) {
-    return 'Invalid hex color. Use format: #RRGGBB (e.g. #7C3AED)';
+    return t('settings.validation.invalidColor');
   }
   if (config.type === 'url' && value) {
     try {
@@ -487,19 +486,22 @@ function validateSettingField(key: string, value: string): string | null {
         throw new Error('Invalid protocol');
       }
     } catch {
-      return 'Invalid URL. Must start with http:// or https://';
+      return t('settings.validation.invalidUrl');
     }
   }
   if (config.type === 'number' && value) {
     const num = parseInt(value, 10);
     if (isNaN(num) || (config.min !== undefined && num < config.min) || (config.max !== undefined && num > config.max)) {
-      return `Must be a number${config.min !== undefined ? ` between ${config.min}` : ''}${config.max !== undefined ? ` and ${config.max}` : ''}`;
+      return t('settings.validation.invalidNumber', {
+        min: config.min ?? 0,
+        max: config.max ?? 0,
+      });
     }
   }
   if (config.type === 'select' && config.options) {
     const validValues = config.options.map((o) => o.value);
     if (!validValues.includes(value)) {
-      return `Invalid value. Must be one of: ${validValues.join(', ')}`;
+      return t('settings.validation.invalidOption', { options: validValues.join(', ') });
     }
   }
 
@@ -508,11 +510,12 @@ function validateSettingField(key: string, value: string): string | null {
 
 /* --- Setting field component --- */
 
-function SettingField({ settingKey, value }: {
+function SettingField({ settingKey, value, t }: {
   settingKey: string;
   value: string;
+  t: TFunction;
 }) {
-  const config = getFieldConfig(settingKey);
+  const config = getFieldConfig(settingKey, t);
 
   let inputElement: Child;
 
@@ -521,7 +524,7 @@ function SettingField({ settingKey, value }: {
       inputElement = (
         <div class="form-dropdown" data-setting-key={settingKey} data-original={value}>
           <button type="button" class="form-dropdown-trigger" aria-haspopup="listbox">
-            <span class="form-dropdown-label">{config.options!.find(o => o.value === value)?.label ?? '-- Select --'}</span>
+            <span class="form-dropdown-label">{config.options!.find(o => o.value === value)?.label ?? t('settings.field.selectDefault')}</span>
           </button>
           <ul role="listbox" class="form-dropdown-list">
             {config.options!.map((opt) => (
@@ -560,7 +563,13 @@ function SettingField({ settingKey, value }: {
             value={value || config.placeholder || '#000000'}
             data-sync={`#color-text-${settingKey}`}
             aria-label={`${config.label} picker`}
-            class="w-12 h-10 rounded-lg"
+            class="w-12 h-10 rounded-lg cursor-pointer"
+          />
+          <span
+            class="inline-block w-5 h-5 rounded-full border border-border-subtle shrink-0"
+            style={`background: ${value || config.placeholder || '#000000'}`}
+            id={`color-preview-${settingKey}`}
+            aria-hidden="true"
           />
           <input
             type="text"
@@ -615,19 +624,27 @@ export async function settingsPage(c: Context<{ Bindings: WebEnv; Variables: Web
   const store = c.get('store');
   const settings = await store.getSettings();
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
+  const locale = c.get('locale');
+  const defaultLocale = c.get('defaultLocale');
   const flash = c.req.query('success') ? { type: 'success' as const, message: c.req.query('success')! } :
     c.req.query('error') ? { type: 'error' as const, message: c.req.query('error')! } : undefined;
 
+  const categories = getCategories(t);
+
   return c.html(
     <AppLayout
-      title="Settings"
+      title={t('settings.title')}
       currentPath="/pignal/settings"
       csrfToken={csrfToken}
       flash={flash}
+      t={t}
+      locale={locale}
+      defaultLocale={defaultLocale}
     >
       <div class="mb-8">
-        <h1 class="text-2xl font-bold tracking-tight">Settings</h1>
-        <p class="text-muted text-sm mt-1">Configure your signal store</p>
+        <h1 class="text-2xl font-bold tracking-tight">{t('settings.title')}</h1>
+        <p class="text-muted text-sm mt-1">{t('settings.description')}</p>
       </div>
 
       <script id="setting-defaults" type="application/json">
@@ -640,7 +657,7 @@ export async function settingsPage(c: Context<{ Bindings: WebEnv; Variables: Web
         <nav class="lg:w-48 shrink-0 lg:sticky lg:top-20 lg:self-start">
           {/* Mobile: horizontal scroll pills */}
           <div class="flex lg:hidden gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <a
                 href={`#settings-${cat.slug}`}
                 class="px-3 py-1.5 text-sm rounded-full whitespace-nowrap bg-surface border border-border-subtle text-muted hover:text-text hover:bg-surface-hover transition-colors"
@@ -651,7 +668,7 @@ export async function settingsPage(c: Context<{ Bindings: WebEnv; Variables: Web
           </div>
           {/* Desktop: vertical nav links */}
           <div class="hidden lg:flex flex-col gap-0.5">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <a
                 href={`#settings-${cat.slug}`}
                 class="px-3 py-2 text-sm rounded-lg text-muted hover:text-text hover:bg-surface-hover transition-colors"
@@ -664,7 +681,7 @@ export async function settingsPage(c: Context<{ Bindings: WebEnv; Variables: Web
 
         {/* Right content: open sections */}
         <div class="flex-1 min-w-0 space-y-8">
-          {CATEGORIES.map((category) => {
+          {categories.map((category) => {
             const resetKeys = category.keys.filter((k) => k in DEFAULTS);
             return (
               <section
@@ -676,7 +693,7 @@ export async function settingsPage(c: Context<{ Bindings: WebEnv; Variables: Web
                   <p class="text-sm text-muted mt-1">{category.description}</p>
                 </div>
                 {category.keys.map((key) => (
-                  <SettingField settingKey={key} value={settings[key] ?? ''} />
+                  <SettingField settingKey={key} value={settings[key] ?? ''} t={t} />
                 ))}
                 {resetKeys.length > 0 && (
                   <button
@@ -684,7 +701,7 @@ export async function settingsPage(c: Context<{ Bindings: WebEnv; Variables: Web
                     class="outline secondary text-sm px-4 py-2 mt-2"
                     data-reset-keys={JSON.stringify(resetKeys)}
                   >
-                    Reset to defaults
+                    {t('common.resetToDefaults')}
                   </button>
                 )}
               </section>
@@ -696,11 +713,11 @@ export async function settingsPage(c: Context<{ Bindings: WebEnv; Variables: Web
       <div id="save-bar" class="save-bar" hidden>
         <div class="save-bar-content">
           <span class="save-bar-text">
-            <strong id="save-bar-count">0</strong> unsaved changes
+            <strong id="save-bar-count">0</strong> {t('common.unsavedChanges')}
           </span>
           <div class="save-bar-actions">
-            <button type="button" id="save-bar-discard" class="outline secondary">Discard</button>
-            <button type="button" id="save-bar-save">Save All</button>
+            <button type="button" id="save-bar-discard" class="outline secondary">{t('common.discard')}</button>
+            <button type="button" id="save-bar-save">{t('common.saveAll')}</button>
           </div>
         </div>
       </div>
@@ -712,9 +729,10 @@ export async function settingsPage(c: Context<{ Bindings: WebEnv; Variables: Web
 
 export async function updateSettingHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const key = c.req.param('key')!;
+  const t = c.get('t');
 
   if (!ALLOWED_KEYS.has(key)) {
-    const msg = 'Unknown setting key';
+    const msg = t('settings.validation.unknownKey');
     if (isHtmxRequest(c)) {
       c.header('HX-Trigger', toastTrigger(msg, 'error'));
       c.header('HX-Reswap', 'none');
@@ -728,15 +746,16 @@ export async function updateSettingHandler(c: Context<{ Bindings: WebEnv; Variab
   const value = body.value as string;
 
   if (value === undefined || value === null) {
+    const msg = t('settings.validation.valueRequired');
     if (isHtmxRequest(c)) {
-      c.header('HX-Trigger', toastTrigger('Value is required', 'error'));
+      c.header('HX-Trigger', toastTrigger(msg, 'error'));
       c.header('HX-Reswap', 'none');
       return c.body(null, 204);
     }
-    return c.redirect('/pignal/settings?error=Value+is+required');
+    return c.redirect(`/pignal/settings?error=${encodeURIComponent(msg)}`);
   }
 
-  const error = validateSettingField(key, value);
+  const error = validateSettingField(key, value, t);
   if (error) {
     if (isHtmxRequest(c)) {
       c.header('HX-Trigger', toastTrigger(error, 'error'));
@@ -749,12 +768,12 @@ export async function updateSettingHandler(c: Context<{ Bindings: WebEnv; Variab
   try {
     await store.updateSetting(key, value);
     if (isHtmxRequest(c)) {
-      c.header('HX-Trigger', toastTrigger('Setting updated'));
-      return c.html(<SettingField settingKey={key} value={value} />);
+      c.header('HX-Trigger', toastTrigger(t('settings.toast.updated')));
+      return c.html(<SettingField settingKey={key} value={value} t={t} />);
     }
-    return c.redirect('/pignal/settings?success=Setting+updated');
+    return c.redirect(`/pignal/settings?success=${encodeURIComponent(t('settings.toast.updated'))}`);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Failed to update setting';
+    const msg = err instanceof Error ? err.message : t('settings.validation.failedToUpdate');
     if (isHtmxRequest(c)) {
       c.header('HX-Trigger', toastTrigger(msg, 'error'));
       c.header('HX-Reswap', 'none');
@@ -767,16 +786,17 @@ export async function updateSettingHandler(c: Context<{ Bindings: WebEnv; Variab
 /* --- Batch update handler (JSON API for save bar) --- */
 
 export async function batchUpdateSettingsHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+  const t = c.get('t');
   let changes: Record<string, string>;
   try {
     const body = await c.req.json<{ changes: Record<string, string> }>();
     changes = body.changes;
   } catch {
-    return c.json({ saved: [], errors: { _body: 'Invalid JSON body' } }, 400);
+    return c.json({ saved: [], errors: { _body: t('settings.validation.invalidJsonBody') } }, 400);
   }
 
   if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
-    return c.json({ saved: [], errors: { _body: 'Missing "changes" object' } }, 400);
+    return c.json({ saved: [], errors: { _body: t('settings.validation.missingChanges') } }, 400);
   }
 
   const errors: Record<string, string> = {};
@@ -785,7 +805,7 @@ export async function batchUpdateSettingsHandler(c: Context<{ Bindings: WebEnv; 
   // Validate all fields first
   const validEntries: [string, string][] = [];
   for (const [key, value] of Object.entries(changes)) {
-    const error = validateSettingField(key, String(value));
+    const error = validateSettingField(key, String(value), t);
     if (error) {
       errors[key] = error;
     } else {
@@ -800,7 +820,7 @@ export async function batchUpdateSettingsHandler(c: Context<{ Bindings: WebEnv; 
         await store.updateSetting(key, value);
         return key;
       } catch (err) {
-        errors[key] = err instanceof Error ? err.message : 'Failed to save';
+        errors[key] = err instanceof Error ? err.message : t('settings.validation.failedToSave');
         return null;
       }
     })

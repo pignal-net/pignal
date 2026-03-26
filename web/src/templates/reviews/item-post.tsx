@@ -31,11 +31,11 @@ function StarDisplay({ score, max }: { score: number; max: number }) {
   const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
 
   return (
-    <span class="inline-flex items-center gap-px text-primary text-xl tracking-wider" title={`${score}/${max}`}>
+    <span class="inline-flex items-center gap-px text-primary text-xl tracking-wider" role="img" aria-label={`Rating: ${score} out of ${max}`} title={`${score}/${max}`}>
       {'★'.repeat(fullStars)}
       {hasHalf && <span class="opacity-40">★</span>}
       {'☆'.repeat(Math.max(0, emptyStars))}
-      <span class="text-sm text-muted ml-1.5">{score}/{max}</span>
+      <span class="text-sm text-muted ml-1.5" aria-hidden="true">{score}/{max}</span>
     </span>
   );
 }
@@ -75,7 +75,7 @@ export function ReviewsItemPost(props: ItemPostProps) {
 
       <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
         <main class="min-w-0 max-w-full break-words">
-          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
           <article class="source-article min-w-0 max-w-full">
             <header>
@@ -117,7 +117,7 @@ export function ReviewsItemPost(props: ItemPostProps) {
               <footer class="mt-10 pt-6 border-t border-border-subtle">
                 <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag text-sm text-primary hover:underline">#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                   ))}
                 </div>
               </footer>

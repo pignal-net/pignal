@@ -4,6 +4,7 @@ import { DirectorySourcePage } from './source-page';
 import { DirectoryItemPost } from './item-post';
 import { DirectoryLayout } from './layout';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { stripMarkdown } from '../../lib/markdown';
 
 const config = getTemplateConfig('directory');
@@ -11,20 +12,21 @@ const config = getTemplateConfig('directory');
 function getStatusClasses(label: string | null): string {
   if (!label) return '';
   const lower = label.toLowerCase();
-  if (lower.includes('active') || lower.includes('recommended')) return 'bg-green-500/15 text-green-600';
-  if (lower.includes('new')) return 'bg-blue-500/15 text-blue-500';
-  if (lower.includes('archived') || lower.includes('inactive') || lower.includes('stale')) return 'bg-border/50 text-muted';
-  if (lower.includes('deprecated') || lower.includes('shutting')) return 'bg-red-500/15 text-red-600';
-  return 'bg-green-500/15 text-green-600';
+  if (lower.includes('active') || lower.includes('recommended')) return 'bg-success-bg text-success border border-success-border';
+  if (lower.includes('new')) return 'bg-info-bg text-info border border-info-border';
+  if (lower.includes('archived') || lower.includes('inactive') || lower.includes('stale')) return 'bg-surface-raised text-muted border border-border';
+  if (lower.includes('deprecated') || lower.includes('shutting')) return 'bg-error-bg text-error border border-error-border';
+  return 'bg-success-bg text-success border border-success-border';
 }
 
 function DirectoryPartialResults(props: PartialResultsProps) {
   if (props.items.length === 0) {
     return (
-      <div class="empty-state">
-        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-        <p>{`No ${props.vocabulary.itemPlural} found.`}</p>
-      </div>
+      <EmptyState
+        icon="search"
+        title={`No ${props.vocabulary.itemPlural} found`}
+        description="Try adjusting your search or filters."
+      />
     );
   }
 
@@ -40,18 +42,31 @@ function DirectoryPartialResults(props: PartialResultsProps) {
 
   return (
     <>
+      {/* A-Z jump links */}
+      {sortedLetters.length > 1 && (
+        <nav class="flex flex-wrap gap-1 mb-6" aria-label="Alphabetical navigation">
+          {sortedLetters.map((letter) => (
+            <a
+              href={`#letter-${letter}`}
+              class="filter-chip"
+            >
+              {letter}
+            </a>
+          ))}
+        </nav>
+      )}
       <div class="flex flex-col">
         {sortedLetters.map((letter) => (
           <>
-            <div class="text-xl font-bold text-primary pt-2 pb-1 mt-6 first:mt-0 mb-3 border-b-2 border-primary">{letter}</div>
+            <div class="text-lg font-bold text-primary pt-2 pb-1 mt-5 first:mt-0 mb-2 border-b-2 border-primary" id={`letter-${letter}`}>{letter}</div>
             {grouped[letter].map((item) => {
               const desc = stripMarkdown(item.content).slice(0, 140);
               const statusClasses = getStatusClasses(item.validationActionLabel);
               return (
-                <div class="flex items-start gap-3 py-3 border-b border-border-subtle transition-colors hover:bg-primary/[0.03] max-sm:flex-col max-sm:gap-1">
+                <a href={`/item/${item.slug}`} class="card-hover flex items-start gap-3 py-3 px-3 rounded-lg border-b border-border-subtle no-underline text-inherit transition-colors hover:bg-primary/4 max-sm:flex-col max-sm:gap-1">
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-0.5 flex-wrap">
-                      <a href={`/item/${item.slug}`} class="no-underline text-text font-semibold text-[0.95rem] hover:text-primary after:content-['\\2197'] after:text-xs after:ml-1 after:opacity-40">{item.keySummary}</a>
+                      <span class="text-text font-semibold text-[0.95rem]">{item.keySummary}</span>
                       {item.typeName && <span class="text-[0.7rem] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium whitespace-nowrap">{item.typeName}</span>}
                       {item.validationActionLabel && (
                         <span class={`text-[0.68rem] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${statusClasses}`}>{item.validationActionLabel}</span>
@@ -64,7 +79,8 @@ function DirectoryPartialResults(props: PartialResultsProps) {
                       </div>
                     )}
                   </div>
-                </div>
+                  <svg class="shrink-0 w-4 h-4 mt-1 text-muted opacity-40 max-sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17l9.2-9.2M17 17V7H7" /></svg>
+                </a>
               );
             })}
           </>

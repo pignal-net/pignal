@@ -1,12 +1,18 @@
 import { Hono } from 'hono';
+import { languageDetector } from 'hono/language';
+import { trimTrailingSlash } from 'hono/trailing-slash';
 import type { Item } from '@pignal/core';
-import type { ItemWithMeta, ItemStoreRpc } from '@pignal/db';
+import type { ItemWithMeta } from '@pignal/db';
 
-import type { WebEnv, WebRouteConfig } from './types';
-import type { ApiKeyStore } from '@pignal/core/store/api-keys';
+import type { WebEnv, WebRouteConfig, WebVars } from './types';
+
+// i18n — registers shared translations at import time
+import './i18n';
+import { SUPPORTED_LOCALES } from './i18n/types';
 
 // Middleware
 import { securityHeaders } from './middleware/headers';
+import { i18nMiddleware } from './middleware/locale';
 import { sessionMiddleware } from './middleware/session';
 import { csrfMiddleware } from './middleware/csrf';
 import { analyticsMiddleware } from './middleware/analytics';
@@ -129,7 +135,10 @@ function toItem(row: ItemWithMeta): Item {
 }
 
 export function createWebRoutes(config: WebRouteConfig) {
-  const router = new Hono<{ Bindings: WebEnv; Variables: { store: ItemStoreRpc; apiKeyStore?: ApiKeyStore; templateName: string } }>();
+  const router = new Hono<{ Bindings: WebEnv; Variables: WebVars }>();
+
+  // Normalize trailing slashes (redirects /vi/ → /vi) — must run before route matching
+  router.use(trimTrailingSlash());
 
   // Security headers on ALL responses
   router.use('*', securityHeaders);
@@ -143,6 +152,26 @@ export function createWebRoutes(config: WebRouteConfig) {
     }
     await next();
   });
+
+  // Language detection: path > query > cookie > Accept-Language header
+  router.use('*', languageDetector({
+    supportedLanguages: [...SUPPORTED_LOCALES],
+    fallbackLanguage: 'en',
+    order: ['path', 'querystring', 'cookie', 'header'],
+    lookupFromPathIndex: 0,
+    lookupQueryString: 'lang',
+    lookupCookie: 'language',
+    caches: ['cookie'],
+    cookieOptions: {
+      sameSite: 'Lax',
+      secure: true,
+      maxAge: 365 * 24 * 60 * 60,
+      httpOnly: true,
+    },
+  }));
+
+  // i18n context: resolves locale, creates t(), registers template translations
+  router.use('*', i18nMiddleware);
 
   // Static assets (no auth, immutable cache)
   router.get('/static/tailwind.css', (c) => {
@@ -248,14 +277,18 @@ export function createWebRoutes(config: WebRouteConfig) {
     return c.body(generateLlmsFullTxt(metadata, result.total, sourceUrl, templateConfig.vocabulary));
   });
 
+  // ── Locale-aware content & admin routes ──
+  // Extracted into a sub-app so it can be mounted at both / and /:locale/
+  const contentRoutes = new Hono<{ Bindings: WebEnv; Variables: WebVars }>();
+
   // Analytics tracking on public pages (fire-and-forget via waitUntil)
-  router.use('/', analyticsMiddleware);
-  router.use('/item/:slug', analyticsMiddleware);
+  contentRoutes.use('/', analyticsMiddleware);
+  contentRoutes.use('/item/:slug', analyticsMiddleware);
 
   // Public source page at root (no auth, no CSRF, no HTMX -- pure SSR for crawlability)
-  router.get('/', sourcePageFeed);
+  contentRoutes.get('/', sourcePageFeed);
 
-  router.get('/feed.xml', async (c) => {
+  contentRoutes.get('/feed.xml', async (c) => {
     const store = c.get('store');
     const sourceUrl = new URL(c.req.url).origin;
     const [settings, result] = await Promise.all([
@@ -269,7 +302,7 @@ export function createWebRoutes(config: WebRouteConfig) {
     return c.body(generateAtomFeed(settings, items, sourceUrl, templateConfig.vocabulary));
   });
   // Source post: serves HTML or raw markdown based on .md suffix
-  router.get('/item/:slug', async (c) => {
+  contentRoutes.get('/item/:slug', async (c) => {
     const slugParam = c.req.param('slug') ?? '';
 
     // Raw markdown endpoint: /item/:slug.md
@@ -326,104 +359,112 @@ export function createWebRoutes(config: WebRouteConfig) {
     // HTML source post
     return itemPostPage(c);
   });
-  router.get('/s/:token', sharedPage);
+  contentRoutes.get('/s/:token', sharedPage);
 
   // Admin login (no session required, but CSRF-protected + rate-limited)
   // GET: csrfMiddleware sets the initial CSRF cookie for the form
   // POST: CSRF validated manually in loginHandler (not via middleware, to avoid
   //       the middleware's post-next() hook overwriting the regenerated CSRF cookie)
-  router.get('/pignal/login', csrfMiddleware, loginPage);
-  router.post('/pignal/login', rateLimit('login'), loginHandler);
+  contentRoutes.get('/pignal/login', csrfMiddleware, loginPage);
+  contentRoutes.post('/pignal/login', rateLimit('login'), loginHandler);
 
   // All /pignal routes below require session + CSRF
-  router.use('/pignal/*', sessionMiddleware);
-  router.use('/pignal/*', csrfMiddleware);
+  contentRoutes.use('/pignal/*', sessionMiddleware);
+  contentRoutes.use('/pignal/*', csrfMiddleware);
 
   // Logout
-  router.get('/pignal/logout', (c) => {
+  contentRoutes.get('/pignal/logout', (c) => {
     c.header('Set-Cookie', clearSessionCookie());
     return c.redirect('/pignal/login');
   });
 
   // Admin pages
-  router.get('/pignal', dashboardPage);
-  router.get('/pignal/items', itemsPage);
+  contentRoutes.get('/pignal', dashboardPage);
+  contentRoutes.get('/pignal/items', itemsPage);
 
   // Item bulk actions (must be before :id routes to avoid matching "bulk" as :id)
-  router.post('/pignal/items/bulk/archive', bulkArchiveItemsHandler);
-  router.post('/pignal/items/bulk/unarchive', bulkUnarchiveItemsHandler);
-  router.post('/pignal/items/bulk/vouch', bulkVouchItemsHandler);
-  router.post('/pignal/items/bulk/delete', bulkDeleteItemsHandler);
+  contentRoutes.post('/pignal/items/bulk/archive', bulkArchiveItemsHandler);
+  contentRoutes.post('/pignal/items/bulk/unarchive', bulkUnarchiveItemsHandler);
+  contentRoutes.post('/pignal/items/bulk/vouch', bulkVouchItemsHandler);
+  contentRoutes.post('/pignal/items/bulk/delete', bulkDeleteItemsHandler);
 
   // Item detail + actions
-  router.get('/pignal/items/:id', itemDetailPage);
-  router.get('/pignal/items/:id/edit-form', editItemFormHandler);
-  router.post('/pignal/items/:id/edit', editItemHandler);
-  router.post('/pignal/items/:id/delete', deleteItemHandler);
-  router.post('/pignal/items/:id/toggle-archive', toggleArchiveHandler);
-  router.post('/pignal/items/:id/toggle-pin', togglePinHandler);
-  router.post('/pignal/items/:id/vouch', vouchItemHandler);
-  router.post('/pignal/items/:id/validate', validateHandler);
-  router.post('/pignal/items/:id/archive', archiveHandler);
-  router.post('/pignal/items/:id/unarchive', unarchiveHandler);
-  router.post('/pignal/items/:id/pin', pinHandler);
-  router.post('/pignal/items/:id/unpin', unpinHandler);
-  router.post('/pignal/items/:id/visibility', visibilityHandler);
+  contentRoutes.get('/pignal/items/:id', itemDetailPage);
+  contentRoutes.get('/pignal/items/:id/edit-form', editItemFormHandler);
+  contentRoutes.post('/pignal/items/:id/edit', editItemHandler);
+  contentRoutes.post('/pignal/items/:id/delete', deleteItemHandler);
+  contentRoutes.post('/pignal/items/:id/toggle-archive', toggleArchiveHandler);
+  contentRoutes.post('/pignal/items/:id/toggle-pin', togglePinHandler);
+  contentRoutes.post('/pignal/items/:id/vouch', vouchItemHandler);
+  contentRoutes.post('/pignal/items/:id/validate', validateHandler);
+  contentRoutes.post('/pignal/items/:id/archive', archiveHandler);
+  contentRoutes.post('/pignal/items/:id/unarchive', unarchiveHandler);
+  contentRoutes.post('/pignal/items/:id/pin', pinHandler);
+  contentRoutes.post('/pignal/items/:id/unpin', unpinHandler);
+  contentRoutes.post('/pignal/items/:id/visibility', visibilityHandler);
 
   // Types CRUD
-  router.get('/pignal/types', typesPage);
-  router.get('/pignal/types/add-form', addTypeFormHandler);
-  router.post('/pignal/types', createTypeHandler);
-  router.post('/pignal/types/bulk/delete', bulkDeleteTypesHandler);
-  router.get('/pignal/types/:id/edit-form', editTypeFormHandler);
-  router.post('/pignal/types/:id/edit', editTypeHandler);
-  router.post('/pignal/types/:id/delete', deleteTypeHandler);
+  contentRoutes.get('/pignal/types', typesPage);
+  contentRoutes.get('/pignal/types/add-form', addTypeFormHandler);
+  contentRoutes.post('/pignal/types', createTypeHandler);
+  contentRoutes.post('/pignal/types/bulk/delete', bulkDeleteTypesHandler);
+  contentRoutes.get('/pignal/types/:id/edit-form', editTypeFormHandler);
+  contentRoutes.post('/pignal/types/:id/edit', editTypeHandler);
+  contentRoutes.post('/pignal/types/:id/delete', deleteTypeHandler);
 
   // Workspaces CRUD
-  router.get('/pignal/workspaces', workspacesPage);
-  router.get('/pignal/workspaces/add-form', addWorkspaceFormHandler);
-  router.post('/pignal/workspaces', createWorkspaceHandler);
-  router.post('/pignal/workspaces/bulk/delete', bulkDeleteWorkspacesHandler);
-  router.get('/pignal/workspaces/:id/edit-form', editWorkspaceFormHandler);
-  router.post('/pignal/workspaces/:id/edit', editWorkspaceHandler);
-  router.post('/pignal/workspaces/:id/toggle-visibility', toggleVisibilityHandler);
-  router.post('/pignal/workspaces/:id/delete', deleteWorkspaceHandler);
+  contentRoutes.get('/pignal/workspaces', workspacesPage);
+  contentRoutes.get('/pignal/workspaces/add-form', addWorkspaceFormHandler);
+  contentRoutes.post('/pignal/workspaces', createWorkspaceHandler);
+  contentRoutes.post('/pignal/workspaces/bulk/delete', bulkDeleteWorkspacesHandler);
+  contentRoutes.get('/pignal/workspaces/:id/edit-form', editWorkspaceFormHandler);
+  contentRoutes.post('/pignal/workspaces/:id/edit', editWorkspaceHandler);
+  contentRoutes.post('/pignal/workspaces/:id/toggle-visibility', toggleVisibilityHandler);
+  contentRoutes.post('/pignal/workspaces/:id/delete', deleteWorkspaceHandler);
 
   // Settings
-  router.get('/pignal/settings', settingsPage);
-  router.post('/pignal/settings/batch', batchUpdateSettingsHandler);
-  router.post('/pignal/settings/:key', updateSettingHandler);
+  contentRoutes.get('/pignal/settings', settingsPage);
+  contentRoutes.post('/pignal/settings/batch', batchUpdateSettingsHandler);
+  contentRoutes.post('/pignal/settings/:key', updateSettingHandler);
 
   // API Keys
-  router.get('/pignal/api-keys', apiKeysPage);
-  router.get('/pignal/api-keys/add-form', addApiKeyFormHandler);
-  router.post('/pignal/api-keys', createApiKeyHandler);
-  router.post('/pignal/api-keys/bulk-revoke', bulkRevokeApiKeysHandler);
-  router.post('/pignal/api-keys/:id/delete', deleteApiKeyHandler);
+  contentRoutes.get('/pignal/api-keys', apiKeysPage);
+  contentRoutes.get('/pignal/api-keys/add-form', addApiKeyFormHandler);
+  contentRoutes.post('/pignal/api-keys', createApiKeyHandler);
+  contentRoutes.post('/pignal/api-keys/bulk-revoke', bulkRevokeApiKeysHandler);
+  contentRoutes.post('/pignal/api-keys/:id/delete', deleteApiKeyHandler);
 
   // Site Actions
-  router.get('/pignal/actions', actionsPage);
-  router.get('/pignal/actions/add-form', addActionFormHandler);
-  router.post('/pignal/actions', createActionHandler);
-  router.post('/pignal/actions/bulk-pause', bulkPauseActionsHandler);
-  router.post('/pignal/actions/bulk-activate', bulkActivateActionsHandler);
-  router.post('/pignal/actions/bulk-delete', bulkDeleteActionsHandler);
-  router.get('/pignal/actions/:id/edit-form', editActionFormHandler);
-  router.post('/pignal/actions/:id/update', editActionHandler);
-  router.post('/pignal/actions/:id/delete', deleteActionHandler);
-  router.post('/pignal/actions/:id/toggle-status', toggleActionStatusHandler);
-  router.get('/pignal/actions/:id/export', exportActionSubmissionsHandler);
+  contentRoutes.get('/pignal/actions', actionsPage);
+  contentRoutes.get('/pignal/actions/add-form', addActionFormHandler);
+  contentRoutes.post('/pignal/actions', createActionHandler);
+  contentRoutes.post('/pignal/actions/bulk-pause', bulkPauseActionsHandler);
+  contentRoutes.post('/pignal/actions/bulk-activate', bulkActivateActionsHandler);
+  contentRoutes.post('/pignal/actions/bulk-delete', bulkDeleteActionsHandler);
+  contentRoutes.get('/pignal/actions/:id/edit-form', editActionFormHandler);
+  contentRoutes.post('/pignal/actions/:id/update', editActionHandler);
+  contentRoutes.post('/pignal/actions/:id/delete', deleteActionHandler);
+  contentRoutes.post('/pignal/actions/:id/toggle-status', toggleActionStatusHandler);
+  contentRoutes.get('/pignal/actions/:id/export', exportActionSubmissionsHandler);
 
   // Submissions
-  router.get('/pignal/submissions', submissionsPage);
-  router.post('/pignal/submissions/bulk-read', bulkReadSubmissionsHandler);
-  router.post('/pignal/submissions/bulk-archive', bulkArchiveSubmissionsHandler);
-  router.post('/pignal/submissions/bulk-spam', bulkSpamSubmissionsHandler);
-  router.post('/pignal/submissions/bulk-delete', bulkDeleteSubmissionsHandler);
-  router.post('/pignal/submissions/:id/status', updateSubmissionHandler);
-  router.post('/pignal/submissions/:id/delete', deleteSubmissionHandler);
+  contentRoutes.get('/pignal/submissions', submissionsPage);
+  contentRoutes.post('/pignal/submissions/bulk-read', bulkReadSubmissionsHandler);
+  contentRoutes.post('/pignal/submissions/bulk-archive', bulkArchiveSubmissionsHandler);
+  contentRoutes.post('/pignal/submissions/bulk-spam', bulkSpamSubmissionsHandler);
+  contentRoutes.post('/pignal/submissions/bulk-delete', bulkDeleteSubmissionsHandler);
+  contentRoutes.post('/pignal/submissions/:id/status', updateSubmissionHandler);
+  contentRoutes.post('/pignal/submissions/:id/delete', deleteSubmissionHandler);
+
+  // Mount content routes at root (default locale, no prefix)
+  router.route('/', contentRoutes);
+
+  // Mount content routes at each locale prefix (e.g., /vi/..., /zh/...)
+  for (const locale of SUPPORTED_LOCALES) {
+    router.route(`/${locale}`, contentRoutes);
+  }
 
   return router;
 }
 
-export type { WebEnv, WebRouteConfig } from './types';
+export type { WebEnv, WebRouteConfig, WebVars } from './types';

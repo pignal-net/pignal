@@ -160,6 +160,10 @@ export const ALLOWED_SETTINGS_KEYS = new Set([
   'webhook_secret',
   // Testimonials
   'testimonial_type_name',
+  // Internationalization
+  'source_locale',
+  // Visitor authentication (managed sites)
+  'visitor_login_enabled',
 ]);
 
 export const updateSettingSchema = z.object({

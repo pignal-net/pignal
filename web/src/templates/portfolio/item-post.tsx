@@ -40,8 +40,8 @@ export function PortfolioItemPost(props: ItemPostProps) {
     <PortfolioLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="max-w-4xl mx-auto px-4 pt-8 pb-16">
-        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+      <div class="max-w-4xl mx-auto px-4 pt-8 pb-16 fade-in-page">
+        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
         {/* Full-width hero image area */}
         <div class="mb-8">
@@ -74,9 +74,9 @@ export function PortfolioItemPost(props: ItemPostProps) {
           <p class="text-base text-muted leading-relaxed mb-6">{excerpt}{item.content.length > 300 ? '...' : ''}</p>
 
           {item.tags && item.tags.length > 0 && (
-            <div class="item-tags">
+            <div class="flex flex-wrap gap-2 mt-4">
               {item.tags.map((t) => (
-                <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                <a href={`/?tag=${encodeURIComponent(t)}`} class="text-sm px-3 py-1 rounded-full bg-muted/8 border border-border-subtle text-muted no-underline hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
               ))}
             </div>
           )}

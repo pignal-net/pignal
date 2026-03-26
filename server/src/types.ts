@@ -10,6 +10,8 @@ export type Env = {
   TEMPLATE?: string;
   /** CORS allowed origins: unset = same-origin, "*" = all, comma-separated = explicit list */
   CORS_ORIGIN?: string;
+  /** Per-site visitor secret for hub SSO (managed sites only). */
+  VISITOR_SITE_SECRET?: string;
 };
 
 /**

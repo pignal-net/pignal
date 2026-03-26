@@ -1,3 +1,5 @@
+import type { TFunction } from '../i18n/types';
+
 interface PaginationProps {
   total: number;
   limit: number;
@@ -5,6 +7,7 @@ interface PaginationProps {
   baseUrl: string;
   htmxTarget?: string;
   htmxIndicator?: string;
+  t?: TFunction;
 }
 
 /**
@@ -28,7 +31,10 @@ function buildPageList(currentPage: number, totalPages: number): (number | '...'
   return pages;
 }
 
-export function Pagination({ total, limit, offset, baseUrl, htmxTarget, htmxIndicator }: PaginationProps) {
+const identity = (key: string) => key;
+
+export function Pagination({ total, limit, offset, baseUrl, htmxTarget, htmxIndicator, t: tProp }: PaginationProps) {
+  const t = tProp ?? identity;
   const totalPages = Math.ceil(total / limit);
   const currentPage = Math.floor(offset / limit) + 1;
 
@@ -49,7 +55,7 @@ export function Pagination({ total, limit, offset, baseUrl, htmxTarget, htmxIndi
           rel="prev"
           {...(htmxTarget ? { 'hx-get': `${baseUrl}${separator}offset=${(currentPage - 2) * limit}`, 'hx-target': htmxTarget, 'hx-push-url': 'true', ...(htmxIndicator ? { 'hx-indicator': htmxIndicator } : {}) } : {})}
         >
-          Previous
+          {t('common.previous')}
         </a>
       )}
       {pages.map((page) => (
@@ -74,7 +80,7 @@ export function Pagination({ total, limit, offset, baseUrl, htmxTarget, htmxIndi
           rel="next"
           {...(htmxTarget ? { 'hx-get': `${baseUrl}${separator}offset=${currentPage * limit}`, 'hx-target': htmxTarget, 'hx-push-url': 'true', ...(htmxIndicator ? { 'hx-indicator': htmxIndicator } : {}) } : {})}
         >
-          Next
+          {t('common.next')}
         </a>
       )}
     </nav>

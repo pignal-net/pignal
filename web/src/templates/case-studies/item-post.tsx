@@ -70,14 +70,14 @@ export function CaseStudiesItemPost(props: ItemPostProps) {
     <CaseStudiesLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--post">
+      <div class="source-page source-page--post fade-in-page">
         <main class="source-main min-w-0 max-w-full">
-          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
           <article class="source-article">
             <header>
               <div class="source-category">
-                <a href={`/?type=${item.typeId}`} class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide text-white bg-primary no-underline hover:opacity-90 mb-4" {...hxProps(`/?type=${item.typeId}`)}>
+                <a href={`/?type=${item.typeId}`} class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide text-primary-inverse bg-primary no-underline hover:opacity-90 mb-4" {...hxProps(`/?type=${item.typeId}`)}>
                   {item.typeName}
                 </a>
                 {item.workspaceName && (
@@ -116,11 +116,11 @@ export function CaseStudiesItemPost(props: ItemPostProps) {
 
             {/* Key metrics callout box */}
             {metrics.length > 0 && (
-              <div class="border-2 border-primary rounded-xl overflow-hidden my-6">
-                <div class="px-4 py-2 bg-primary text-white text-xs font-semibold uppercase tracking-wide">Key Outcomes</div>
-                <div class="flex max-sm:flex-col">
+              <div class="border-2 border-primary rounded-xl overflow-hidden my-6" role="region" aria-label="Key Outcomes">
+                <div class="px-4 py-2 bg-primary text-primary-inverse text-xs font-semibold uppercase tracking-wide">Key Outcomes</div>
+                <div class="flex max-sm:flex-col" role="list">
                   {metrics.map((m, i) => (
-                    <div class={`flex-1 px-4 py-3 max-sm:py-2 text-center max-sm:text-left max-sm:flex max-sm:items-center max-sm:gap-2 bg-surface ${i > 0 ? 'border-l max-sm:border-l-0 max-sm:border-t border-border' : ''}`}>
+                    <div class={`flex-1 px-4 py-3 max-sm:py-2 text-center max-sm:text-left max-sm:flex max-sm:items-center max-sm:gap-2 bg-surface ${i > 0 ? 'border-l max-sm:border-l-0 max-sm:border-t border-border' : ''}`} role="listitem">
                       <span class="block max-sm:inline max-sm:min-w-[4rem] text-2xl max-sm:text-lg font-bold text-primary leading-tight mb-0.5">{m.value}</span>
                       <span class="block max-sm:inline text-[0.72rem] text-muted uppercase tracking-wide">{m.label}</span>
                     </div>
@@ -134,9 +134,9 @@ export function CaseStudiesItemPost(props: ItemPostProps) {
             </div>
             {item.tags && item.tags.length > 0 && (
               <footer class="mt-10 pt-6 border-t border-border-subtle">
-                <div class="item-tags">
+                <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag" {...hxProps(`/?tag=${encodeURIComponent(t)}`)}>#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="text-sm px-3 py-1 rounded-full bg-muted/8 border border-border-subtle text-muted no-underline hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors" {...hxProps(`/?tag=${encodeURIComponent(t)}`)}>#{t}</a>
                   ))}
                 </div>
               </footer>

@@ -1,6 +1,7 @@
 import type { SourcePageProps, Item } from '@pignal/templates';
 import { FilterBar } from '../../components/type-sidebar';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
@@ -35,12 +36,12 @@ function MagazineHeroCard({ item }: { item: Item }) {
   const itemUrl = `/item/${item.slug}`;
 
   return (
-    <div class="relative bg-surface rounded-2xl border border-border-subtle shadow-card overflow-hidden mb-8 transition-shadow duration-200 hover:shadow-card-hover">
+    <div class="relative bg-surface rounded-2xl border border-border-subtle shadow-card overflow-hidden mb-8 card-hover">
       <div class="w-full h-56 sm:h-72 bg-gradient-to-br from-primary/10 to-primary/25 flex items-center justify-center">
-        <span class="inline-block px-5 py-2 rounded-full text-base font-semibold uppercase tracking-wide text-white bg-primary no-underline">{item.typeName}</span>
+        <span class="inline-block px-5 py-2 rounded-full text-base font-semibold uppercase tracking-wide text-primary-inverse bg-primary no-underline">{item.typeName}</span>
       </div>
       <div class="p-6 sm:px-8 sm:pb-8">
-        <h2 class="m-0 mb-3 text-xl sm:text-2xl leading-tight tracking-tight">
+        <h2 class="m-0 mb-3 text-[clamp(1.25rem,3vw+0.5rem,1.75rem)] leading-tight tracking-tight">
           <a href={itemUrl} class="no-underline text-text hover:text-primary" {...hxProps(itemUrl)}>{item.keySummary}</a>
         </h2>
         {excerpt && <p class="text-base text-muted leading-relaxed m-0 mb-4 line-clamp-3">{excerpt}</p>}
@@ -67,9 +68,9 @@ function MagazineCard({ item }: { item: Item }) {
   const typeUrl = `/?type=${item.typeId}`;
 
   return (
-    <div class="bg-surface rounded-xl border border-border-subtle shadow-card overflow-hidden flex flex-col transition-all duration-200 hover:shadow-card-hover">
+    <div class="bg-surface rounded-xl border border-border-subtle shadow-card overflow-hidden flex flex-col card-hover">
       <div class="w-full h-28 bg-gradient-to-br from-primary/10 to-primary/25 flex items-center justify-start pl-4">
-        <a href={typeUrl} class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide text-white bg-primary no-underline hover:opacity-90" {...hxProps(typeUrl)}>{item.typeName}</a>
+        <a href={typeUrl} class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide text-primary-inverse bg-primary no-underline hover:opacity-90" {...hxProps(typeUrl)}>{item.typeName}</a>
       </div>
       <div class="p-4 flex-1 flex flex-col">
         <h3 class="m-0 mb-2 text-base leading-snug font-semibold">
@@ -84,7 +85,7 @@ function MagazineCard({ item }: { item: Item }) {
         {item.tags && item.tags.length > 0 && (
           <div class="flex flex-wrap gap-1.5 mt-2">
             {item.tags.slice(0, 3).map((t) => (
-              <a href={`/?tag=${encodeURIComponent(t)}`} class="text-[0.72rem] px-2 py-0.5 rounded-full bg-muted/8 border border-border-subtle text-muted no-underline hover:text-primary" {...hxProps(`/?tag=${encodeURIComponent(t)}`)}>#{t}</a>
+              <a href={`/?tag=${encodeURIComponent(t)}`} class="text-[0.72rem] px-2 py-0.5 rounded-full bg-muted/8 border border-border-subtle text-muted no-underline hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors" {...hxProps(`/?tag=${encodeURIComponent(t)}`)}>#{t}</a>
             ))}
           </div>
         )}
@@ -105,6 +106,7 @@ export function MagazineSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'My Magazine';
@@ -164,7 +166,7 @@ export function MagazineSourcePage(props: SourcePageProps) {
       <JsonLd data={jsonLd} />
 
       <div class="source-page source-page--feed">
-        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
+        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} t={t} />
 
         {/* Active tag filter chip */}
         {filters.tag && (
@@ -172,7 +174,7 @@ export function MagazineSourcePage(props: SourcePageProps) {
             {(() => {
               const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} title="Clear tag filter" class="inline-block px-3 py-1 rounded-full bg-primary text-white no-underline text-sm hover:opacity-85" {...hxProps(url)}>
+                <a href={url} title="Clear tag filter" class="inline-block px-3 py-1 rounded-full bg-primary text-primary-inverse no-underline text-sm hover:opacity-85" {...hxProps(url)}>
                   #{filters.tag} &times;
                 </a>
               );
@@ -188,10 +190,10 @@ export function MagazineSourcePage(props: SourcePageProps) {
             {activeWorkspace && <> in {activeWorkspace.name}</>}
           </span>
           <div class="flex gap-1">
-            <a href={newestUrl} class={`px-3 py-1 rounded text-[0.8rem] no-underline transition-colors ${filters.sort === 'newest' ? 'bg-primary text-white' : 'text-muted hover:bg-border/50 hover:text-text'}`} {...hxProps(newestUrl)}>
+            <a href={newestUrl} class={`px-3 py-1 rounded text-[0.8rem] no-underline transition-colors ${filters.sort === 'newest' ? 'bg-primary text-primary-inverse' : 'text-muted hover:bg-border/50 hover:text-text'}`} {...hxProps(newestUrl)}>
               Newest
             </a>
-            <a href={oldestUrl} class={`px-3 py-1 rounded text-[0.8rem] no-underline transition-colors ${filters.sort === 'oldest' ? 'bg-primary text-white' : 'text-muted hover:bg-border/50 hover:text-text'}`} {...hxProps(oldestUrl)}>
+            <a href={oldestUrl} class={`px-3 py-1 rounded text-[0.8rem] no-underline transition-colors ${filters.sort === 'oldest' ? 'bg-primary text-primary-inverse' : 'text-muted hover:bg-border/50 hover:text-text'}`} {...hxProps(oldestUrl)}>
               Oldest
             </a>
           </div>
@@ -202,10 +204,11 @@ export function MagazineSourcePage(props: SourcePageProps) {
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <div class="empty-state">
-              <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-              <p>{`No ${vocabulary.itemPlural} matching this filter.`}</p>
-            </div>
+            <EmptyState
+              icon="inbox"
+              title={`No ${vocabulary.itemPlural} found`}
+              description={`No ${vocabulary.itemPlural} matching this filter.`}
+            />
           ) : (
             <>
               {/* Hero: first item */}
@@ -226,6 +229,7 @@ export function MagazineSourcePage(props: SourcePageProps) {
                 offset={pagination.offset}
                 baseUrl={paginationBase}
                 htmxTarget={HX_TARGET}
+                t={t}
               />
             </>
           )}

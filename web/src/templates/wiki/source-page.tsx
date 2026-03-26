@@ -1,5 +1,6 @@
 import type { SourcePageProps } from '@pignal/templates';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
@@ -40,6 +41,7 @@ export function WikiSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'My Knowledge Base';
@@ -119,7 +121,7 @@ export function WikiSourcePage(props: SourcePageProps) {
 
       <div class="max-w-7xl mx-auto px-4 pt-8 pb-16 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 items-start">
         {/* Tree sidebar */}
-        <aside class="sticky top-6 text-sm max-h-[calc(100vh-3rem)] overflow-y-auto max-lg:static max-lg:max-h-none max-lg:border-b max-lg:border-border-subtle max-lg:pb-4 max-lg:mb-0 lg:bg-surface lg:rounded-xl lg:border lg:border-border-subtle lg:shadow-card lg:p-4">
+        <aside class="sticky top-6 text-sm max-h-[calc(100vh-3rem)] overflow-y-auto max-lg:static max-lg:max-h-none max-lg:border-b max-lg:border-border-subtle max-lg:pb-4 max-lg:mb-0 lg:bg-surface lg:rounded-xl lg:border lg:border-border-subtle lg:shadow-card lg:p-4" role="navigation" aria-label="Wiki navigation">
           <div class="mb-4">
             <input
               type="text"
@@ -134,6 +136,7 @@ export function WikiSourcePage(props: SourcePageProps) {
               hx-push-url="true"
               hx-indicator={HX_INDICATOR}
               hx-vals={hxVals}
+              aria-label={`Search ${vocabulary.itemPlural}`}
             />
           </div>
 
@@ -159,7 +162,7 @@ export function WikiSourcePage(props: SourcePageProps) {
                 const wsTypes = typesWithItems.filter((t) => (counts.byWorkspaceType[ws.id]?.[t.id] ?? 0) > 0);
                 return (
                   <details class="mb-1" open={isActive || undefined}>
-                    <summary class="flex justify-between items-center px-2.5 py-2 rounded-lg cursor-pointer text-xs font-semibold uppercase tracking-wide text-muted list-none transition-colors hover:bg-primary/8 hover:text-primary [&::-webkit-details-marker]:hidden before:content-['\25B6'] before:text-[0.55rem] before:mr-2 before:inline-block before:transition-transform [details[open]>&]:before:rotate-90">
+                    <summary class="flex justify-between items-center px-2.5 py-2 rounded-lg cursor-pointer text-xs font-semibold uppercase tracking-wide text-muted list-none transition-colors hover:bg-primary/8 hover:text-primary [&::-webkit-details-marker]:hidden before:content-['\25B6'] before:text-[0.55rem] before:mr-2 before:inline-block before:transition-transform before:duration-200 [details[open]>&]:before:rotate-90">
                       <span>{ws.name}</span>
                       <span class="text-[0.7rem] font-normal text-muted min-w-[1.2em] text-right">{counts.byWorkspace[ws.id] ?? 0}</span>
                     </summary>
@@ -191,7 +194,7 @@ export function WikiSourcePage(props: SourcePageProps) {
             <>
               <hr class="border-0 border-t border-border-subtle my-3" />
               <details class="mb-1" open>
-                <summary class="flex justify-between items-center px-2.5 py-2 rounded-lg cursor-pointer text-xs font-semibold uppercase tracking-wide text-muted list-none transition-colors hover:bg-primary/8 hover:text-primary [&::-webkit-details-marker]:hidden before:content-['\25B6'] before:text-[0.55rem] before:mr-2 before:inline-block before:transition-transform [details[open]>&]:before:rotate-90">
+                <summary class="flex justify-between items-center px-2.5 py-2 rounded-lg cursor-pointer text-xs font-semibold uppercase tracking-wide text-muted list-none transition-colors hover:bg-primary/8 hover:text-primary [&::-webkit-details-marker]:hidden before:content-['\25B6'] before:text-[0.55rem] before:mr-2 before:inline-block before:transition-transform before:duration-200 [details[open]>&]:before:rotate-90">
                   <span>By {vocabulary.type}</span>
                 </summary>
                 <ul class="list-none pl-2 mt-1 mb-2">
@@ -220,7 +223,7 @@ export function WikiSourcePage(props: SourcePageProps) {
               {(() => {
                 const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                 return (
-                  <a href={url} class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.8rem] font-medium no-underline bg-primary text-white" title="Clear tag filter" {...hxProps(url)}>
+                  <a href={url} class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.8rem] font-medium no-underline bg-primary text-primary-inverse transition-colors hover:bg-primary-hover" title="Clear tag filter" {...hxProps(url)}>
                     #{filters.tag} &times;
                   </a>
                 );
@@ -248,27 +251,25 @@ export function WikiSourcePage(props: SourcePageProps) {
           <div id="source-loading" class="source-loading htmx-indicator">
             <span class="app-spinner" />
           </div>
-          <div id="source-results">
+          <div id="source-results" aria-live="polite">
             {items.length === 0 ? (
-              <div class="empty-state">
-                <div class="empty-state-icon">
-                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-                </div>
-                <p class="empty-state-title">{`No ${vocabulary.itemPlural} found`}</p>
-                <p class="empty-state-description">Try adjusting your filters or search query.</p>
-              </div>
+              <EmptyState
+                icon="file"
+                title={`No ${vocabulary.itemPlural} found`}
+                description="Try adjusting your filters or search query."
+              />
             ) : (
               <>
                 <div class="flex flex-col">
                   {sortedLetters.map((letter) => (
                     <>
-                      <div class="text-lg font-bold text-primary pt-2 pb-1 mt-5 first:mt-0 border-b-2 border-primary mb-2">{letter}</div>
+                      <div class="text-lg font-bold text-primary pt-2 pb-1 mt-5 first:mt-0 border-b-2 border-primary mb-2 scroll-mt-4" id={`letter-${letter}`}>{letter}</div>
                       {grouped[letter].map((item) => {
                         const desc = stripMarkdown(item.content).slice(0, 100);
                         return (
-                          <div class="flex items-baseline max-sm:flex-col gap-3 max-sm:gap-1 py-2.5 border-b border-border-subtle transition-colors hover:bg-primary/4">
+                          <div class="flex items-baseline max-sm:flex-col gap-3 max-sm:gap-1 py-2.5 px-2 border-b border-border-subtle rounded-lg transition-colors hover:bg-primary/4">
                             <div class="flex-1 min-w-0">
-                              <a href={`/item/${item.slug}`} class="no-underline text-text font-medium text-[0.95rem] hover:text-primary">{item.keySummary}</a>
+                              <a href={`/item/${item.slug}`} class="no-underline text-text font-medium text-[0.95rem] hover:text-primary transition-colors">{item.keySummary}</a>
                               {desc && <div class="text-sm text-muted mt-0.5 line-clamp-1">{desc}</div>}
                             </div>
                             <div class="flex items-center gap-2 shrink-0 text-xs text-muted max-sm:order-first">
@@ -287,6 +288,7 @@ export function WikiSourcePage(props: SourcePageProps) {
                   offset={pagination.offset}
                   baseUrl={paginationBase}
                   htmxTarget={HX_TARGET}
+                  t={t}
                 />
               </>
             )}

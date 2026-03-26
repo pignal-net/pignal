@@ -1,6 +1,7 @@
 import type { SourcePageProps, Item } from '@pignal/templates';
 import type { TemplateVocabulary } from '@pignal/templates';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { TypeBadge } from '../../components/type-badge';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
@@ -34,8 +35,8 @@ export function FlashCard({ item, vocabulary }: { item: Item; vocabulary: Templa
   const backPreview = stripMarkdown(item.content).slice(0, 120);
 
   return (
-    <article class="[perspective:800px] aspect-square">
-      <div class="relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] cursor-pointer hover:[transform:rotateY(180deg)]">
+    <article class="[perspective:800px] aspect-square group">
+      <div class="relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] cursor-pointer group-hover:[transform:rotateY(180deg)]">
         {/* Front: question/prompt */}
         <div class="absolute inset-0 [backface-visibility:hidden] border border-border-subtle shadow-card rounded-xl overflow-hidden bg-surface flex flex-col items-center justify-center p-4 text-center z-[2]">
           <div class="absolute top-2 left-2">
@@ -45,9 +46,9 @@ export function FlashCard({ item, vocabulary }: { item: Item; vocabulary: Templa
           <span class="absolute bottom-2 text-[0.65rem] text-muted opacity-60">hover to reveal</span>
         </div>
         {/* Back: answer preview */}
-        <div class="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] border border-border rounded-xl overflow-hidden bg-primary/[0.04] flex flex-col items-center justify-center p-4 text-center">
+        <div class="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] border border-primary/20 rounded-xl overflow-hidden bg-surface-hover flex flex-col items-center justify-center p-4 text-center">
           <span class="text-[0.8rem] leading-relaxed text-muted line-clamp-6 max-w-full">{backPreview}{item.content.length > 120 ? '...' : ''}</span>
-          <a href={detailUrl} class="absolute bottom-2.5 text-xs text-primary no-underline font-semibold hover:underline">Full {vocabulary.item} &rarr;</a>
+          <a href={detailUrl} class="absolute bottom-2.5 text-xs text-primary no-underline font-semibold hover:underline transition-colors">Full {vocabulary.item} &rarr;</a>
         </div>
       </div>
     </article>
@@ -66,6 +67,7 @@ export function FlashcardsSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || `My ${vocabulary.itemPlural.charAt(0).toUpperCase() + vocabulary.itemPlural.slice(1)}`;
@@ -137,7 +139,7 @@ export function FlashcardsSourcePage(props: SourcePageProps) {
 
       <div class="max-w-7xl mx-auto px-4 pt-8 pb-16 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
         {/* Sidebar: decks + subjects */}
-        <aside class="lg:sticky lg:top-6 text-sm max-lg:flex max-lg:gap-4 max-lg:flex-wrap max-lg:border-b max-lg:border-border-subtle max-lg:pb-4">
+        <aside class="lg:sticky lg:top-6 text-sm max-lg:flex max-lg:gap-4 max-lg:flex-wrap max-lg:border-b max-lg:border-border-subtle max-lg:pb-4" role="navigation" aria-label="Flashcard navigation">
           <div class="mb-4 max-lg:w-full">
             <input
               type="text"
@@ -152,6 +154,7 @@ export function FlashcardsSourcePage(props: SourcePageProps) {
               hx-push-url="true"
               hx-indicator={HX_INDICATOR}
               hx-vals={hxVals}
+              aria-label={`Search ${vocabulary.itemPlural}`}
             />
           </div>
 
@@ -212,7 +215,7 @@ export function FlashcardsSourcePage(props: SourcePageProps) {
               {(() => {
                 const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                 return (
-                  <a href={url} title="Clear tag filter" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium no-underline bg-primary text-white" {...hxProps(url)}>
+                  <a href={url} title="Clear tag filter" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium no-underline bg-primary text-primary-inverse transition-colors hover:bg-primary-hover" {...hxProps(url)}>
                     #{filters.tag} &times;
                   </a>
                 );
@@ -239,12 +242,13 @@ export function FlashcardsSourcePage(props: SourcePageProps) {
           <div id="source-loading" class="source-loading htmx-indicator">
             <span class="app-spinner" />
           </div>
-          <div id="source-results">
+          <div id="source-results" aria-live="polite">
             {items.length === 0 ? (
-              <div class="empty-state">
-                <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                <p>{`No ${vocabulary.itemPlural} found.`}</p>
-              </div>
+              <EmptyState
+                icon="inbox"
+                title={`No ${vocabulary.itemPlural} found`}
+                description="Try adjusting your filters or search query."
+              />
             ) : (
               <>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -258,6 +262,7 @@ export function FlashcardsSourcePage(props: SourcePageProps) {
                   offset={pagination.offset}
                   baseUrl={paginationBase}
                   htmxTarget={HX_TARGET}
+                  t={t}
                 />
               </>
             )}

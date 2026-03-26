@@ -1,7 +1,9 @@
 import type { Item } from '@pignal/core';
+import type { TFunction } from '../i18n/types';
 import { TypeBadge } from './type-badge';
 import { VisibilityBadge } from './visibility-badge';
 import { Pagination } from './pagination';
+import { EmptyState } from './empty-state';
 import { formatDate, relativeTime, readingTime } from '../lib/time';
 import { stripMarkdown } from '../lib/markdown';
 
@@ -23,7 +25,10 @@ interface ItemCardProps {
   showReadingTime?: boolean;
   showVisibility?: boolean;
   isPinned?: boolean;
+  t?: TFunction;
 }
+
+const identity = (key: string) => key;
 
 export function ItemCard({
   item,
@@ -34,7 +39,9 @@ export function ItemCard({
   showReadingTime = false,
   showVisibility = false,
   isPinned = false,
+  t: tProp,
 }: ItemCardProps) {
+  const t = tProp ?? identity;
   const detailUrl = useSlug ? `${basePath}/${item.slug}` : `${basePath}/${item.id}`;
   const dateStr = useSlug
     ? formatDate(item.vouchedAt || item.createdAt)
@@ -49,9 +56,9 @@ export function ItemCard({
 
       {/* Meta row */}
       <div class="flex items-center gap-2.5 mb-3 text-xs text-muted flex-wrap">
-        {isPinned && <span class="text-xs text-muted italic">pinned</span>}
+        {isPinned && <span class="text-xs text-muted italic">{t('feed.pinned')}</span>}
         <TypeBadge typeName={item.typeName} />
-        {showVisibility && <VisibilityBadge visibility={item.visibility} />}
+        {showVisibility && <VisibilityBadge visibility={item.visibility} t={tProp} />}
         {item.workspaceName && (
           <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-muted/70 bg-muted/10 no-underline hover:text-primary hover:bg-primary-focus transition-colors">
             {item.workspaceName}
@@ -73,12 +80,12 @@ export function ItemCard({
       {/* Footer: tags + reading time */}
       <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
         {item.tags && item.tags.length > 0 && (
-          item.tags.map((t) => (
+          item.tags.map((tag) => (
             <a
-              href={`${tagBasePath}?${tagParam}=${encodeURIComponent(t)}`}
+              href={`${tagBasePath}?${tagParam}=${encodeURIComponent(tag)}`}
               class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium text-muted/70 bg-muted/8 border border-border-subtle no-underline whitespace-nowrap hover:text-primary hover:bg-primary-focus transition-colors"
             >
-              #{t}
+              #{tag}
             </a>
           ))
         )}
@@ -97,7 +104,13 @@ interface TimelineGroup {
   items: Item[];
 }
 
-function groupByTimeline(items: Item[], sort: 'newest' | 'oldest'): TimelineGroup[] {
+const MONTH_KEYS = [
+  'feed.month.january', 'feed.month.february', 'feed.month.march', 'feed.month.april',
+  'feed.month.may', 'feed.month.june', 'feed.month.july', 'feed.month.august',
+  'feed.month.september', 'feed.month.october', 'feed.month.november', 'feed.month.december',
+];
+
+function groupByTimeline(items: Item[], sort: 'newest' | 'oldest', t: (key: string) => string): TimelineGroup[] {
   if (items.length === 0) return [];
 
   const now = new Date();
@@ -107,6 +120,10 @@ function groupByTimeline(items: Item[], sort: 'newest' | 'oldest'): TimelineGrou
   weekStart.setDate(today.getDate() - dayOfWeek);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
+  const todayLabel = t('feed.today');
+  const thisWeekLabel = t('feed.thisWeek');
+  const thisMonthLabel = t('feed.thisMonth');
+
   const groups = new Map<string, Item[]>();
 
   for (const item of items) {
@@ -114,15 +131,14 @@ function groupByTimeline(items: Item[], sort: 'newest' | 'oldest'): TimelineGrou
     let key: string;
 
     if (d >= today) {
-      key = 'Today';
+      key = todayLabel;
     } else if (d >= weekStart) {
-      key = 'This Week';
+      key = thisWeekLabel;
     } else if (d >= monthStart) {
-      key = 'This Month';
+      key = thisMonthLabel;
     } else {
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'];
-      key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+      const monthName = t(MONTH_KEYS[d.getMonth()]);
+      key = `${monthName} ${d.getFullYear()}`;
     }
 
     const arr = groups.get(key) ?? [];
@@ -130,7 +146,7 @@ function groupByTimeline(items: Item[], sort: 'newest' | 'oldest'): TimelineGrou
     groups.set(key, arr);
   }
 
-  const orderedLabels = ['Today', 'This Week', 'This Month'];
+  const orderedLabels = [todayLabel, thisWeekLabel, thisMonthLabel];
   const monthlyKeys = [...groups.keys()].filter((k) => !orderedLabels.includes(k));
   monthlyKeys.sort((a, b) => {
     const dateA = new Date(a);
@@ -178,6 +194,7 @@ interface FeedResultsProps {
   emptyMessage?: string;
   /** HTMX target for pagination links */
   htmxTarget?: string;
+  t?: TFunction;
 }
 
 export function FeedResults({
@@ -195,22 +212,17 @@ export function FeedResults({
   showVisibility = false,
   emptyMessage = 'No items matching this filter.',
   htmxTarget,
+  t: tProp,
 }: FeedResultsProps) {
+  const t = tProp ?? identity;
+
   if (items.length === 0) {
-    return (
-      <div class="empty-state">
-        <div class="empty-state-icon">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-        </div>
-        <p class="empty-state-title">No items found</p>
-        <p class="empty-state-description">{emptyMessage}</p>
-      </div>
-    );
+    return <EmptyState icon="inbox" title={t('feed.noItems')} description={emptyMessage} />;
   }
 
   const pinned = items.filter((i) => !!i.pinnedAt);
   const unpinned = items.filter((i) => !i.pinnedAt);
-  const groups = groupByTimeline(unpinned, sort);
+  const groups = groupByTimeline(unpinned, sort, t);
 
   return (
     <>
@@ -222,6 +234,7 @@ export function FeedResults({
               tagParam={tagParam} useSlug={useSlug}
               showReadingTime={showReadingTime} showVisibility={showVisibility}
               isPinned={true}
+              t={tProp}
             />
           ))}
         </div>
@@ -237,6 +250,7 @@ export function FeedResults({
               tagParam={tagParam} useSlug={useSlug}
               showReadingTime={showReadingTime} showVisibility={showVisibility}
               isPinned={false}
+              t={tProp}
             />
           ))}
         </div>
@@ -247,6 +261,7 @@ export function FeedResults({
         offset={offset}
         baseUrl={paginationBase}
         htmxTarget={htmxTarget}
+        t={tProp}
       />
     </>
   );

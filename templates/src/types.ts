@@ -3,10 +3,34 @@ import type { Item } from '@pignal/core';
 import type { ItemTypeWithActions, WorkspaceSelect, SettingsMap } from '@pignal/db';
 import type { TemplateVocabulary, TemplateSeoHints, TemplateProfile } from './config';
 
+/** Visitor identity from hub SSO (null if not authenticated). */
+export type VisitorContext = {
+  id: string;
+  login: string;
+  name: string;
+  role: 'admin' | 'visitor';
+} | null;
+
 export type { Item };
 export type { TemplateVocabulary, TemplateSeoHints, TemplateProfile } from './config';
 
-export interface SourcePageProps {
+/** i18n props passed to template components. */
+export interface I18nProps {
+  t: (key: string, params?: Record<string, string | number>) => string;
+  locale: string;
+  defaultLocale: string;
+}
+
+/** Optional i18n props for components that may not have i18n wired yet. */
+export interface OptionalI18nProps {
+  t?: (key: string, params?: Record<string, string | number>) => string;
+  locale?: string;
+  defaultLocale?: string;
+}
+
+export interface SourcePageProps extends I18nProps {
+  /** Locale URL prefix (e.g., '/vi' or '' for default locale). Prepend to internal links. */
+  localePrefix: string;
   items: Item[];
   types: ItemTypeWithActions[];
   workspaces: WorkspaceSelect[];
@@ -30,9 +54,13 @@ export interface SourcePageProps {
   isHtmxRequest: boolean;
   vocabulary: TemplateVocabulary;
   seo: TemplateSeoHints;
+  /** Visitor identity from hub SSO (null if not authenticated). */
+  visitor?: VisitorContext;
 }
 
-export interface ItemPostProps {
+export interface ItemPostProps extends I18nProps {
+  /** Locale URL prefix (e.g., '/vi' or '' for default locale). Prepend to internal links. */
+  localePrefix: string;
   item: Item;
   settings: SettingsMap;
   renderedContent: string;
@@ -42,15 +70,19 @@ export interface ItemPostProps {
   githubUrl: string;
   vocabulary: TemplateVocabulary;
   seo: TemplateSeoHints;
+  /** Visitor identity from hub SSO (null if not authenticated). */
+  visitor?: VisitorContext;
 }
 
-export interface LayoutProps {
+export interface LayoutProps extends OptionalI18nProps {
   title: string;
   head?: string;
   sourceTitle: string;
   sourceUrl: string;
   settings: SettingsMap;
   children: Child;
+  /** Visitor identity from hub SSO (null if not authenticated). */
+  visitor?: VisitorContext;
 }
 
 export interface ItemCardProps {
@@ -115,4 +147,7 @@ export interface Template {
   seo: TemplateSeoHints;
   profile: TemplateProfile;
   styles: string;
+
+  /** Optional per-locale translations, keyed by locale code (e.g., { en: {...}, vi: {...} }). */
+  i18n?: Record<string, Record<string, string>>;
 }

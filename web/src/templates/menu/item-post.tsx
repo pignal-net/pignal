@@ -38,7 +38,7 @@ export function MenuItemPost(props: ItemPostProps) {
       <JsonLd data={jsonLd} />
 
       <div class="max-w-2xl mx-auto py-4">
-        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
         <article class="mt-4">
           <header class="mb-6 pb-4 border-b border-border-subtle">
@@ -67,9 +67,9 @@ export function MenuItemPost(props: ItemPostProps) {
 
           {item.tags && item.tags.length > 0 && (
             <footer class="mt-10 pt-6 border-t border-border-subtle">
-              <div class="item-tags">
+              <div class="flex flex-wrap gap-2">
                 {item.tags.map((t) => (
-                  <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                  <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                 ))}
               </div>
             </footer>

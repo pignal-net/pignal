@@ -40,7 +40,7 @@ export function CourseItemPost(props: ItemPostProps) {
       <JsonLd data={jsonLd} />
 
       <div class="max-w-3xl mx-auto px-4 pt-8 pb-16">
-        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
         {/* Breadcrumb */}
         <nav class="flex items-center gap-1.5 text-sm text-muted mb-4 flex-wrap" aria-label="Breadcrumb">
@@ -90,9 +90,9 @@ export function CourseItemPost(props: ItemPostProps) {
 
           {item.tags && item.tags.length > 0 && (
             <footer class="mt-10 pt-6 border-t border-border-subtle">
-              <div class="item-tags">
+              <div class="flex flex-wrap gap-2">
                 {item.tags.map((t) => (
-                  <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                  <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                 ))}
               </div>
             </footer>
@@ -100,7 +100,7 @@ export function CourseItemPost(props: ItemPostProps) {
 
           {/* Navigation back to course */}
           <nav class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-10 pt-6 border-t border-border-subtle" aria-label="Lesson navigation">
-            <a href={item.typeId ? `/?type=${item.typeId}` : '/'} class="flex flex-col gap-1 px-4 py-3 border border-border-subtle shadow-card rounded-xl no-underline text-text transition-colors hover:border-primary hover:bg-primary/4">
+            <a href={item.typeId ? `/?type=${item.typeId}` : '/'} class="card-hover flex flex-col gap-1 px-4 py-3 border border-border-subtle shadow-card rounded-xl no-underline text-text transition-all hover:border-primary hover:bg-primary/4">
               <span class="text-[0.72rem] uppercase tracking-wide text-muted font-semibold">Back to</span>
               <span class="text-[0.9rem] font-medium text-primary">{item.typeName || 'All lessons'}</span>
             </a>

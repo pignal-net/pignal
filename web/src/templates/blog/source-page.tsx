@@ -16,6 +16,10 @@ export function BlogSourcePage(props: SourcePageProps) {
     pagination,
     paginationBase,
     sourceUrl,
+    t,
+    locale,
+    defaultLocale,
+    localePrefix,
   } = props;
 
   const showReadingTime = settings.source_show_reading_time !== 'false';
@@ -68,7 +72,7 @@ export function BlogSourcePage(props: SourcePageProps) {
   const headContent = `${metaTags}${relLinks}`;
 
   return (
-    <BlogLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
+    <BlogLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={t} locale={locale} defaultLocale={defaultLocale}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col">
@@ -78,7 +82,7 @@ export function BlogSourcePage(props: SourcePageProps) {
             {sourceDescription && <p class="text-lg text-muted max-w-2xl leading-relaxed">{sourceDescription}</p>}
           </div>
         )}
-        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
+        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} basePath={`${localePrefix}/`} t={t} />
 
         <div id="source-loading" class="source-loading htmx-indicator">
           <span class="app-spinner" />
@@ -91,10 +95,12 @@ export function BlogSourcePage(props: SourcePageProps) {
             offset={pagination.offset}
             paginationBase={paginationBase}
             sort={filters.sort}
-            basePath="/item"
-            tagBasePath="/"
+            basePath={`${localePrefix}/item`}
+            tagBasePath={`${localePrefix}/`}
             showReadingTime={showReadingTime}
             emptyMessage="No vouched items matching this filter."
+            htmxTarget="#source-results"
+            t={t}
           />
         </div>
       </div>

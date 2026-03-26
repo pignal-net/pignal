@@ -2,6 +2,7 @@ import type { SourcePageProps } from '@pignal/templates';
 import type { Item } from '@pignal/templates';
 import { FilterBar } from '../../components/type-sidebar';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { formatDate } from '../../lib/time';
@@ -21,37 +22,37 @@ function getSeverityLevel(typeName: string): string {
   return 'p3';
 }
 
-/** Map severity to badge Tailwind classes */
+/** Map severity to badge Tailwind classes using design tokens */
 function getSeverityClasses(severity: string): string {
   switch (severity) {
-    case 'p0': return 'bg-red-600 text-white';
-    case 'p1': return 'bg-red-500/70 text-white';
-    case 'p2': return 'bg-primary/70 text-white';
-    case 'p3': return 'bg-muted/80 text-white';
-    default: return 'bg-muted/80 text-white';
+    case 'p0': return 'bg-error text-primary-inverse';
+    case 'p1': return 'bg-error/70 text-primary-inverse';
+    case 'p2': return 'bg-warning text-primary-inverse';
+    case 'p3': return 'bg-muted/80 text-primary-inverse';
+    default: return 'bg-muted/80 text-primary-inverse';
   }
 }
 
 /** Map severity to left border Tailwind classes */
 function getSeverityBorderClass(severity: string): string {
   switch (severity) {
-    case 'p0': return 'border-l-red-600';
-    case 'p1': return 'border-l-red-500/70';
-    case 'p2': return 'border-l-primary/70';
+    case 'p0': return 'border-l-error';
+    case 'p1': return 'border-l-error/70';
+    case 'p2': return 'border-l-warning';
     case 'p3': return 'border-l-muted/50';
     default: return 'border-l-muted/50';
   }
 }
 
-/** Map validation action label to status Tailwind classes */
+/** Map validation action label to status Tailwind classes using design tokens */
 function getStatusClasses(actionLabel: string | null | undefined): string {
   if (!actionLabel) return '';
   const lower = actionLabel.toLowerCase();
-  if (lower.includes('resolved') || lower.includes('fix')) return 'bg-emerald-500/20 text-emerald-600';
-  if (lower.includes('investigating') || lower.includes('false alarm')) return 'bg-red-500/15 text-red-600';
-  if (lower.includes('monitoring') || lower.includes('downgraded')) return 'bg-primary/15 text-primary';
-  if (lower.includes('escalated') || lower.includes('upgraded')) return 'bg-red-500/15 text-red-600';
-  return 'bg-muted/15 text-muted';
+  if (lower.includes('resolved') || lower.includes('fix')) return 'bg-success-bg text-success border border-success-border';
+  if (lower.includes('investigating') || lower.includes('false alarm')) return 'bg-error-bg text-error border border-error-border';
+  if (lower.includes('monitoring') || lower.includes('downgraded')) return 'bg-warning-bg text-warning border border-warning-border';
+  if (lower.includes('escalated') || lower.includes('upgraded')) return 'bg-error-bg text-error border border-error-border';
+  return 'bg-surface-raised text-muted border border-border';
 }
 
 interface DateGroup {
@@ -93,6 +94,7 @@ export function IncidentsSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'Incident Log';
@@ -148,18 +150,18 @@ export function IncidentsSourcePage(props: SourcePageProps) {
       <JsonLd data={jsonLd} />
 
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col">
-        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
+        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} t={t} />
 
         <div id="source-loading" class="source-loading htmx-indicator">
           <span class="app-spinner" />
         </div>
-        <div id="source-results">
+        <div id="source-results" aria-live="polite">
           {items.length === 0 ? (
-            <div class="empty-state">
-              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-              <p class="empty-state-title">No items found</p>
-              <p class="empty-state-description">No {vocabulary.vouched} {vocabulary.itemPlural} matching this filter.</p>
-            </div>
+            <EmptyState
+              icon="inbox"
+              title={`No ${vocabulary.itemPlural} found`}
+              description={`No ${vocabulary.vouched} ${vocabulary.itemPlural} matching this filter.`}
+            />
           ) : (
             <>
               <div class="relative pl-8 my-4 sm:border-l-[3px] sm:border-border-subtle sm:ml-2">
@@ -172,14 +174,14 @@ export function IncidentsSourcePage(props: SourcePageProps) {
                       const borderClass = getSeverityBorderClass(severity);
                       const statusClasses = getStatusClasses(item.validationActionLabel);
                       return (
-                        <a href={`/item/${item.slug}`} class={`relative block p-3 sm:p-4 mb-2 border border-border-subtle shadow-card border-l-[3px] ${borderClass} rounded-xl bg-surface no-underline text-inherit hover:shadow-card-hover hover:border-primary transition-all`}>
+                        <a href={`/item/${item.slug}`} class={`card-hover relative block p-3 sm:p-4 mb-2 border border-border-subtle shadow-card border-l-[3px] ${borderClass} rounded-xl bg-surface no-underline text-inherit hover:shadow-card-hover hover:border-primary transition-all`}>
                           <div class="flex items-center gap-2 flex-wrap mb-1.5 sm:flex-nowrap">
                             <span class={`inline-block px-2 py-0.5 rounded text-[0.72rem] font-semibold tracking-tight whitespace-nowrap ${severityClasses}`}>{item.typeName}</span>
                             {item.validationActionLabel && (
                               <span class={`inline-block px-1.5 py-0.5 rounded text-[0.7rem] font-semibold tracking-tight whitespace-nowrap ${statusClasses}`}>{item.validationActionLabel}</span>
                             )}
                             {item.workspaceName && (
-                              <span class="inline-block px-1.5 py-0.5 rounded text-[0.72rem] font-medium bg-muted/20 text-text">{item.workspaceName}</span>
+                              <span class="inline-block px-1.5 py-0.5 rounded text-[0.72rem] font-medium bg-surface-raised text-text">{item.workspaceName}</span>
                             )}
                           </div>
                           <div class="text-[0.95rem] font-semibold leading-snug mb-1 text-text">
@@ -191,7 +193,7 @@ export function IncidentsSourcePage(props: SourcePageProps) {
                             </time>
                           </div>
                           <p class="text-[0.82rem] text-muted m-0 mt-1 leading-relaxed line-clamp-2">
-                            {stripMarkdown(item.content).slice(0, 160)}{item.content.length > 160 ? '...' : ''}
+                            {stripMarkdown(item.content).slice(0, 160)}
                           </p>
                           {item.tags && item.tags.length > 0 && (
                             <div class="flex flex-wrap gap-1.5 mt-1.5">
@@ -212,6 +214,7 @@ export function IncidentsSourcePage(props: SourcePageProps) {
                 offset={pagination.offset}
                 baseUrl={paginationBase}
                 htmxTarget={HX_TARGET}
+                t={t}
               />
             </>
           )}

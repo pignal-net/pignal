@@ -1,10 +1,11 @@
 import type { Context } from 'hono';
-import type { ItemStoreRpc, ActionStoreRpc, SubmissionWithAction, SiteActionSelect, SubmissionStatus } from '@pignal/db';
-import type { WebEnv } from '../types';
+import type { ActionStoreRpc, SubmissionWithAction, SiteActionSelect, SubmissionStatus } from '@pignal/db';
+import type { WebEnv, WebVars } from '../types';
+import type { TFunction } from '../i18n/types';
 import { AppLayout } from '../components/app-layout';
 import { PageHeader } from '../components/page-header';
 import { StatusBadge } from '../components/status-badge';
-import { ManagedList } from '../components/managed-list';
+import { ManagedList, TableResultsWrapper } from '../components/managed-list';
 import type { SortTab, FilterDropdown, BulkAction, TableColumn } from '../components/managed-list';
 import type { RowAction } from '../components/feed-item';
 import { TableRow, TableCell, TableActions, RowActions } from '../components/feed-item';
@@ -13,7 +14,7 @@ import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
 import { relativeTime } from '../lib/time';
 
-type WebVars = { store: ItemStoreRpc; actionStore: ActionStoreRpc };
+type PageVars = WebVars & { actionStore: ActionStoreRpc };
 
 const PAGE_SIZE = 20;
 
@@ -48,20 +49,20 @@ function dataPreview(data: Record<string, string>): string {
     .slice(0, 80);
 }
 
-function buildSubmissionColumns(previewFields: SiteActionFieldDef[]): TableColumn[] {
+function buildSubmissionColumns(previewFields: SiteActionFieldDef[], t: TFunction): TableColumn[] {
   if (previewFields.length > 0) {
     return [
-      { key: 'action', label: 'Action' },
-      { key: 'status', label: 'Status' },
+      { key: 'action', label: t('submissions.column.action') },
+      { key: 'status', label: t('submissions.column.status') },
       ...previewFields.map((f) => ({ key: f.name, label: f.label, class: 'max-w-[200px] truncate' })),
-      { key: 'created', label: 'Created', class: 'text-muted whitespace-nowrap' },
+      { key: 'created', label: t('submissions.column.created'), class: 'text-muted whitespace-nowrap' },
     ];
   }
   return [
-    { key: 'action', label: 'Action' },
-    { key: 'status', label: 'Status' },
-    { key: 'data', label: 'Data', class: 'max-w-[400px] truncate text-xs text-muted' },
-    { key: 'created', label: 'Created', class: 'text-muted whitespace-nowrap' },
+    { key: 'action', label: t('submissions.column.action') },
+    { key: 'status', label: t('submissions.column.status') },
+    { key: 'data', label: t('submissions.column.data'), class: 'max-w-[400px] truncate text-xs text-muted' },
+    { key: 'created', label: t('submissions.column.created'), class: 'text-muted whitespace-nowrap' },
   ];
 }
 
@@ -69,10 +70,12 @@ function SubmissionTableRow({
   submission,
   csrfToken,
   previewFields,
+  t,
 }: {
   submission: SubmissionWithAction;
   csrfToken: string;
   previewFields: SiteActionFieldDef[];
+  t: TFunction;
 }) {
   return (
     <TableRow id={`sub-${submission.id}`} bulkValue={submission.id}>
@@ -90,18 +93,18 @@ function SubmissionTableRow({
       <TableActions>
         <RowActions actions={[
           ...(submission.status !== 'read' ? [
-            { label: 'Mark Read', hxPost: `/pignal/submissions/${submission.id}/status?status=read`, hxTarget: `#sub-${submission.id}`, csrf: csrfToken },
+            { label: t('submissions.action.markRead'), hxPost: `/pignal/submissions/${submission.id}/status?status=read`, hxTarget: `#sub-${submission.id}`, csrf: csrfToken },
           ] satisfies RowAction[] : []),
           ...(submission.status !== 'replied' ? [
-            { label: 'Replied', hxPost: `/pignal/submissions/${submission.id}/status?status=replied`, hxTarget: `#sub-${submission.id}`, csrf: csrfToken },
+            { label: t('submissions.action.replied'), hxPost: `/pignal/submissions/${submission.id}/status?status=replied`, hxTarget: `#sub-${submission.id}`, csrf: csrfToken },
           ] satisfies RowAction[] : []),
           ...(submission.status !== 'archived' ? [
-            { label: 'Archive', hxPost: `/pignal/submissions/${submission.id}/status?status=archived`, hxTarget: `#sub-${submission.id}`, csrf: csrfToken },
+            { label: t('submissions.action.archive'), hxPost: `/pignal/submissions/${submission.id}/status?status=archived`, hxTarget: `#sub-${submission.id}`, csrf: csrfToken },
           ] satisfies RowAction[] : []),
           ...(submission.status !== 'spam' ? [
-            { label: 'Spam', hxPost: `/pignal/submissions/${submission.id}/status?status=spam`, hxTarget: `#sub-${submission.id}`, destructive: true, csrf: csrfToken },
+            { label: t('submissions.action.spam'), hxPost: `/pignal/submissions/${submission.id}/status?status=spam`, hxTarget: `#sub-${submission.id}`, destructive: true, csrf: csrfToken },
           ] satisfies RowAction[] : []),
-          { label: 'Delete', hxPost: `/pignal/submissions/${submission.id}/delete`, hxTarget: `#sub-${submission.id}`, hxSwap: 'delete', hxConfirm: 'Delete this submission?', destructive: true, csrf: csrfToken },
+          { label: t('submissions.action.delete'), hxPost: `/pignal/submissions/${submission.id}/delete`, hxTarget: `#sub-${submission.id}`, hxSwap: 'delete', hxConfirm: t('submissions.confirmDelete'), destructive: true, csrf: csrfToken },
         ]} />
       </TableActions>
     </TableRow>
@@ -120,6 +123,7 @@ function SubmissionTableResults({
   baseUrl,
   csrfToken,
   previewFields,
+  t,
 }: {
   submissions: SubmissionWithAction[];
   total: number;
@@ -128,20 +132,23 @@ function SubmissionTableResults({
   baseUrl: string;
   csrfToken: string;
   previewFields: SiteActionFieldDef[];
+  t: TFunction;
 }) {
-  const columns = buildSubmissionColumns(previewFields);
+  const columns = buildSubmissionColumns(previewFields, t);
   const colCount = columns.length + 2; // +1 bulk checkbox, +1 actions
   return (
     <>
-      <tbody id="submissions-feed" class="managed-table-body">
-        {submissions.length === 0 ? (
-          <tr><td colspan={colCount} class="managed-table-td text-center py-8 text-muted">No submissions found.</td></tr>
-        ) : (
-          submissions.map((sub) => (
-            <SubmissionTableRow submission={sub} csrfToken={csrfToken} previewFields={previewFields} />
-          ))
-        )}
-      </tbody>
+      <TableResultsWrapper id="submissions" columns={columns} hasBulk>
+        <tbody id="submissions-feed" class="managed-table-body">
+          {submissions.length === 0 ? (
+            <tr><td colspan={colCount} class="managed-table-td text-center py-8 text-muted">{t('submissions.empty')}</td></tr>
+          ) : (
+            submissions.map((sub) => (
+              <SubmissionTableRow submission={sub} csrfToken={csrfToken} previewFields={previewFields} t={t} />
+            ))
+          )}
+        </tbody>
+      </TableResultsWrapper>
       {total > limit && (
         <Pagination
           total={total}
@@ -171,9 +178,12 @@ function parsePreviewFields(action: SiteActionSelect | undefined): SiteActionFie
   }
 }
 
-export async function submissionsPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function submissionsPage(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const actionStore = c.get('actionStore');
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
+  const locale = c.get('locale');
+  const defaultLocale = c.get('defaultLocale');
 
   const q = (c.req.query('q') || '').trim();
   const sort = c.req.query('sort') || 'newest';
@@ -235,26 +245,27 @@ export async function submissionsPage(c: Context<{ Bindings: WebEnv; Variables: 
         baseUrl={baseUrl}
         csrfToken={csrfToken}
         previewFields={previewFields}
+        t={t}
       />,
     );
   }
 
   // Full page — build filters
-  const columns = buildSubmissionColumns(previewFields);
+  const columns = buildSubmissionColumns(previewFields, t);
 
   const sortTabs: SortTab[] = [
-    { label: 'Newest', value: 'newest', active: sort === 'newest', href: buildUrl({ q: q || undefined, actionId, status }) },
-    { label: 'Oldest', value: 'oldest', active: sort === 'oldest', href: buildUrl({ q: q || undefined, sort: 'oldest', actionId, status }) },
+    { label: t('common.newest'), value: 'newest', active: sort === 'newest', href: buildUrl({ q: q || undefined, actionId, status }) },
+    { label: t('common.oldest'), value: 'oldest', active: sort === 'oldest', href: buildUrl({ q: q || undefined, sort: 'oldest', actionId, status }) },
   ];
 
   const filterDropdowns: FilterDropdown[] = [];
 
   if (actions.length > 0) {
     filterDropdowns.push({
-      label: 'Action',
+      label: t('submissions.filter.action'),
       name: 'actionId',
       options: [
-        { label: 'All', href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined, status }), active: !actionId },
+        { label: t('common.all'), href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined, status }), active: !actionId },
         ...actions.map((a: SiteActionSelect) => ({
           label: a.name,
           href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined, actionId: a.id, status }),
@@ -264,13 +275,21 @@ export async function submissionsPage(c: Context<{ Bindings: WebEnv; Variables: 
     });
   }
 
+  const statusLabels: Record<string, string> = {
+    new: t('submissions.filter.new'),
+    read: t('submissions.filter.read'),
+    replied: t('submissions.filter.replied'),
+    archived: t('submissions.filter.archived'),
+    spam: t('submissions.filter.spam'),
+  };
+
   filterDropdowns.push({
-    label: 'Status',
+    label: t('submissions.filter.status'),
     name: 'status',
     options: [
-      { label: 'All', href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined, actionId }), active: !status },
+      { label: t('common.all'), href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined, actionId }), active: !status },
       ...VALID_STATUSES.map((s) => ({
-        label: s.charAt(0).toUpperCase() + s.slice(1),
+        label: statusLabels[s] ?? s,
         href: buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined, actionId, status: s }),
         active: s === status,
       })),
@@ -278,30 +297,30 @@ export async function submissionsPage(c: Context<{ Bindings: WebEnv; Variables: 
   });
 
   const bulkActions: BulkAction[] = [
-    { label: 'Mark Read', action: '/pignal/submissions/bulk-read' },
-    { label: 'Archive', action: '/pignal/submissions/bulk-archive' },
-    { label: 'Spam', action: '/pignal/submissions/bulk-spam' },
-    { label: 'Delete', action: '/pignal/submissions/bulk-delete', confirm: 'Delete all selected submissions?', destructive: true },
+    { label: t('submissions.bulk.markRead'), action: '/pignal/submissions/bulk-read' },
+    { label: t('submissions.bulk.archive'), action: '/pignal/submissions/bulk-archive' },
+    { label: t('submissions.bulk.spam'), action: '/pignal/submissions/bulk-spam' },
+    { label: t('submissions.bulk.delete'), action: '/pignal/submissions/bulk-delete', confirm: t('submissions.bulk.confirmDelete'), destructive: true },
   ];
 
   // Active filter label
-  const activeFilter = activeAction ? `Action: ${activeAction.name}` : undefined;
+  const activeFilter = activeAction ? `${t('submissions.filter.action')}: ${activeAction.name}` : undefined;
   const activeFilterClearHref = activeAction
     ? buildUrl({ q: q || undefined, sort: sort !== 'newest' ? sort : undefined, status })
     : undefined;
 
   return c.html(
-    <AppLayout title="Submissions" currentPath="/pignal/submissions" csrfToken={csrfToken}>
+    <AppLayout title={t('submissions.title')} currentPath="/pignal/submissions" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale}>
       <PageHeader
-        title="Submissions"
-        description="View and manage form submissions."
+        title={t('submissions.title')}
+        description={t('submissions.description')}
         count={result.total}
       />
 
       <ManagedList
         id="submissions"
         searchEndpoint="/pignal/submissions"
-        searchPlaceholder="Search submissions..."
+        searchPlaceholder={t('submissions.searchPlaceholder')}
         query={q}
         sortTabs={sortTabs}
         filterDropdowns={filterDropdowns}
@@ -310,14 +329,14 @@ export async function submissionsPage(c: Context<{ Bindings: WebEnv; Variables: 
         bulkActions={bulkActions}
         csrfToken={csrfToken}
         totalCount={submissions.length}
-        emptyMessage={actionId || status ? 'No submissions match your filters.' : 'Submissions will appear here when forms are submitted.'}
+        emptyMessage={actionId || status ? t('submissions.emptyMessageWithFilter') : t('submissions.emptyMessage')}
         pushUrl
         display="table"
         columns={columns}
         pagination={{ total: result.total, limit: PAGE_SIZE, offset, baseUrl }}
       >
         {submissions.map((sub) => (
-          <SubmissionTableRow submission={sub} csrfToken={csrfToken} previewFields={previewFields} />
+          <SubmissionTableRow submission={sub} csrfToken={csrfToken} previewFields={previewFields} t={t} />
         ))}
       </ManagedList>
     </AppLayout>,
@@ -328,9 +347,10 @@ export async function submissionsPage(c: Context<{ Bindings: WebEnv; Variables: 
 // Update submission status
 // ---------------------------------------------------------------------------
 
-export async function updateSubmissionHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function updateSubmissionHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const id = c.req.param('id')!;
   const actionStore = c.get('actionStore');
+  const t = c.get('t');
   const body = await c.req.parseBody();
   const status = (body.status as string) || c.req.query('status') || '';
 
@@ -343,16 +363,16 @@ export async function updateSubmissionHandler(c: Context<{ Bindings: WebEnv; Var
   try {
     const updated = await actionStore.updateSubmissionStatus(id, status as SubmissionStatus);
     if (!updated) {
-      c.header('HX-Trigger', toastTrigger('Submission not found', 'error'));
+      c.header('HX-Trigger', toastTrigger(t('submissions.toast.notFound'), 'error'));
       c.header('HX-Reswap', 'none');
       return c.body(null, 204);
     }
 
-    c.header('HX-Trigger', toastTrigger(`Marked as ${status}`));
+    c.header('HX-Trigger', toastTrigger(t('submissions.toast.markedAs', { status })));
     const submission = await actionStore.getSubmission(id);
     if (submission) {
       const csrfToken = getCsrfToken(c);
-      return c.html(<SubmissionTableRow submission={submission} csrfToken={csrfToken} previewFields={[]} />);
+      return c.html(<SubmissionTableRow submission={submission} csrfToken={csrfToken} previewFields={[]} t={t} />);
     }
     return c.html('');
   } catch (err) {
@@ -367,18 +387,19 @@ export async function updateSubmissionHandler(c: Context<{ Bindings: WebEnv; Var
 // Delete single submission
 // ---------------------------------------------------------------------------
 
-export async function deleteSubmissionHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function deleteSubmissionHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const id = c.req.param('id')!;
   const actionStore = c.get('actionStore');
+  const t = c.get('t');
 
   try {
     const deleted = await actionStore.deleteSubmission(id);
     if (!deleted) {
-      c.header('HX-Trigger', toastTrigger('Submission not found', 'error'));
+      c.header('HX-Trigger', toastTrigger(t('submissions.toast.notFound'), 'error'));
       c.header('HX-Reswap', 'none');
       return c.body(null, 204);
     }
-    c.header('HX-Trigger', toastTrigger('Submission deleted'));
+    c.header('HX-Trigger', toastTrigger(t('submissions.toast.deleted')));
     return c.html('');
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to delete submission';
@@ -398,9 +419,10 @@ async function parseBulkIds(c: Context): Promise<string[]> {
   return Array.isArray(rawIds) ? rawIds as string[] : rawIds ? [rawIds as string] : [];
 }
 
-async function reRenderSubmissionList(c: Context<{ Bindings: WebEnv; Variables: WebVars }>): Promise<Response> {
+async function reRenderSubmissionList(c: Context<{ Bindings: WebEnv; Variables: PageVars }>): Promise<Response> {
   const actionStore = c.get('actionStore');
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
   const result = await actionStore.listSubmissions({ limit: PAGE_SIZE, offset: 0 });
   return c.html(
     <SubmissionTableResults
@@ -411,20 +433,22 @@ async function reRenderSubmissionList(c: Context<{ Bindings: WebEnv; Variables: 
       baseUrl="/pignal/submissions"
       csrfToken={csrfToken}
       previewFields={[]}
+      t={t}
     />,
   );
 }
 
 async function bulkUpdateStatus(
-  c: Context<{ Bindings: WebEnv; Variables: WebVars }>,
+  c: Context<{ Bindings: WebEnv; Variables: PageVars }>,
   targetStatus: SubmissionStatus,
-  label: string,
+  toastKey: string,
 ): Promise<Response> {
   const actionStore = c.get('actionStore');
+  const t = c.get('t');
   const ids = await parseBulkIds(c);
 
   if (ids.length === 0) {
-    c.header('HX-Trigger', toastTrigger('No submissions selected', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('common.noResults'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -439,28 +463,29 @@ async function bulkUpdateStatus(
     }
   }
 
-  c.header('HX-Trigger', toastTrigger(`${label} ${updated} submission${updated !== 1 ? 's' : ''}`));
+  c.header('HX-Trigger', toastTrigger(t(toastKey, { count: updated })));
   return reRenderSubmissionList(c);
 }
 
-export async function bulkReadSubmissionsHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
-  return bulkUpdateStatus(c, 'read', 'Marked as read:');
+export async function bulkReadSubmissionsHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
+  return bulkUpdateStatus(c, 'read', 'submissions.bulk.readToast');
 }
 
-export async function bulkArchiveSubmissionsHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
-  return bulkUpdateStatus(c, 'archived', 'Archived');
+export async function bulkArchiveSubmissionsHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
+  return bulkUpdateStatus(c, 'archived', 'submissions.bulk.archiveToast');
 }
 
-export async function bulkSpamSubmissionsHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
-  return bulkUpdateStatus(c, 'spam', 'Marked as spam:');
+export async function bulkSpamSubmissionsHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
+  return bulkUpdateStatus(c, 'spam', 'submissions.bulk.spamToast');
 }
 
-export async function bulkDeleteSubmissionsHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+export async function bulkDeleteSubmissionsHandler(c: Context<{ Bindings: WebEnv; Variables: PageVars }>) {
   const actionStore = c.get('actionStore');
+  const t = c.get('t');
   const ids = await parseBulkIds(c);
 
   if (ids.length === 0) {
-    c.header('HX-Trigger', toastTrigger('No submissions selected', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('common.noResults'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -475,6 +500,6 @@ export async function bulkDeleteSubmissionsHandler(c: Context<{ Bindings: WebEnv
     }
   }
 
-  c.header('HX-Trigger', toastTrigger(`Deleted ${deleted} submission${deleted !== 1 ? 's' : ''}`));
+  c.header('HX-Trigger', toastTrigger(t('submissions.bulk.deleteToast', { count: deleted })));
   return reRenderSubmissionList(c);
 }

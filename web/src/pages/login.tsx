@@ -1,16 +1,18 @@
 import type { Context } from 'hono';
-import type { WebEnv } from '../types';
+import type { WebEnv, WebVars } from '../types';
 import { Layout } from '../components/layout';
 import { createSessionCookie } from '../lib/cookie';
 import { timingSafeEqual } from '@pignal/core/auth/timing-safe';
 import { getCsrfToken, CSRF_FIELD, CSRF_COOKIE } from '../middleware/csrf';
 import { APP_JS_URL, LOGO_SVG_URL } from '../lib/static-versions';
 
-export function loginPage(c: Context<{ Bindings: WebEnv }>) {
+export function loginPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
+  const t = c.get('t');
+  const locale = c.get('locale');
   const error = c.req.query('error');
 
   return c.html(
-    <Layout title="Login | pignal">
+    <Layout title={`${t('login.title')} | pignal`} locale={locale}>
       <main class="min-h-screen flex items-center justify-center px-4 bg-bg-page">
         <div class="w-full max-w-sm">
           {/* Logo + branding */}
@@ -18,8 +20,8 @@ export function loginPage(c: Context<{ Bindings: WebEnv }>) {
             <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl shadow-md bg-surface border border-border-subtle mb-4">
               <img src={LOGO_SVG_URL} alt="pignal" width="28" height="28" class="rounded" />
             </div>
-            <h1 class="text-2xl font-bold tracking-tight text-text">pignal</h1>
-            <p class="text-muted text-sm mt-1">Sign in to your signal store</p>
+            <h1 class="text-2xl font-bold tracking-tight text-text">{t('login.heading')}</h1>
+            <p class="text-muted text-sm mt-1">{t('login.subtitle')}</p>
           </div>
 
           {/* Login card */}
@@ -32,23 +34,23 @@ export function loginPage(c: Context<{ Bindings: WebEnv }>) {
             <form method="post" action="/pignal/login">
               <input type="hidden" name={CSRF_FIELD} value={getCsrfToken(c)} />
               <div class="mb-4">
-                <label for="token" class="block text-sm font-medium text-text mb-1.5">Server Token</label>
+                <label for="token" class="block text-sm font-medium text-text mb-1.5">{t('login.serverToken')}</label>
                 <input
                   id="token"
                   type="password"
                   name="token"
                   required
                   autofocus
-                  placeholder="Enter SERVER_TOKEN"
+                  placeholder={t('login.placeholder')}
                   class="w-full"
                 />
               </div>
-              <button type="submit" class="w-full py-2.5">Login</button>
+              <button type="submit" class="w-full py-2.5">{t('login.button')}</button>
             </form>
           </div>
 
           {/* Footer */}
-          <p class="text-center text-xs text-muted mt-6">Self-hosted content platform</p>
+          <p class="text-center text-xs text-muted mt-6">{t('login.footer')}</p>
         </div>
       </main>
       <script src={APP_JS_URL}></script>
@@ -61,7 +63,7 @@ export function loginPage(c: Context<{ Bindings: WebEnv }>) {
  * Does NOT use csrfMiddleware (which would overwrite the regenerated CSRF cookie
  * in its post-next() hook). Instead, validates CSRF inline and sets a fresh token.
  */
-export async function loginHandler(c: Context<{ Bindings: WebEnv }>) {
+export async function loginHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   // Manual CSRF validation (same logic as csrfMiddleware)
   const cookieHeader = c.req.header('Cookie');
   const csrfCookieMatch = cookieHeader?.match(new RegExp(`${CSRF_COOKIE}=([^;]+)`));

@@ -3,6 +3,7 @@ import type { TemplateVocabulary } from '@pignal/templates';
 import { FilterBar } from '../../components/type-sidebar';
 import { Pagination } from '../../components/pagination';
 import { TypeBadge } from '../../components/type-badge';
+import { EmptyState } from '../../components/empty-state';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
@@ -37,25 +38,25 @@ function PortfolioCard({ item, vocabulary }: { item: Item; vocabulary: TemplateV
   const icon = item.typeName ? item.typeName.charAt(0).toUpperCase() : '?';
 
   return (
-    <article class="bg-surface rounded-xl border border-border-subtle shadow-card overflow-hidden flex flex-col transition-all duration-300 hover:shadow-card-hover">
-      <div class="aspect-[4/3] bg-gradient-to-br from-primary/5 to-primary/15 flex items-center justify-center text-4xl text-primary opacity-50 relative overflow-hidden">
-        <span>{icon}</span>
+    <article class="group bg-surface rounded-xl border border-border-subtle shadow-card overflow-hidden flex flex-col card-hover">
+      <a href={detailUrl} class="block aspect-[4/3] bg-gradient-to-br from-primary/5 to-primary/15 flex items-center justify-center text-4xl text-primary opacity-50 relative overflow-hidden no-underline" aria-label={item.keySummary}>
+        <span class="transition-transform duration-300 group-hover:scale-110">{icon}</span>
         <div class="absolute top-2.5 left-2.5 z-10">
           <TypeBadge typeName={item.typeName} />
         </div>
         <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-surface" />
-      </div>
+      </a>
       <div class="px-4 pt-3 pb-4 flex-1 flex flex-col">
         <h3 class="m-0 mb-1 text-base font-semibold leading-snug">
           <a href={detailUrl} class="no-underline text-text hover:text-primary transition-colors">{item.keySummary}</a>
         </h3>
         <p class="text-[0.82rem] text-muted leading-relaxed m-0 mb-2 line-clamp-2 flex-1">{preview}{item.content.length > 120 ? '...' : ''}</p>
         {item.tags && item.tags.length > 0 && (
-          <div class="flex gap-1 flex-wrap mt-auto pt-2">
+          <div class="flex gap-1.5 flex-wrap mt-auto pt-2">
             {item.tags.slice(0, 3).map((t) => {
               const tagUrl = `/?tag=${encodeURIComponent(t)}`;
               return (
-                <a href={tagUrl} class="item-tag text-[0.7rem] px-1.5 py-0.5" {...hxProps(tagUrl)}>#{t}</a>
+                <a href={tagUrl} class="text-[0.7rem] px-2 py-0.5 rounded-full bg-muted/8 border border-border-subtle text-muted no-underline hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors" {...hxProps(tagUrl)}>#{t}</a>
               );
             })}
           </div>
@@ -83,6 +84,7 @@ export function PortfolioSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || `My ${vocabulary.itemPlural.charAt(0).toUpperCase() + vocabulary.itemPlural.slice(1)}`;
@@ -140,9 +142,9 @@ export function PortfolioSourcePage(props: SourcePageProps) {
     <PortfolioLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="max-w-7xl mx-auto px-4 pt-8 pb-16">
+      <div class="max-w-7xl mx-auto px-4 pt-8 pb-16 fade-in-page">
         {/* Horizontal filter chips (FilterBar renders as chips, no sidebar) */}
-        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
+        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} t={t} />
 
         {/* Active tag filter */}
         {filters.tag && (
@@ -150,7 +152,7 @@ export function PortfolioSourcePage(props: SourcePageProps) {
             {(() => {
               const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} title="Clear tag filter" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium no-underline bg-primary text-white" {...hxProps(url)}>
+                <a href={url} title="Clear tag filter" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium no-underline bg-primary text-primary-inverse" {...hxProps(url)}>
                   #{filters.tag} &times;
                 </a>
               );
@@ -166,7 +168,7 @@ export function PortfolioSourcePage(props: SourcePageProps) {
             {activeWorkspace && <> in {activeWorkspace.name}</>}
           </span>
           <div class="flex">
-            <a href={newestUrl} class={`text-[0.82rem] px-3 py-1 no-underline transition-colors ${filters.sort === 'newest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(newestUrl)}>
+            <a href={newestUrl} class={`text-[0.82rem] px-3 py-1 no-underline transition-colors ${filters.sort !== 'oldest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(newestUrl)}>
               Newest
             </a>
             <a href={oldestUrl} class={`text-[0.82rem] px-3 py-1 no-underline transition-colors ${filters.sort === 'oldest' ? 'text-primary font-semibold' : 'text-muted hover:text-text'}`} {...hxProps(oldestUrl)}>
@@ -180,10 +182,11 @@ export function PortfolioSourcePage(props: SourcePageProps) {
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <div class="empty-state">
-              <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-              <p>{`No ${vocabulary.itemPlural} found.`}</p>
-            </div>
+            <EmptyState
+              icon="inbox"
+              title={`No ${vocabulary.itemPlural} found`}
+              description="Try adjusting your filters or search query."
+            />
           ) : (
             <>
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -197,6 +200,7 @@ export function PortfolioSourcePage(props: SourcePageProps) {
                 offset={pagination.offset}
                 baseUrl={paginationBase}
                 htmxTarget={HX_TARGET}
+                t={t}
               />
             </>
           )}

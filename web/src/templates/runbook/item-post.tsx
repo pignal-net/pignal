@@ -14,7 +14,7 @@ export function RunbookItemPost(props: ItemPostProps) {
     item,
     settings,
     renderedContent,
-    headings: _headings,
+    headings,
     sourceUrl,
     sourceAuthor,
     githubUrl,
@@ -43,13 +43,18 @@ export function RunbookItemPost(props: ItemPostProps) {
     contentLower.startsWith('# prerequisites') ||
     contentLower.includes('\n## prerequisites');
 
+  // Count steps (headings that look like numbered steps)
+  const stepCount = headings
+    ? headings.filter((h) => h.level === 2 && /^(step\s+\d|#?\d+[\.\):])/i.test(h.text)).length
+    : 0;
+
   return (
     <RunbookLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-4xl mx-auto px-4 pt-8 pb-16">
         <div class="min-w-0 max-w-full">
-          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
           {/* Breadcrumb */}
           <nav class="flex items-center gap-1.5 text-sm text-muted mb-4 flex-wrap" aria-label="Breadcrumb">
@@ -85,6 +90,7 @@ export function RunbookItemPost(props: ItemPostProps) {
                   {formatDate(item.vouchedAt || item.createdAt)}
                 </time>
                 {showReadingTime && <span>{readingTime(item.content)}</span>}
+                {stepCount > 0 && <span>{stepCount} steps</span>}
                 {item.validationActionLabel && (
                   <span class="validation-badge">
                     {item.validationActionLabel} by {sourceAuthor}
@@ -95,9 +101,9 @@ export function RunbookItemPost(props: ItemPostProps) {
 
             {/* Prerequisites callout if detected */}
             {hasPrerequisites && (
-              <div class="p-4 mb-6 rounded-lg bg-primary/6 border border-primary/20">
-                <div class="text-sm font-bold uppercase tracking-wide text-primary mb-2">Prerequisites</div>
-                <div class="text-sm">Check the prerequisites section below before proceeding.</div>
+              <div class="p-4 mb-6 rounded-lg bg-info-bg border border-info-border" role="note">
+                <div class="text-sm font-bold uppercase tracking-wide text-info mb-1">Prerequisites</div>
+                <div class="text-sm text-muted">Check the prerequisites section below before proceeding.</div>
               </div>
             )}
 
@@ -107,9 +113,9 @@ export function RunbookItemPost(props: ItemPostProps) {
 
             {item.tags && item.tags.length > 0 && (
               <footer class="mt-10 pt-6 border-t border-border-subtle">
-                <div class="item-tags">
+                <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                   ))}
                 </div>
               </footer>

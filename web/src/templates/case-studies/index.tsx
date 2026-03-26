@@ -4,6 +4,7 @@ import { CaseStudiesSourcePage } from './source-page';
 import { CaseStudiesItemPost } from './item-post';
 import { CaseStudiesLayout } from './layout';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { stripMarkdown } from '../../lib/markdown';
 import { formatDate, readingTime } from '../../lib/time';
 
@@ -50,13 +51,13 @@ function PartialHeroCard({ item }: { item: Item }) {
   const client = extractClient(item.keySummary);
 
   return (
-    <div class="relative border border-border-subtle shadow-card rounded-xl overflow-hidden bg-surface mb-8 transition-shadow hover:shadow-card-hover">
+    <article class="relative border border-border-subtle shadow-card rounded-xl overflow-hidden bg-surface mb-8 card-hover">
       <div class="px-6 max-sm:px-5 pt-7 pb-6 max-sm:pt-4 max-sm:pb-4">
-        <a href={`/?type=${item.typeId}`} class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide text-white bg-primary no-underline hover:opacity-90 mb-3" {...hxProps(`/?type=${item.typeId}`)}>
+        <a href={`/?type=${item.typeId}`} class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide text-primary-inverse bg-primary no-underline hover:opacity-90 mb-3 transition-opacity" {...hxProps(`/?type=${item.typeId}`)}>
           {item.typeName}
         </a>
         <h2 class="m-0 mb-3 text-2xl max-sm:text-lg leading-snug tracking-tight">
-          <a href={itemUrl} class="no-underline text-text hover:text-primary" {...hxProps(itemUrl)}>{item.keySummary}</a>
+          <a href={itemUrl} class="no-underline text-text hover:text-primary transition-colors" {...hxProps(itemUrl)}>{item.keySummary}</a>
         </h2>
         {excerpt && <p class="text-[0.95rem] max-sm:text-sm text-muted leading-relaxed m-0 mb-4 line-clamp-3">{excerpt}</p>}
         <div class="flex items-center gap-3 flex-wrap text-sm text-muted">
@@ -72,16 +73,16 @@ function PartialHeroCard({ item }: { item: Item }) {
         </div>
       </div>
       {metrics.length > 0 && (
-        <div class="flex max-sm:flex-col border-t border-border-subtle">
+        <div class="flex max-sm:flex-col border-t border-border-subtle" role="list" aria-label="Key metrics">
           {metrics.map((m, i) => (
-            <div class={`flex-1 px-4 py-3 max-sm:py-2 text-center max-sm:text-left max-sm:flex max-sm:items-center max-sm:gap-2 bg-surface ${i > 0 ? 'border-l max-sm:border-l-0 max-sm:border-t border-border' : ''}`}>
+            <div class={`flex-1 px-4 py-3 max-sm:py-2 text-center max-sm:text-left max-sm:flex max-sm:items-center max-sm:gap-2 bg-surface ${i > 0 ? 'border-l max-sm:border-l-0 max-sm:border-t border-border' : ''}`} role="listitem">
               <span class="block max-sm:inline max-sm:min-w-[4rem] text-2xl max-sm:text-xl font-bold text-primary leading-tight mb-0.5">{m.value}</span>
               <span class="block max-sm:inline text-[0.72rem] text-muted uppercase tracking-wide">{m.label}</span>
             </div>
           ))}
         </div>
       )}
-    </div>
+    </article>
   );
 }
 
@@ -94,14 +95,14 @@ function PartialGridCard({ item }: { item: Item }) {
   const client = extractClient(item.keySummary);
 
   return (
-    <div class="border border-border-subtle shadow-card rounded-xl overflow-hidden bg-surface flex flex-col transition-all duration-200 hover:shadow-card-hover">
+    <article class="border border-border-subtle shadow-card rounded-xl overflow-hidden bg-surface flex flex-col card-hover">
       <div class="px-4 pt-4 flex items-center justify-between gap-2">
-        <a href={typeUrl} class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide text-white bg-primary no-underline hover:opacity-90" {...hxProps(typeUrl)}>{item.typeName}</a>
+        <a href={typeUrl} class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide text-primary-inverse bg-primary no-underline hover:opacity-90 transition-opacity" {...hxProps(typeUrl)}>{item.typeName}</a>
         {client && <span class="text-sm text-muted italic">{client}</span>}
       </div>
       <div class="px-4 pt-3 pb-4 flex-1 flex flex-col">
         <h3 class="m-0 mb-2 text-base leading-snug font-semibold">
-          <a href={itemUrl} class="no-underline text-text hover:text-primary" {...hxProps(itemUrl)}>{item.keySummary}</a>
+          <a href={itemUrl} class="no-underline text-text hover:text-primary transition-colors" {...hxProps(itemUrl)}>{item.keySummary}</a>
         </h3>
         {excerpt && <p class="text-sm text-muted m-0 mb-3 leading-relaxed line-clamp-2 flex-1">{excerpt}</p>}
         <div class="flex items-center gap-2 flex-wrap text-xs text-muted mt-auto">
@@ -112,35 +113,33 @@ function PartialGridCard({ item }: { item: Item }) {
         {item.tags && item.tags.length > 0 && (
           <div class="flex flex-wrap gap-1.5 mt-2">
             {item.tags.slice(0, 3).map((t) => (
-              <a href={`/?tag=${encodeURIComponent(t)}`} class="text-[0.72rem] px-2 py-0.5 rounded-full bg-muted/8 border border-border-subtle text-muted no-underline hover:text-primary" {...hxProps(`/?tag=${encodeURIComponent(t)}`)}>#{t}</a>
+              <a href={`/?tag=${encodeURIComponent(t)}`} class="text-[0.72rem] px-2 py-0.5 rounded-full bg-muted/8 border border-border-subtle text-muted no-underline hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors" {...hxProps(`/?tag=${encodeURIComponent(t)}`)}>#{t}</a>
             ))}
           </div>
         )}
       </div>
       {metrics.length > 0 && (
-        <div class="flex max-sm:flex-col border-t border-border-subtle">
+        <div class="flex max-sm:flex-col border-t border-border-subtle" role="list" aria-label="Key metrics">
           {metrics.map((m, i) => (
-            <div class={`flex-1 px-3 py-2 max-sm:py-1.5 text-center max-sm:text-left max-sm:flex max-sm:items-center max-sm:gap-2 bg-surface ${i > 0 ? 'border-l max-sm:border-l-0 max-sm:border-t border-border' : ''}`}>
+            <div class={`flex-1 px-3 py-2 max-sm:py-1.5 text-center max-sm:text-left max-sm:flex max-sm:items-center max-sm:gap-2 bg-surface ${i > 0 ? 'border-l max-sm:border-l-0 max-sm:border-t border-border' : ''}`} role="listitem">
               <span class="block max-sm:inline text-base max-sm:text-sm font-bold text-primary leading-tight mb-0.5">{m.value}</span>
               <span class="block max-sm:inline text-[0.65rem] text-muted uppercase tracking-wide">{m.label}</span>
             </div>
           ))}
         </div>
       )}
-    </div>
+    </article>
   );
 }
 
 function CaseStudiesPartialResults(props: PartialResultsProps) {
   if (props.items.length === 0) {
     return (
-      <div class="empty-state">
-        <div class="empty-state-icon">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-        </div>
-        <p class="empty-state-title">{`No ${config.vocabulary.itemPlural} found`}</p>
-        <p class="empty-state-description">Try adjusting your filters or search query.</p>
-      </div>
+      <EmptyState
+        icon="inbox"
+        title={`No ${config.vocabulary.itemPlural} found`}
+        description="Try adjusting your filters or search query."
+      />
     );
   }
 

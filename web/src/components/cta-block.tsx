@@ -1,4 +1,5 @@
 import type { SettingsMap } from '@pignal/db';
+import type { TFunction } from '../i18n/types';
 
 /* ------------------------------------------------------------------ */
 /*  Props                                                             */
@@ -25,6 +26,7 @@ interface StickyCtaProps {
   buttonText: string;
   buttonUrl?: string;
   actionSlug?: string;
+  t?: TFunction;
 }
 
 interface InlineCtaProps {
@@ -136,7 +138,9 @@ export function PostCta({ title, description, buttonText, buttonUrl, actionSlug 
 /*  StickyCta — fixed bottom bar                                      */
 /* ------------------------------------------------------------------ */
 
-export function StickyCta({ text, buttonText, buttonUrl, actionSlug }: StickyCtaProps) {
+const identity = (key: string) => key;
+
+export function StickyCta({ text, buttonText, buttonUrl, actionSlug, t: tProp }: StickyCtaProps) {
   const buttonClass = 'bg-primary text-primary-inverse rounded-lg px-6 py-2.5 text-sm font-medium hover:bg-primary-hover transition-colors inline-block';
 
   return (
@@ -163,7 +167,7 @@ export function StickyCta({ text, buttonText, buttonUrl, actionSlug }: StickyCta
             type="button"
             class="p-1.5 rounded-md text-muted hover:text-text hover:bg-surface-hover transition-colors"
             onclick="this.closest('.sticky-cta').remove()"
-            aria-label="Dismiss"
+            aria-label={(tProp ?? identity)('common.dismiss')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />

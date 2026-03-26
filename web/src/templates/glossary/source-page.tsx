@@ -1,5 +1,6 @@
 import type { SourcePageProps } from '@pignal/templates';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { TypeBadge } from '../../components/type-badge';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
@@ -62,6 +63,7 @@ export function GlossarySourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'My Glossary';
@@ -163,6 +165,7 @@ export function GlossarySourcePage(props: SourcePageProps) {
             hx-indicator={HX_INDICATOR}
             hx-vals={hxVals}
             class="w-full text-lg px-4 py-3 border-2 border-border rounded-lg bg-surface text-text transition-colors focus:border-primary focus:outline-none placeholder:text-muted"
+            aria-label={`Search ${vocabulary.itemPlural}`}
           />
         </div>
 
@@ -171,9 +174,9 @@ export function GlossarySourcePage(props: SourcePageProps) {
           {alphabet.map((letter) => {
             const hasItems = letterGroups.has(letter);
             return hasItems ? (
-              <a href={`#letter-${letter}`} class="inline-flex items-center justify-center w-8 h-8 text-sm font-semibold no-underline text-primary rounded hover:bg-primary/10">{letter}</a>
+              <a href={`#letter-${letter}`} class="filter-chip inline-flex items-center justify-center w-8 h-8 text-sm font-semibold no-underline rounded hover:bg-primary/10 transition-colors">{letter}</a>
             ) : (
-              <span class="inline-flex items-center justify-center w-8 h-8 text-sm font-semibold text-muted opacity-40 cursor-default pointer-events-none">{letter}</span>
+              <span class="inline-flex items-center justify-center w-8 h-8 text-sm font-semibold text-muted opacity-40 cursor-default pointer-events-none" aria-disabled="true">{letter}</span>
             );
           })}
         </nav>
@@ -184,7 +187,7 @@ export function GlossarySourcePage(props: SourcePageProps) {
             {(() => {
               const url = buildFilterUrl({ workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} class={`inline-block px-3 py-1 text-[0.8rem] no-underline rounded-full border whitespace-nowrap transition-colors ${!filters.typeId ? 'bg-primary border-primary text-white' : 'border-border text-muted hover:border-primary hover:text-primary'}`} {...hxProps(url)}>
+                <a href={url} class={`filter-chip ${!filters.typeId ? 'active' : ''}`} {...hxProps(url)}>
                   All ({counts.total})
                 </a>
               );
@@ -192,7 +195,7 @@ export function GlossarySourcePage(props: SourcePageProps) {
             {typesWithItems.map((type) => {
               const url = buildFilterUrl({ type: type.id, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} class={`inline-block px-3 py-1 text-[0.8rem] no-underline rounded-full border whitespace-nowrap transition-colors ${filters.typeId === type.id ? 'bg-primary border-primary text-white' : 'border-border text-muted hover:border-primary hover:text-primary'}`} {...hxProps(url)}>
+                <a href={url} class={`filter-chip ${filters.typeId === type.id ? 'active' : ''}`} {...hxProps(url)}>
                   {type.icon ? `${type.icon} ` : ''}{type.name} ({counts.byType[type.id] ?? 0})
                 </a>
               );
@@ -202,7 +205,7 @@ export function GlossarySourcePage(props: SourcePageProps) {
 
         {/* Glossary (workspace) tabs */}
         {workspacesWithItems.length > 0 && (
-          <nav class="flex gap-0 border-b-2 border-border-subtle mb-4 overflow-x-auto">
+          <nav class="flex gap-0 border-b-2 border-border-subtle mb-4 overflow-x-auto" aria-label="Glossary sections">
             {workspacesWithItems.map((ws) => {
               const url = buildFilterUrl({
                 workspace: filters.workspaceId === ws.id ? undefined : ws.id,
@@ -225,7 +228,7 @@ export function GlossarySourcePage(props: SourcePageProps) {
             {(() => {
               const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
               return (
-                <a href={url} class="inline-block px-3 py-1 bg-primary/10 rounded-full text-sm text-primary no-underline" title="Clear tag filter" {...hxProps(url)}>
+                <a href={url} class="inline-block px-3 py-1 bg-primary/10 rounded-full text-sm text-primary no-underline transition-colors hover:bg-primary/20" title="Clear tag filter" {...hxProps(url)}>
                   #{filters.tag} &times;
                 </a>
               );
@@ -245,15 +248,13 @@ export function GlossarySourcePage(props: SourcePageProps) {
         <div id="source-loading" class="source-loading htmx-indicator">
           <span class="app-spinner" />
         </div>
-        <div id="source-results">
+        <div id="source-results" aria-live="polite">
           {items.length === 0 ? (
-            <div class="empty-state">
-              <div class="empty-state-icon">
-                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-              </div>
-              <p class="empty-state-title">{`No ${vocabulary.itemPlural} found`}</p>
-              <p class="empty-state-description">Try adjusting your filters or search query.</p>
-            </div>
+            <EmptyState
+              icon="search"
+              title={`No ${vocabulary.itemPlural} found`}
+              description="Try adjusting your filters or search query."
+            />
           ) : (
             <>
               <div class="flex flex-col gap-6">
@@ -265,9 +266,9 @@ export function GlossarySourcePage(props: SourcePageProps) {
                         const termName = getTermName(item.keySummary);
                         const definition = getDefinition(item.content, 100);
                         return (
-                          <a href={`/item/${item.slug}`} class="flex items-start max-sm:flex-col gap-4 max-sm:gap-1 px-2 py-2.5 no-underline text-inherit border-b border-border-subtle transition-colors hover:bg-surface" {...hxProps(`/item/${item.slug}`)}>
+                          <a href={`/item/${item.slug}`} class="flex items-start max-sm:flex-col gap-4 max-sm:gap-1 px-3 py-3 no-underline text-inherit border-b border-border-subtle rounded-lg transition-colors hover:bg-surface-hover">
                             <div class="flex items-center gap-2 shrink-0 min-w-[180px] lg:min-w-[220px] max-sm:min-w-0">
-                              <span class="font-semibold text-text">{termName}</span>
+                              <span class="font-semibold text-lg text-text">{termName}</span>
                               <TypeBadge typeName={item.typeName} />
                             </div>
                             <div class="text-[0.9rem] text-muted leading-relaxed flex-1 max-sm:text-sm">{definition}</div>
@@ -284,6 +285,7 @@ export function GlossarySourcePage(props: SourcePageProps) {
                 offset={pagination.offset}
                 baseUrl={paginationBase}
                 htmxTarget={HX_TARGET}
+                t={t}
               />
             </>
           )}

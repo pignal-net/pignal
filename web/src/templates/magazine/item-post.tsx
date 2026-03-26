@@ -55,12 +55,12 @@ export function MagazineItemPost(props: ItemPostProps) {
 
       <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
         <main class="min-w-0 max-w-full break-words">
-          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
-          <article class="min-w-0 max-w-full">
+          <article class="min-w-0 max-w-full drop-cap">
             <header class="mb-6">
               <div class="source-category mb-4">
-                <a href={`/?type=${item.typeId}`} class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide text-white bg-primary no-underline hover:opacity-90" {...hxProps(`/?type=${item.typeId}`)}>
+                <a href={`/?type=${item.typeId}`} class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide text-primary-inverse bg-primary no-underline hover:opacity-90" {...hxProps(`/?type=${item.typeId}`)}>
                   {item.typeName}
                 </a>
                 {item.workspaceName && (
@@ -69,7 +69,7 @@ export function MagazineItemPost(props: ItemPostProps) {
                   </a>
                 )}
               </div>
-              <h1>{item.keySummary}</h1>
+              <h1 class="text-[clamp(1.75rem,4vw+0.5rem,2.75rem)] font-bold tracking-tight leading-tight">{item.keySummary}</h1>
               <div class="flex items-center gap-3 flex-wrap text-[0.88rem] text-muted mt-3">
                 {githubUrl ? (
                   <a href={githubUrl} target="_blank" rel="noopener" class="text-text font-medium no-underline hover:text-primary">
@@ -103,9 +103,9 @@ export function MagazineItemPost(props: ItemPostProps) {
             </div>
             {item.tags && item.tags.length > 0 && (
               <footer class="mt-10 pt-6 border-t border-border-subtle">
-                <div class="item-tags">
+                <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag" {...hxProps(`/?tag=${encodeURIComponent(t)}`)}>#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors" {...hxProps(`/?tag=${encodeURIComponent(t)}`)}>#{t}</a>
                   ))}
                 </div>
               </footer>

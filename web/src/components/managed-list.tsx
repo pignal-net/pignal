@@ -82,6 +82,35 @@ export interface TableColumn {
   headerClass?: string;
 }
 
+/** Reusable table shell (wrap + table + thead). Used by ManagedList and HTMX partials. */
+export function TableResultsWrapper({ id, columns, hasBulk, children }: {
+  id: string;
+  columns: TableColumn[];
+  hasBulk?: boolean;
+  children: Child;
+}) {
+  return (
+    <div class="managed-table-wrap">
+      <table class="managed-table">
+        <thead>
+          <tr>
+            {hasBulk && (
+              <th class="managed-table-check">
+                <input type="checkbox" class="native-check" data-bulk-select-all={id} />
+              </th>
+            )}
+            {columns.map((col) => (
+              <th class={`managed-table-th ${col.headerClass ?? ''}`}>{col.label}</th>
+            ))}
+            <th class="managed-table-th managed-table-actions" />
+          </tr>
+        </thead>
+        {children}
+      </table>
+    </div>
+  );
+}
+
 export interface ManagedListProps {
   id: string;
   children: Child;
@@ -238,28 +267,13 @@ export function ManagedList(props: ManagedListProps) {
 
       {display === 'table' ? (
         <div id={resultsId}>
-          <div class="managed-table-wrap">
-            <table class="managed-table">
-              <thead>
-                <tr>
-                  {hasBulk && (
-                    <th class="managed-table-check">
-                      <input type="checkbox" class="native-check" data-bulk-select-all={id} />
-                    </th>
-                  )}
-                  {columns!.map((col) => (
-                    <th class={`managed-table-th ${col.headerClass ?? ''}`}>{col.label}</th>
-                  ))}
-                  <th class="managed-table-th managed-table-actions" />
-                </tr>
-              </thead>
-              <tbody id={`${id}-feed`} class="managed-table-body">
-                {totalCount === 0
-                  ? <tr><td colspan={(columns!.length + (hasBulk ? 2 : 1))} class="managed-table-td text-center py-8 text-muted">{emptyMessage || 'No items yet.'}</td></tr>
-                  : children}
-              </tbody>
-            </table>
-          </div>
+          <TableResultsWrapper id={id} columns={columns!} hasBulk={hasBulk}>
+            <tbody id={`${id}-feed`} class="managed-table-body">
+              {totalCount === 0
+                ? <tr><td colspan={(columns!.length + (hasBulk ? 2 : 1))} class="managed-table-td text-center py-8 text-muted">{emptyMessage || 'No items yet.'}</td></tr>
+                : children}
+            </tbody>
+          </TableResultsWrapper>
           {pagination && pagination.total > pagination.limit && (
             <Pagination {...pagination} htmxTarget={`#${resultsId}`} htmxIndicator={`#${loadingId}`} />
           )}

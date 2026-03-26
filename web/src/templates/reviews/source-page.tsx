@@ -3,6 +3,7 @@ import { FilterBar } from '../../components/type-sidebar';
 import { Pagination } from '../../components/pagination';
 import { TypeBadge } from '../../components/type-badge';
 import { JsonLd } from '../../components/json-ld';
+import { EmptyState } from '../../components/empty-state';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { formatDate } from '../../lib/time';
 import { stripMarkdown } from '../../lib/markdown';
@@ -33,11 +34,11 @@ function StarDisplay({ score, max }: { score: number; max: number }) {
   const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
 
   return (
-    <span class="inline-flex items-center gap-px text-primary text-base tracking-wider" title={`${score}/${max}`}>
+    <span class="inline-flex items-center gap-px text-primary text-base tracking-wider" role="img" aria-label={`Rating: ${score} out of ${max}`} title={`${score}/${max}`}>
       {'★'.repeat(fullStars)}
       {hasHalf && <span class="opacity-40">★</span>}
       {'☆'.repeat(Math.max(0, emptyStars))}
-      <span class="text-xs text-muted ml-1.5">{score}/{max}</span>
+      <span class="text-xs text-muted ml-1.5" aria-hidden="true">{score}/{max}</span>
     </span>
   );
 }
@@ -54,6 +55,7 @@ export function ReviewsSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'Reviews';
@@ -107,18 +109,18 @@ export function ReviewsSourcePage(props: SourcePageProps) {
       <JsonLd data={jsonLd} />
 
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col">
-        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
+        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} t={t} />
 
         <div id="source-loading" class="source-loading htmx-indicator">
           <span class="app-spinner" />
         </div>
         <div id="source-results">
           {items.length === 0 ? (
-            <div class="empty-state">
-              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-              <p class="empty-state-title">No items found</p>
-              <p class="empty-state-description">No {vocabulary.itemPlural} matching this filter.</p>
-            </div>
+            <EmptyState
+              icon="search"
+              title={`No ${vocabulary.itemPlural} found`}
+              description={`No ${vocabulary.itemPlural} matching this filter.`}
+            />
           ) : (
             <>
               <div class="flex flex-col gap-6 py-4">
@@ -127,7 +129,7 @@ export function ReviewsSourcePage(props: SourcePageProps) {
                   const preview = stripMarkdown(item.content).slice(0, 180);
 
                   return (
-                    <article class="border border-border-subtle shadow-card rounded-xl overflow-hidden bg-surface hover:shadow-card-hover transition-shadow">
+                    <article class="card-hover border border-border-subtle shadow-card rounded-xl overflow-hidden bg-surface">
                       <div class="flex items-center justify-between px-4 py-3 border-b border-border-subtle bg-surface/50 flex-wrap gap-2 sm:flex-nowrap">
                         <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
                           <TypeBadge typeName={item.typeName} />
@@ -153,7 +155,7 @@ export function ReviewsSourcePage(props: SourcePageProps) {
                       {item.tags && item.tags.length > 0 && (
                         <div class="px-4 pb-2 flex flex-wrap gap-1.5">
                           {item.tags.map((t) => (
-                            <a href={`/?tag=${encodeURIComponent(t)}`} class="text-xs text-primary hover:underline">#{t}</a>
+                            <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                           ))}
                         </div>
                       )}
@@ -169,6 +171,8 @@ export function ReviewsSourcePage(props: SourcePageProps) {
                 limit={pagination.limit}
                 offset={pagination.offset}
                 baseUrl={paginationBase}
+                htmxTarget="#source-results"
+                t={t}
               />
             </>
           )}

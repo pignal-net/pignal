@@ -48,7 +48,20 @@ export function GlossaryItemPost(props: ItemPostProps) {
       <JsonLd data={jsonLd} />
 
       <div class="max-w-[750px] mx-auto py-8 pb-16">
-        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+        <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
+
+        {/* Breadcrumb */}
+        <nav class="flex items-center gap-1.5 text-sm text-muted mb-4 flex-wrap" aria-label="Breadcrumb">
+          <a href="/" class="text-primary no-underline hover:underline">{sourceTitle}</a>
+          <span class="text-muted opacity-50">/</span>
+          {item.workspaceName && (
+            <>
+              <a href={`/?workspace=${item.workspaceId}`} class="text-primary no-underline hover:underline">{item.workspaceName}</a>
+              <span class="text-muted opacity-50">/</span>
+            </>
+          )}
+          <span>{termName}</span>
+        </nav>
 
         <article class="mt-4">
           <header class="mb-8 pb-4 border-b-2 border-border-subtle">
@@ -78,9 +91,9 @@ export function GlossaryItemPost(props: ItemPostProps) {
           {item.tags && item.tags.length > 0 && (
             <footer class="mt-10 pt-6 border-t border-border-subtle">
               <div class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Related topics</div>
-              <div class="item-tags">
+              <div class="flex flex-wrap gap-2">
                 {item.tags.map((t) => (
-                  <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag">#{t}</a>
+                  <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                 ))}
               </div>
             </footer>

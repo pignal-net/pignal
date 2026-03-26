@@ -1,10 +1,11 @@
 import type { Context } from 'hono';
-import type { ItemStoreRpc, WorkspaceSelect } from '@pignal/db';
-import type { WebEnv } from '../types';
+import type { WorkspaceSelect } from '@pignal/db';
+import type { WebEnv, WebVars } from '../types';
+import type { TFunction } from '../i18n/types';
 import type { BulkAction, TableColumn } from '../components/managed-list';
 import { AppLayout } from '../components/app-layout';
 import { PageHeader } from '../components/page-header';
-import { ManagedList } from '../components/managed-list';
+import { ManagedList, TableResultsWrapper } from '../components/managed-list';
 import type { RowAction } from '../components/feed-item';
 import { TableRow, TableCell, TableActions, RowActions } from '../components/feed-item';
 import { StatusBadge } from '../components/status-badge';
@@ -13,8 +14,6 @@ import { Pagination } from '../components/pagination';
 import { relativeTime } from '../lib/time';
 import { getCsrfToken } from '../middleware/csrf';
 import { isHtmxRequest, toastTrigger } from '../lib/htmx';
-
-type WebVars = { store: ItemStoreRpc };
 
 const VISIBILITY_STYLES: Record<string, string> = {
   public: 'text-success border border-success-border bg-success-bg',
@@ -60,15 +59,17 @@ function truncate(str: string, max: number): string {
   return str.slice(0, max) + '...';
 }
 
-const workspaceColumns: TableColumn[] = [
-  { key: 'name', label: 'Name' },
-  { key: 'visibility', label: 'Visibility' },
-  { key: 'description', label: 'Description' },
-  { key: 'default', label: 'Default' },
-  { key: 'created', label: 'Created', class: 'text-muted whitespace-nowrap' },
-];
+function workspaceColumns(t: TFunction): TableColumn[] {
+  return [
+    { key: 'name', label: t('workspaces.column.name') },
+    { key: 'visibility', label: t('workspaces.column.visibility') },
+    { key: 'description', label: t('workspaces.column.description') },
+    { key: 'default', label: t('workspaces.column.default') },
+    { key: 'created', label: t('workspaces.column.created'), class: 'text-muted whitespace-nowrap' },
+  ];
+}
 
-function WorkspaceTableRow({ workspace, csrfToken }: { workspace: WorkspaceSelect; csrfToken: string }) {
+function WorkspaceTableRow({ workspace, csrfToken, t }: { workspace: WorkspaceSelect; csrfToken: string; t: TFunction }) {
   const isDefault = workspace.isDefault === 1;
   const description = workspace.description ? truncate(workspace.description, 80) : null;
 
@@ -79,24 +80,24 @@ function WorkspaceTableRow({ workspace, csrfToken }: { workspace: WorkspaceSelec
       </TableCell>
       <TableCell><StatusBadge status={workspace.visibility} styles={VISIBILITY_STYLES} /></TableCell>
       <TableCell class="text-muted">{description ?? '\u2014'}</TableCell>
-      <TableCell>{isDefault ? <span class="text-xs text-muted">Yes</span> : '\u2014'}</TableCell>
+      <TableCell>{isDefault ? <span class="text-xs text-muted">{t('workspaces.defaultYes')}</span> : '\u2014'}</TableCell>
       <TableCell class="text-muted whitespace-nowrap">{relativeTime(workspace.createdAt)}</TableCell>
       <TableActions>
         <RowActions actions={[
-          { label: 'Edit', hxGet: `/pignal/workspaces/${workspace.id}/edit-form` },
+          { label: t('workspaces.action.edit'), hxGet: `/pignal/workspaces/${workspace.id}/edit-form` },
           ...(!isDefault ? [
             {
-              label: workspace.visibility === 'public' ? 'Make Private' : 'Make Public',
+              label: workspace.visibility === 'public' ? t('workspaces.action.makePrivate') : t('workspaces.action.makePublic'),
               hxPost: `/pignal/workspaces/${workspace.id}/toggle-visibility`,
               hxTarget: `#ws-${workspace.id}`,
               csrf: csrfToken,
             },
             {
-              label: 'Delete',
+              label: t('workspaces.action.delete'),
               hxPost: `/pignal/workspaces/${workspace.id}/delete`,
               hxTarget: `#ws-${workspace.id}`,
               hxSwap: 'delete',
-              hxConfirm: 'Delete this workspace?',
+              hxConfirm: t('workspaces.confirmDelete'),
               destructive: true,
               csrf: csrfToken,
             },
@@ -107,18 +108,21 @@ function WorkspaceTableRow({ workspace, csrfToken }: { workspace: WorkspaceSelec
   );
 }
 
-function renderTableResults(list: WorkspaceSelect[], total: number, params: ReturnType<typeof parseParams>, csrfToken: string) {
+function renderTableResults(list: WorkspaceSelect[], total: number, params: ReturnType<typeof parseParams>, csrfToken: string, t: TFunction) {
   const baseUrl = buildBaseUrl(params);
+  const cols = workspaceColumns(t);
 
   return (
     <>
-      <tbody id="workspaces-feed" class="managed-table-body">
-        {total === 0 ? (
-          <tr><td colspan={workspaceColumns.length + 2} class="managed-table-td text-center py-8 text-muted">No workspaces found.</td></tr>
-        ) : (
-          list.map((ws) => <WorkspaceTableRow workspace={ws} csrfToken={csrfToken} />)
-        )}
-      </tbody>
+      <TableResultsWrapper id="workspaces" columns={cols} hasBulk>
+        <tbody id="workspaces-feed" class="managed-table-body">
+          {total === 0 ? (
+            <tr><td colspan={cols.length + 2} class="managed-table-td text-center py-8 text-muted">{t('workspaces.empty')}</td></tr>
+          ) : (
+            list.map((ws) => <WorkspaceTableRow workspace={ws} csrfToken={csrfToken} t={t} />)
+          )}
+        </tbody>
+      </TableResultsWrapper>
       {total > params.limit && (
         <Pagination
           total={total}
@@ -136,6 +140,9 @@ function renderTableResults(list: WorkspaceSelect[], total: number, params: Retu
 export async function workspacesPage(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const store = c.get('store');
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
+  const locale = c.get('locale');
+  const defaultLocale = c.get('defaultLocale');
   const params = parseParams(c);
 
   c.header('Vary', 'HX-Request');
@@ -147,47 +154,47 @@ export async function workspacesPage(c: Context<{ Bindings: WebEnv; Variables: W
   const paged = sorted.slice(params.offset, params.offset + params.limit);
 
   if (isHtmxRequest(c)) {
-    return c.html(renderTableResults(paged, total, params, csrfToken));
+    return c.html(renderTableResults(paged, total, params, csrfToken, t));
   }
 
   const sortTabs = [
-    { label: 'Newest', value: 'newest', active: params.sort === 'newest', href: buildBaseUrl({ ...params, sort: 'newest' }) },
-    { label: 'Oldest', value: 'oldest', active: params.sort === 'oldest', href: buildBaseUrl({ ...params, sort: 'oldest' }) },
+    { label: t('common.newest'), value: 'newest', active: params.sort === 'newest', href: buildBaseUrl({ ...params, sort: 'newest' }) },
+    { label: t('common.oldest'), value: 'oldest', active: params.sort === 'oldest', href: buildBaseUrl({ ...params, sort: 'oldest' }) },
   ];
 
   const bulkActions: BulkAction[] = [
-    { label: 'Delete', action: '/pignal/workspaces/bulk/delete', confirm: 'Delete selected workspaces?', destructive: true },
+    { label: t('workspaces.bulk.delete'), action: '/pignal/workspaces/bulk/delete', confirm: t('workspaces.bulk.confirmDelete'), destructive: true },
   ];
 
   return c.html(
-    <AppLayout title="Workspaces" currentPath="/pignal/workspaces" csrfToken={csrfToken}>
-      <PageHeader title="Workspaces" description="Organize content into collections" count={total} />
+    <AppLayout title={t('workspaces.title')} currentPath="/pignal/workspaces" csrfToken={csrfToken} t={t} locale={locale} defaultLocale={defaultLocale}>
+      <PageHeader title={t('workspaces.title')} description={t('workspaces.description')} count={total} />
 
       <ManagedList
         id="workspaces"
         searchEndpoint="/pignal/workspaces"
-        searchPlaceholder="Search workspaces..."
+        searchPlaceholder={t('workspaces.searchPlaceholder')}
         query={params.q}
         sortTabs={sortTabs}
         bulkActions={bulkActions}
         csrfToken={csrfToken}
         totalCount={total}
-        emptyMessage="No workspaces yet. Create one to organize your content."
+        emptyMessage={t('workspaces.emptyMessage')}
         pagination={{ total, limit: params.limit, offset: params.offset, baseUrl: buildBaseUrl(params) }}
         pushUrl
         display="table"
-        columns={workspaceColumns}
+        columns={workspaceColumns(t)}
         addButton={
           <button
             class="outline btn-sm"
             hx-get="/pignal/workspaces/add-form"
             hx-target="#app-dialog-content"
           >
-            + Add
+            {t('common.add')}
           </button>
         }
       >
-        {paged.map((ws) => <WorkspaceTableRow workspace={ws} csrfToken={csrfToken} />)}
+        {paged.map((ws) => <WorkspaceTableRow workspace={ws} csrfToken={csrfToken} t={t} />)}
       </ManagedList>
     </AppLayout>
   );
@@ -195,11 +202,12 @@ export async function workspacesPage(c: Context<{ Bindings: WebEnv; Variables: W
 
 export async function addWorkspaceFormHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
 
   return c.html(
     <div>
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold">Create Workspace</h3>
+        <h3 class="text-lg font-semibold">{t('workspaces.create.title')}</h3>
         <button type="button" class="dialog-close" data-close-dialog>&times;</button>
       </div>
       <form
@@ -211,25 +219,25 @@ export async function addWorkspaceFormHandler(c: Context<{ Bindings: WebEnv; Var
       >
         <input type="hidden" name="_csrf" value={csrfToken} />
         <label class="mb-3 block">
-          Name
-          <input type="text" name="name" required maxlength={100} placeholder="e.g., Engineering" />
+          {t('workspaces.create.name')}
+          <input type="text" name="name" required maxlength={100} placeholder={t('workspaces.create.namePlaceholder')} />
         </label>
         <label class="mb-3 block">
-          Description
-          <textarea name="description" rows={3} maxlength={500} placeholder="What this workspace is for" />
+          {t('workspaces.create.description')}
+          <textarea name="description" rows={3} maxlength={500} placeholder={t('workspaces.create.descriptionPlaceholder')} />
         </label>
         <label class="mb-3 block">
-          Visibility
+          {t('workspaces.create.visibility')}
           <FormDropdown
             name="visibility"
             value="private"
             options={[
-              { value: 'private', label: 'Private' },
-              { value: 'public', label: 'Public' },
+              { value: 'private', label: t('workspaces.visibility.private') },
+              { value: 'public', label: t('workspaces.visibility.public') },
             ]}
           />
         </label>
-        <button type="submit" class="btn mt-4 w-full">Create Workspace</button>
+        <button type="submit" class="btn mt-4 w-full">{t('workspaces.create.button')}</button>
       </form>
     </div>
   );
@@ -238,6 +246,7 @@ export async function addWorkspaceFormHandler(c: Context<{ Bindings: WebEnv; Var
 export async function createWorkspaceHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const store = c.get('store');
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
   const body = await c.req.parseBody();
 
   const name = (body.name as string || '').trim();
@@ -245,7 +254,7 @@ export async function createWorkspaceHandler(c: Context<{ Bindings: WebEnv; Vari
   const visibility = (body.visibility as string || 'private') === 'public' ? 'public' as const : 'private' as const;
 
   if (!name) {
-    c.header('HX-Trigger', toastTrigger('Name is required', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('workspaces.error.nameRequired'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -260,9 +269,9 @@ export async function createWorkspaceHandler(c: Context<{ Bindings: WebEnv; Vari
 
     c.header('HX-Trigger', JSON.stringify({
       closeDialog: true,
-      showToast: { message: 'Workspace created', type: 'success' },
+      showToast: { message: t('workspaces.toast.created'), type: 'success' },
     }));
-    return c.html(<WorkspaceTableRow workspace={created} csrfToken={csrfToken} />);
+    return c.html(<WorkspaceTableRow workspace={created} csrfToken={csrfToken} t={t} />);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to create workspace';
     c.header('HX-Trigger', toastTrigger(msg, 'error'));
@@ -275,17 +284,18 @@ export async function editWorkspaceFormHandler(c: Context<{ Bindings: WebEnv; Va
   const store = c.get('store');
   const id = c.req.param('id')!;
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
 
   const workspace = await store.getWorkspace(id);
   if (!workspace) {
-    c.header('HX-Trigger', toastTrigger('Workspace not found', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('workspaces.toast.notFound'), 'error'));
     return c.body(null, 204);
   }
 
   return c.html(
     <div>
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold">Edit Workspace</h3>
+        <h3 class="text-lg font-semibold">{t('workspaces.edit.title')}</h3>
         <button type="button" class="dialog-close" data-close-dialog>&times;</button>
       </div>
       <form
@@ -297,25 +307,25 @@ export async function editWorkspaceFormHandler(c: Context<{ Bindings: WebEnv; Va
       >
         <input type="hidden" name="_csrf" value={csrfToken} />
         <label class="mb-3 block">
-          Name
+          {t('workspaces.create.name')}
           <input type="text" name="name" value={workspace.name} required maxlength={100} />
         </label>
         <label class="mb-3 block">
-          Description
+          {t('workspaces.create.description')}
           <textarea name="description" rows={3} maxlength={500}>{workspace.description ?? ''}</textarea>
         </label>
         <label class="mb-3 block">
-          Visibility
+          {t('workspaces.create.visibility')}
           <FormDropdown
             name="visibility"
             value={workspace.visibility}
             options={[
-              { value: 'private', label: 'Private' },
-              { value: 'public', label: 'Public' },
+              { value: 'private', label: t('workspaces.visibility.private') },
+              { value: 'public', label: t('workspaces.visibility.public') },
             ]}
           />
         </label>
-        <button type="submit" class="btn mt-4 w-full">Save Changes</button>
+        <button type="submit" class="btn mt-4 w-full">{t('workspaces.edit.saveChanges')}</button>
       </form>
     </div>
   );
@@ -325,6 +335,7 @@ export async function editWorkspaceHandler(c: Context<{ Bindings: WebEnv; Variab
   const store = c.get('store');
   const id = c.req.param('id')!;
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
   const body = await c.req.parseBody();
 
   const name = (body.name as string || '').trim();
@@ -332,7 +343,7 @@ export async function editWorkspaceHandler(c: Context<{ Bindings: WebEnv; Variab
   const visibility = (body.visibility as string || 'private') === 'public' ? 'public' as const : 'private' as const;
 
   if (!name) {
-    c.header('HX-Trigger', toastTrigger('Name is required', 'error'));
+    c.header('HX-Trigger', toastTrigger(t('workspaces.error.nameRequired'), 'error'));
     c.header('HX-Reswap', 'none');
     return c.body(null, 204);
   }
@@ -345,16 +356,16 @@ export async function editWorkspaceHandler(c: Context<{ Bindings: WebEnv; Variab
     });
 
     if (!updated) {
-      c.header('HX-Trigger', toastTrigger('Workspace not found', 'error'));
+      c.header('HX-Trigger', toastTrigger(t('workspaces.toast.notFound'), 'error'));
       c.header('HX-Reswap', 'none');
       return c.body(null, 204);
     }
 
     c.header('HX-Trigger', JSON.stringify({
       closeDialog: true,
-      showToast: { message: 'Workspace updated', type: 'success' },
+      showToast: { message: t('workspaces.toast.updated'), type: 'success' },
     }));
-    return c.html(<WorkspaceTableRow workspace={updated} csrfToken={csrfToken} />);
+    return c.html(<WorkspaceTableRow workspace={updated} csrfToken={csrfToken} t={t} />);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to update workspace';
     c.header('HX-Trigger', toastTrigger(msg, 'error'));
@@ -367,11 +378,12 @@ export async function toggleVisibilityHandler(c: Context<{ Bindings: WebEnv; Var
   const store = c.get('store');
   const id = c.req.param('id')!;
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
 
   try {
     const existing = await store.getWorkspace(id);
     if (!existing) {
-      c.header('HX-Trigger', toastTrigger('Workspace not found', 'error'));
+      c.header('HX-Trigger', toastTrigger(t('workspaces.toast.notFound'), 'error'));
       c.header('HX-Reswap', 'none');
       return c.body(null, 204);
     }
@@ -385,8 +397,8 @@ export async function toggleVisibilityHandler(c: Context<{ Bindings: WebEnv; Var
       return c.body(null, 204);
     }
 
-    c.header('HX-Trigger', toastTrigger(`Workspace set to ${newVisibility}`));
-    return c.html(<WorkspaceTableRow workspace={updated} csrfToken={csrfToken} />);
+    c.header('HX-Trigger', toastTrigger(newVisibility === 'public' ? t('workspaces.toast.setToPublic') : t('workspaces.toast.setToPrivate')));
+    return c.html(<WorkspaceTableRow workspace={updated} csrfToken={csrfToken} t={t} />);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to update workspace';
     c.header('HX-Trigger', toastTrigger(msg, 'error'));
@@ -398,15 +410,16 @@ export async function toggleVisibilityHandler(c: Context<{ Bindings: WebEnv; Var
 export async function deleteWorkspaceHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const store = c.get('store');
   const id = c.req.param('id')!;
+  const t = c.get('t');
 
   try {
     const deleted = await store.deleteWorkspace(id);
     if (!deleted) {
-      c.header('HX-Trigger', toastTrigger('Workspace not found', 'error'));
+      c.header('HX-Trigger', toastTrigger(t('workspaces.toast.notFound'), 'error'));
       c.header('HX-Reswap', 'none');
       return c.body(null, 204);
     }
-    c.header('HX-Trigger', toastTrigger('Workspace deleted'));
+    c.header('HX-Trigger', toastTrigger(t('workspaces.toast.deleted')));
     return c.html('');
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to delete workspace';
@@ -419,6 +432,7 @@ export async function deleteWorkspaceHandler(c: Context<{ Bindings: WebEnv; Vari
 export async function bulkDeleteWorkspacesHandler(c: Context<{ Bindings: WebEnv; Variables: WebVars }>) {
   const store = c.get('store');
   const csrfToken = getCsrfToken(c);
+  const t = c.get('t');
   const body = await c.req.parseBody();
   const ids = Array.isArray(body['ids[]']) ? body['ids[]'] as string[] : [body['ids[]'] as string].filter(Boolean);
 
@@ -428,7 +442,7 @@ export async function bulkDeleteWorkspacesHandler(c: Context<{ Bindings: WebEnv;
     if (result) deleted++;
   }
 
-  c.header('HX-Trigger', toastTrigger(`${deleted} workspace(s) deleted`));
+  c.header('HX-Trigger', toastTrigger(t('workspaces.bulk.deletedToast', { count: String(deleted) })));
 
   const params = parseParams(c);
   const allWorkspaces = await store.listWorkspaces();
@@ -437,5 +451,5 @@ export async function bulkDeleteWorkspacesHandler(c: Context<{ Bindings: WebEnv;
   const total = sorted.length;
   const paged = sorted.slice(params.offset, params.offset + params.limit);
 
-  return c.html(renderTableResults(paged, total, params, csrfToken));
+  return c.html(renderTableResults(paged, total, params, csrfToken, t));
 }

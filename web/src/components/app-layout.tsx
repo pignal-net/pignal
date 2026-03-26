@@ -1,44 +1,59 @@
 import type { Child } from 'hono/jsx';
+import type { TFunction, Locale } from '../i18n/types';
 import { Layout } from './layout';
 import { HTMX_JS_URL, APP_JS_URL, LOGO_SVG_URL } from '../lib/static-versions';
 import { IconLogout, IconExternalLink, IconHamburger } from '../components/icons';
+import { localePath } from '../i18n/utils';
+import { LanguageSwitcher } from './language-switcher';
 
 interface AppLayoutProps {
   title: string;
   currentPath: string;
   csrfToken: string;
   flash?: { type: 'success' | 'error'; message: string };
+  t: TFunction;
+  locale: Locale;
+  defaultLocale: Locale;
   children: Child;
 }
-
-const ALL_NAV = [
-  { href: '/pignal', label: 'Dashboard' },
-  { href: '/pignal/items', label: 'Items' },
-  { href: '/pignal/types', label: 'Types' },
-  { href: '/pignal/workspaces', label: 'Workspaces' },
-  { href: '/pignal/actions', label: 'Actions' },
-  { href: '/pignal/submissions', label: 'Submissions' },
-  { href: '/pignal/api-keys', label: 'API Keys' },
-  { href: '/pignal/settings', label: 'Settings' },
-];
 
 export function AppLayout({
   title,
   currentPath,
   csrfToken,
   flash,
+  t,
+  locale,
+  defaultLocale,
   children,
 }: AppLayoutProps) {
+  const lp = (path: string) => localePath(path, locale, defaultLocale);
+
+  const allNav = [
+    { href: '/pignal', label: t('nav.dashboard') },
+    { href: '/pignal/items', label: t('nav.items') },
+    { href: '/pignal/types', label: t('nav.types') },
+    { href: '/pignal/workspaces', label: t('nav.workspaces') },
+    { href: '/pignal/actions', label: t('nav.actions') },
+    { href: '/pignal/submissions', label: t('nav.submissions') },
+    { href: '/pignal/api-keys', label: t('nav.apiKeys') },
+    { href: '/pignal/settings', label: t('nav.settings') },
+  ];
+
   return (
-    <Layout title={`${title} | pignal`}>
+    <Layout title={`${title} | pignal`} locale={locale}>
       <div>
+        <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:bg-primary focus:text-primary-inverse focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-semibold">
+          {t('common.skipToMainContent')}
+        </a>
+
         {/* Navigation */}
         <header class="sticky top-0 z-40 bg-bg-page/80 backdrop-blur-lg border-b border-border">
           <div class="max-w-6xl mx-auto w-full px-4 sm:px-6">
             <nav class="flex items-center justify-between h-14 gap-4" aria-label="Main navigation">
               {/* Left: Logo */}
               <div class="flex items-center shrink-0">
-                <a href="/pignal" class="inline-flex items-center gap-1.5 text-base font-bold text-text no-underline hover:text-primary transition-colors">
+                <a href={lp('/pignal')} class="inline-flex items-center gap-1.5 text-base font-bold text-text no-underline hover:text-primary transition-colors">
                   <img src={LOGO_SVG_URL} alt="" width="20" height="20" class="rounded" />
                   pignal
                 </a>
@@ -46,9 +61,9 @@ export function AppLayout({
 
               {/* Center: Nav pill group (hidden on mobile) */}
               <div class="hidden md:flex items-center bg-surface rounded-lg p-1 shadow-xs border border-border">
-                {ALL_NAV.map((item) => (
+                {allNav.map((item) => (
                   <a
-                    href={item.href}
+                    href={lp(item.href)}
                     class={`px-3 py-1.5 text-sm rounded-md transition-colors whitespace-nowrap ${
                       currentPath === item.href
                         ? 'bg-primary/10 text-primary font-semibold shadow-xs'
@@ -70,19 +85,22 @@ export function AppLayout({
                   rel="noopener"
                   class="hidden md:inline-flex items-center gap-1 px-2.5 py-1.5 text-sm text-muted hover:text-text hover:bg-surface-hover rounded-md transition-colors"
                 >
-                  View Site
+                  {t('common.viewSite')}
                   <IconExternalLink size={14} />
                 </a>
 
+                {/* Language switcher */}
+                <LanguageSwitcher currentLocale={locale} defaultLocale={defaultLocale} currentPath={currentPath} />
+
                 {/* Theme toggle */}
-                <button class="theme-toggle" type="button" aria-label="Toggle theme">
+                <button class="theme-toggle" type="button" aria-label={t('common.toggleTheme')}>
                 </button>
 
                 {/* Logout (hidden on mobile) */}
                 <a
-                  href="/pignal/logout"
+                  href={lp('/pignal/logout')}
                   class="hidden md:inline-flex items-center p-2 text-muted hover:text-text hover:bg-surface-hover rounded-md transition-colors"
-                  aria-label="Logout"
+                  aria-label={t('common.logout')}
                 >
                   <IconLogout size={16} />
                 </a>
@@ -93,9 +111,9 @@ export function AppLayout({
                     <IconHamburger size={18} />
                   </summary>
                   <div class="absolute right-0 top-full mt-1 w-56 bg-surface border border-border rounded-lg shadow-md py-1 z-50">
-                    {ALL_NAV.map((item) => (
+                    {allNav.map((item) => (
                       <a
-                        href={item.href}
+                        href={lp(item.href)}
                         class={`block px-4 py-2 text-sm transition-colors ${
                           currentPath === item.href
                             ? 'bg-primary/10 text-primary font-semibold'
@@ -113,15 +131,15 @@ export function AppLayout({
                       rel="noopener"
                       class="flex items-center gap-2 px-4 py-2 text-sm text-muted hover:text-text hover:bg-surface-hover transition-colors"
                     >
-                      View Site
+                      {t('common.viewSite')}
                       <IconExternalLink size={14} />
                     </a>
                     <a
-                      href="/pignal/logout"
+                      href={lp('/pignal/logout')}
                       class="flex items-center gap-2 px-4 py-2 text-sm text-muted hover:text-text hover:bg-surface-hover transition-colors"
                     >
                       <IconLogout size={14} />
-                      Logout
+                      {t('common.logout')}
                     </a>
                   </div>
                 </details>
@@ -147,14 +165,14 @@ export function AppLayout({
         <footer class="max-w-6xl mx-auto w-full px-4 sm:px-6 py-8 mt-auto border-t border-border-subtle">
           <div class="flex items-center justify-between text-sm text-muted">
             <span>
-              Powered by{' '}
+              {t('common.poweredBy')}{' '}
               <a href="https://github.com/pignal-net/pignal" rel="noopener" class="inline-flex items-center gap-1 text-muted hover:text-primary transition-colors">
                 <img src={LOGO_SVG_URL} alt="" width="14" height="14" class="rounded-sm" />
                 pignal
               </a>
             </span>
             <a href="/" class="inline-flex items-center gap-1 text-muted hover:text-primary transition-colors">
-              View public site
+              {t('common.viewPublicSite')}
               <IconExternalLink size={14} />
             </a>
           </div>

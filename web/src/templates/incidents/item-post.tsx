@@ -17,26 +17,26 @@ function getSeverityLevel(typeName: string): string {
   return 'p3';
 }
 
-/** Map severity to badge Tailwind classes */
+/** Map severity to badge Tailwind classes using design tokens */
 function getSeverityClasses(severity: string): string {
   switch (severity) {
-    case 'p0': return 'bg-red-600 text-white';
-    case 'p1': return 'bg-red-500/70 text-white';
-    case 'p2': return 'bg-primary/70 text-white';
-    case 'p3': return 'bg-muted/80 text-white';
-    default: return 'bg-muted/80 text-white';
+    case 'p0': return 'bg-error text-primary-inverse';
+    case 'p1': return 'bg-error/70 text-primary-inverse';
+    case 'p2': return 'bg-warning text-primary-inverse';
+    case 'p3': return 'bg-muted/80 text-primary-inverse';
+    default: return 'bg-muted/80 text-primary-inverse';
   }
 }
 
-/** Map validation action label to status Tailwind classes */
+/** Map validation action label to status Tailwind classes using design tokens */
 function getStatusClasses(actionLabel: string | null | undefined): string {
   if (!actionLabel) return '';
   const lower = actionLabel.toLowerCase();
-  if (lower.includes('resolved') || lower.includes('fix')) return 'bg-emerald-500/20 text-emerald-600';
-  if (lower.includes('investigating') || lower.includes('false alarm')) return 'bg-red-500/15 text-red-600';
-  if (lower.includes('monitoring') || lower.includes('downgraded')) return 'bg-primary/15 text-primary';
-  if (lower.includes('escalated') || lower.includes('upgraded')) return 'bg-red-500/15 text-red-600';
-  return 'bg-muted/15 text-muted';
+  if (lower.includes('resolved') || lower.includes('fix')) return 'bg-success-bg text-success border border-success-border';
+  if (lower.includes('investigating') || lower.includes('false alarm')) return 'bg-error-bg text-error border border-error-border';
+  if (lower.includes('monitoring') || lower.includes('downgraded')) return 'bg-warning-bg text-warning border border-warning-border';
+  if (lower.includes('escalated') || lower.includes('upgraded')) return 'bg-error-bg text-error border border-error-border';
+  return 'bg-surface-raised text-muted border border-border';
 }
 
 /** Try to extract duration from content */
@@ -90,7 +90,7 @@ export function IncidentsItemPost(props: ItemPostProps) {
 
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
         <main class="min-w-0 max-w-full break-words">
-          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
           <article class="source-article min-w-0 max-w-full">
             <header>
@@ -100,7 +100,7 @@ export function IncidentsItemPost(props: ItemPostProps) {
                   <span class={`inline-block px-1.5 py-0.5 rounded text-[0.7rem] font-semibold tracking-tight whitespace-nowrap ${statusClasses}`}>{item.validationActionLabel}</span>
                 )}
                 {item.workspaceName && (
-                  <a href={`/?workspace=${item.workspaceId}`} class="inline-block px-1.5 py-0.5 rounded text-[0.72rem] font-medium bg-muted/20 text-text no-underline hover:bg-muted/35 transition-colors">{item.workspaceName}</a>
+                  <a href={`/?workspace=${item.workspaceId}`} class="inline-block px-1.5 py-0.5 rounded text-[0.72rem] font-medium bg-surface-raised text-text no-underline hover:bg-surface-hover transition-colors">{item.workspaceName}</a>
                 )}
               </div>
               <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight mb-4">{item.keySummary}</h1>
@@ -158,7 +158,7 @@ export function IncidentsItemPost(props: ItemPostProps) {
               <footer class="mt-10 pt-6 border-t border-border-subtle">
                 <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag text-sm text-primary hover:underline">#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                   ))}
                 </div>
               </footer>

@@ -4,6 +4,7 @@ import { MenuSourcePage } from './source-page';
 import { MenuItemPost } from './item-post';
 import { MenuLayout } from './layout';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { stripMarkdown } from '../../lib/markdown';
 
 const config = getTemplateConfig('menu');
@@ -36,10 +37,11 @@ function groupByType(items: Item[]): Map<string, Item[]> {
 function MenuPartialResults(props: PartialResultsProps) {
   if (props.items.length === 0) {
     return (
-      <div class="empty-state">
-        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-        <p>{`No ${props.vocabulary.itemPlural} found.`}</p>
-      </div>
+      <EmptyState
+        icon="search"
+        title={`No ${props.vocabulary.itemPlural} found`}
+        description="Try adjusting your filters or search terms."
+      />
     );
   }
 
@@ -58,11 +60,11 @@ function MenuPartialResults(props: PartialResultsProps) {
                 const price = extractPrice(item.content);
                 const desc = getDescription(item.content, 80);
                 return (
-                  <a href={`/item/${item.slug}`} class="block py-3 no-underline text-inherit border-b border-border-subtle transition-colors hover:bg-surface max-sm:p-3 max-sm:mb-2 max-sm:border max-sm:border-border-subtle max-sm:rounded-lg max-sm:bg-surface">
+                  <a href={`/item/${item.slug}`} class="group block py-3 no-underline text-inherit border-b border-border-subtle transition-colors hover:bg-surface-hover max-sm:p-3 max-sm:mb-2 max-sm:border max-sm:border-border-subtle max-sm:rounded-lg max-sm:bg-surface max-sm:hover:bg-surface-hover">
                     <div class="flex items-baseline gap-0 min-h-[1.4em]">
-                      <span class="font-semibold text-base text-text shrink-0">{item.keySummary}</span>
+                      <span class="font-semibold text-base text-text shrink-0 group-hover:text-primary transition-colors">{item.keySummary}</span>
                       <span class="flex-1 border-b border-dotted border-border-subtle mx-2 min-w-4 relative -top-1 max-sm:hidden" />
-                      {price && <span class="font-semibold text-base text-primary shrink-0 whitespace-nowrap">{price}</span>}
+                      {price && <span class="font-bold text-lg text-primary shrink-0 whitespace-nowrap">{price}</span>}
                     </div>
                     {desc && <div class="text-sm text-muted mt-0.5 leading-snug">{desc}</div>}
                   </a>

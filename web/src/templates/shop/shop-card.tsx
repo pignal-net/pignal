@@ -23,14 +23,16 @@ export function ShopCard({ item, vocabulary }: { item: Item; vocabulary: Templat
   const icon = item.typeName ? item.typeName.charAt(0).toUpperCase() : '?';
 
   return (
-    <article class="group bg-surface rounded-xl border border-border-subtle shadow-card overflow-hidden flex flex-col transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
-      <div class="aspect-[4/3] bg-gradient-to-br from-primary/5 to-primary/15 flex items-center justify-center text-4xl text-primary opacity-60 relative overflow-hidden">
-        <span class="transition-transform duration-300 group-hover:scale-110">{icon}</span>
-        <div class="absolute top-2.5 left-2.5 z-10">
-          <TypeBadge typeName={item.typeName} />
+    <article class="group card-hover bg-surface rounded-xl border border-border-subtle shadow-card overflow-hidden flex flex-col">
+      <a href={detailUrl} class="block no-underline text-inherit">
+        <div class="aspect-[4/3] bg-gradient-to-br from-primary/5 to-primary/15 flex items-center justify-center text-4xl text-primary opacity-60 relative overflow-hidden">
+          <span class="transition-transform duration-300 group-hover:scale-[1.03]">{icon}</span>
+          <div class="absolute top-2.5 left-2.5 z-10">
+            <TypeBadge typeName={item.typeName} />
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-surface" />
         </div>
-        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-surface" />
-      </div>
+      </a>
       <div class="px-4 pt-3 pb-4 flex-1 flex flex-col">
         <h3 class="m-0 mb-1 text-[0.95rem] font-semibold leading-snug">
           <a href={detailUrl} class="no-underline text-text hover:text-primary transition-colors">{item.keySummary}</a>
@@ -41,7 +43,7 @@ export function ShopCard({ item, vocabulary }: { item: Item; vocabulary: Templat
             {item.tags.slice(0, 3).map((t) => {
               const tagUrl = `/?tag=${encodeURIComponent(t)}`;
               return (
-                <a href={tagUrl} class="item-tag text-[0.7rem] px-1.5 py-0.5" {...hxProps(tagUrl)}>#{t}</a>
+                <a href={tagUrl} class="inline-block px-2 py-0.5 rounded-full text-[0.7rem] font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors" {...hxProps(tagUrl)}>#{t}</a>
               );
             })}
           </div>

@@ -1,6 +1,7 @@
 import type { SourcePageProps } from '@pignal/templates';
 import { FilterBar } from '../../components/type-sidebar';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { formatDate } from '../../lib/time';
@@ -10,15 +11,15 @@ import { ChangelogLayout } from './layout';
 /* HTMX constants */
 const HX_TARGET = '#source-results';
 
-/** Map type name to Tailwind badge classes */
+/** Map type name to design-token-based badge classes */
 function getTypeBadgeClasses(typeName: string): string {
   const lower = typeName.toLowerCase();
-  if (lower.includes('feature') || lower.includes('new')) return 'bg-primary/85 text-white';
-  if (lower.includes('fix') || lower.includes('bug')) return 'bg-emerald-600/85 text-white';
-  if (lower.includes('breaking')) return 'bg-red-600/85 text-white';
-  if (lower.includes('improvement') || lower.includes('enhance')) return 'bg-primary/60 text-white';
-  if (lower.includes('deprecat')) return 'bg-red-600/50 text-white';
-  return 'bg-muted/60 text-white';
+  if (lower.includes('feature') || lower.includes('new')) return 'bg-primary text-primary-inverse';
+  if (lower.includes('fix') || lower.includes('bug')) return 'bg-success text-primary-inverse';
+  if (lower.includes('breaking')) return 'bg-error text-primary-inverse';
+  if (lower.includes('improvement') || lower.includes('enhance')) return 'bg-info text-primary-inverse';
+  if (lower.includes('deprecat')) return 'bg-warning text-primary-inverse';
+  return 'bg-muted/60 text-primary-inverse';
 }
 
 interface DateGroup {
@@ -60,6 +61,7 @@ export function ChangelogSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'Changelog';
@@ -115,18 +117,18 @@ export function ChangelogSourcePage(props: SourcePageProps) {
       <JsonLd data={jsonLd} />
 
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col">
-        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
+        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} t={t} />
 
         <div id="source-loading" class="source-loading htmx-indicator">
           <span class="app-spinner" />
         </div>
-        <div id="source-results">
+        <div id="source-results" aria-live="polite">
           {items.length === 0 ? (
-            <div class="empty-state">
-              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-              <p class="empty-state-title">No items found</p>
-              <p class="empty-state-description">No {vocabulary.vouched} {vocabulary.itemPlural} matching this filter.</p>
-            </div>
+            <EmptyState
+              icon="file"
+              title={`No ${vocabulary.itemPlural} found`}
+              description={`No ${vocabulary.vouched} ${vocabulary.itemPlural} matching this filter.`}
+            />
           ) : (
             <>
               <div class="relative pl-8 my-4 sm:border-l-[3px] sm:border-border-subtle sm:ml-2">
@@ -136,19 +138,19 @@ export function ChangelogSourcePage(props: SourcePageProps) {
                     {group.items.map((item) => {
                       const badgeClasses = getTypeBadgeClasses(item.typeName);
                       return (
-                        <a href={`/item/${item.slug}`} class="relative block p-3 sm:p-4 mb-2 border border-border-subtle shadow-card rounded-xl bg-surface no-underline text-inherit hover:shadow-card-hover hover:border-primary transition-all before:content-[''] before:absolute before:hidden sm:before:block before:-left-[calc(2rem+3.5px)] before:top-4 before:-translate-x-1/2 before:w-[7px] before:h-[7px] before:rounded-full before:bg-muted before:z-10">
+                        <a href={`/item/${item.slug}`} class="card-hover relative block p-3 sm:p-4 mb-2 border border-border-subtle shadow-card rounded-xl bg-surface no-underline text-inherit hover:shadow-card-hover hover:border-primary transition-all before:content-[''] before:absolute before:hidden sm:before:block before:-left-[calc(2rem+3.5px)] before:top-4 before:-translate-x-1/2 before:w-[7px] before:h-[7px] before:rounded-full before:bg-muted before:z-10">
                           <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 flex-wrap text-xs text-muted mb-1">
                               <span class={`inline-block px-2 py-0.5 rounded text-[0.72rem] font-semibold tracking-tight whitespace-nowrap ${badgeClasses}`}>{item.typeName}</span>
                               {item.workspaceName && (
-                                <span class="inline-block px-1.5 py-0.5 rounded text-[0.72rem] font-medium bg-muted/20 text-text">{item.workspaceName}</span>
+                                <span class="inline-block px-1.5 py-0.5 rounded text-[0.72rem] font-medium bg-surface-raised text-text">{item.workspaceName}</span>
                               )}
                             </div>
                             <div class="text-[0.95rem] font-semibold leading-snug mb-1">
                               {item.keySummary}
                             </div>
                             <p class="text-[0.82rem] text-muted m-0 leading-relaxed line-clamp-2">
-                              {stripMarkdown(item.content).slice(0, 160)}{item.content.length > 160 ? '...' : ''}
+                              {stripMarkdown(item.content).slice(0, 160)}
                             </p>
                             {item.tags && item.tags.length > 0 && (
                               <div class="flex flex-wrap gap-1.5 mt-1.5">
@@ -170,6 +172,7 @@ export function ChangelogSourcePage(props: SourcePageProps) {
                 offset={pagination.offset}
                 baseUrl={paginationBase}
                 htmxTarget={HX_TARGET}
+                t={t}
               />
             </>
           )}

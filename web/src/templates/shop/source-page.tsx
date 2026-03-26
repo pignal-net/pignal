@@ -1,6 +1,7 @@
 import type { SourcePageProps } from '@pignal/templates';
 import { Pagination } from '../../components/pagination';
 import { JsonLd } from '../../components/json-ld';
+import { EmptyState } from '../../components/empty-state';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { ShopLayout } from './layout';
 import { ShopCard } from './shop-card';
@@ -42,6 +43,7 @@ export function ShopSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || `My ${vocabulary.itemPlural.charAt(0).toUpperCase() + vocabulary.itemPlural.slice(1)}`;
@@ -192,7 +194,7 @@ export function ShopSourcePage(props: SourcePageProps) {
               {(() => {
                 const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                 return (
-                  <a href={url} title="Clear tag filter" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium no-underline bg-primary text-white" {...hxProps(url)}>
+                  <a href={url} title="Clear tag filter" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium no-underline bg-primary text-primary-inverse" {...hxProps(url)}>
                     #{filters.tag} &times;
                   </a>
                 );
@@ -222,10 +224,11 @@ export function ShopSourcePage(props: SourcePageProps) {
           </div>
           <div id="source-results">
             {items.length === 0 ? (
-              <div class="empty-state">
-                <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                <p>{`No ${vocabulary.itemPlural} found.`}</p>
-              </div>
+              <EmptyState
+                icon="search"
+                title={`No ${vocabulary.itemPlural} found`}
+                description="Try adjusting your filters or search terms."
+              />
             ) : (
               <>
                 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -239,6 +242,7 @@ export function ShopSourcePage(props: SourcePageProps) {
                   offset={pagination.offset}
                   baseUrl={paginationBase}
                   htmxTarget={HX_TARGET}
+                  t={t}
                 />
               </>
             )}

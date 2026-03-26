@@ -1,5 +1,6 @@
 import type { SourcePageProps } from '@pignal/templates';
 import { Pagination } from '../../components/pagination';
+import { EmptyState } from '../../components/empty-state';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { stripMarkdown } from '../../lib/markdown';
@@ -41,6 +42,7 @@ export function CourseSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'My Course';
@@ -103,13 +105,19 @@ export function CourseSourcePage(props: SourcePageProps) {
   const newestUrl = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, tag: filters.tag, q: filters.q });
   const oldestUrl = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, tag: filters.tag, q: filters.q, sort: 'oldest' });
 
+  // Compute total reading time for all items
+  const totalReadingMinutes = items.reduce((sum, item) => {
+    const words = item.content.split(/\s+/).length;
+    return sum + Math.ceil(words / 200);
+  }, 0);
+
   return (
     <CourseLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-7xl mx-auto px-4 pt-8 pb-16 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 items-start">
         {/* Sidebar: module outline */}
-        <aside class="sticky top-6 text-sm max-h-[calc(100vh-3rem)] overflow-y-auto max-lg:static max-lg:max-h-none max-lg:border-b max-lg:border-border-subtle max-lg:pb-4 max-lg:mb-0 lg:bg-surface lg:rounded-xl lg:border lg:border-border-subtle lg:shadow-card lg:p-4">
+        <aside class="sticky top-6 text-sm max-h-[calc(100vh-3rem)] overflow-y-auto max-lg:static max-lg:max-h-none max-lg:border-b max-lg:border-border-subtle max-lg:pb-4 max-lg:mb-0 lg:bg-surface lg:rounded-xl lg:border lg:border-border-subtle lg:shadow-card lg:p-4" role="navigation" aria-label="Course navigation">
           <div class="mb-4">
             <input
               type="text"
@@ -124,7 +132,14 @@ export function CourseSourcePage(props: SourcePageProps) {
               hx-push-url="true"
               hx-indicator={HX_INDICATOR}
               hx-vals={hxVals}
+              aria-label={`Search ${vocabulary.itemPlural}`}
             />
+          </div>
+
+          {/* Course stats summary */}
+          <div class="flex items-center gap-3 px-2.5 py-2 mb-3 text-xs text-muted">
+            <span>{counts.total} {counts.total === 1 ? vocabulary.item : vocabulary.itemPlural}</span>
+            {totalReadingMinutes > 0 && <span>&middot; ~{totalReadingMinutes} min total</span>}
           </div>
 
           {/* All lessons */}
@@ -148,7 +163,7 @@ export function CourseSourcePage(props: SourcePageProps) {
                 const typeUrl = buildFilterUrl({ type: isActive ? undefined : type.id, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                 return (
                   <details class="mb-1" open={isActive || undefined}>
-                    <summary class="flex justify-between items-center px-2.5 py-2 rounded-lg cursor-pointer text-[0.82rem] font-semibold text-text list-none transition-colors hover:bg-primary/8 hover:text-primary [&::-webkit-details-marker]:hidden before:content-['\25B6'] before:text-[0.55rem] before:mr-2 before:inline-block before:transition-transform [details[open]>&]:before:rotate-90">
+                    <summary class="flex justify-between items-center px-2.5 py-2 rounded-lg cursor-pointer text-[0.82rem] font-semibold text-text list-none transition-colors hover:bg-primary/8 hover:text-primary [&::-webkit-details-marker]:hidden before:content-['\25B6'] before:text-[0.55rem] before:mr-2 before:inline-block before:transition-transform before:duration-200 [details[open]>&]:before:rotate-90">
                       {type.icon && <span class="mr-1.5">{type.icon}</span>}
                       <span style="flex:1">{type.name}</span>
                       <span class="text-[0.72rem] font-normal text-muted min-w-[1.2em] text-right">{counts.byType[type.id] ?? 0}</span>
@@ -194,7 +209,7 @@ export function CourseSourcePage(props: SourcePageProps) {
               {(() => {
                 const url = buildFilterUrl({ type: filters.typeId, workspace: filters.workspaceId, q: filters.q, sort: sortParam });
                 return (
-                  <a href={url} class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.8rem] font-medium no-underline bg-primary text-white" title="Clear tag filter" {...hxProps(url)}>
+                  <a href={url} class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.8rem] font-medium no-underline bg-primary text-primary-inverse transition-colors hover:bg-primary-hover" title="Clear tag filter" {...hxProps(url)}>
                     #{filters.tag} &times;
                   </a>
                 );
@@ -221,15 +236,13 @@ export function CourseSourcePage(props: SourcePageProps) {
           <div id="source-loading" class="source-loading htmx-indicator">
             <span class="app-spinner" />
           </div>
-          <div id="source-results">
+          <div id="source-results" aria-live="polite">
             {items.length === 0 ? (
-              <div class="empty-state">
-                <div class="empty-state-icon">
-                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-                </div>
-                <p class="empty-state-title">{`No ${vocabulary.itemPlural} found`}</p>
-                <p class="empty-state-description">Try adjusting your filters or search query.</p>
-              </div>
+              <EmptyState
+                icon="file"
+                title={`No ${vocabulary.itemPlural} found`}
+                description="Try adjusting your filters or search query."
+              />
             ) : (
               <>
                 <div class="flex flex-col gap-3">
@@ -237,11 +250,11 @@ export function CourseSourcePage(props: SourcePageProps) {
                     const num = pagination.offset + idx + 1;
                     const desc = stripMarkdown(item.content).slice(0, 120);
                     return (
-                      <div class="flex items-start max-sm:flex-col gap-4 max-sm:gap-2 p-4 border border-border-subtle shadow-card rounded-xl bg-surface transition-all hover:shadow-card-hover hover:border-primary">
+                      <div class="card-hover flex items-start max-sm:flex-col gap-4 max-sm:gap-2 p-4 border border-border-subtle shadow-card rounded-xl bg-surface transition-all hover:border-primary">
                         <div class="flex items-center justify-center w-10 h-10 max-sm:w-8 max-sm:h-8 rounded-full bg-primary/12 text-primary text-base max-sm:text-sm font-bold shrink-0">{num}</div>
                         <div class="flex-1 min-w-0">
                           <h3 class="m-0 mb-1 text-base font-semibold leading-snug">
-                            <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary">{item.keySummary}</a>
+                            <a href={`/item/${item.slug}`} class="no-underline text-text hover:text-primary transition-colors">{item.keySummary}</a>
                           </h3>
                           <div class="flex items-center gap-2 flex-wrap text-xs text-muted">
                             {item.typeName && <span class="text-[0.72rem] px-2 py-0.5 rounded-full bg-primary/12 text-primary font-medium whitespace-nowrap">{item.typeName}</span>}
@@ -260,6 +273,7 @@ export function CourseSourcePage(props: SourcePageProps) {
                   offset={pagination.offset}
                   baseUrl={paginationBase}
                   htmxTarget={HX_TARGET}
+                  t={t}
                 />
               </>
             )}

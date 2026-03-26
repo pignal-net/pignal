@@ -40,9 +40,9 @@ export function ResumeItemPost(props: ItemPostProps) {
     <ResumeLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="source-page source-page--post">
+      <div class="source-page source-page--post fade-in-page">
         <main class="max-w-[740px] mx-auto px-4">
-          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
           <article class="source-article">
             <header class="mb-8 pb-6 border-b-2 border-primary">
@@ -60,12 +60,12 @@ export function ResumeItemPost(props: ItemPostProps) {
                 )}
                 <time datetime={dateStr}>{formatDate(dateStr)}</time>
                 {item.validationActionLabel && (
-                  <span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold rounded-xl bg-primary/10 text-primary uppercase tracking-wide">
+                  <span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold rounded-full bg-primary/10 text-primary uppercase tracking-wide">
                     {item.validationActionLabel}
                   </span>
                 )}
                 {item.workspaceName && (
-                  <span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold rounded-xl bg-primary/10 text-primary uppercase tracking-wide">{item.workspaceName}</span>
+                  <span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold rounded-full bg-primary/10 text-primary uppercase tracking-wide">{item.workspaceName}</span>
                 )}
               </div>
             </header>
@@ -75,9 +75,9 @@ export function ResumeItemPost(props: ItemPostProps) {
             </div>
 
             {item.tags && item.tags.length > 0 && (
-              <footer class="flex flex-wrap gap-1.5 mt-10 pt-6 border-t border-border-subtle">
+              <footer class="flex flex-wrap gap-2 mt-10 pt-6 border-t border-border-subtle">
                 {item.tags.map((t) => (
-                  <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-2.5 py-0.5 text-xs rounded-full bg-primary/10 text-primary no-underline hover:underline">#{t}</a>
+                  <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 text-xs rounded-full bg-primary/10 text-primary no-underline hover:bg-primary/20 transition-colors">#{t}</a>
                 ))}
               </footer>
             )}

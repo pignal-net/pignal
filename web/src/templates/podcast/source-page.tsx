@@ -2,6 +2,7 @@ import type { SourcePageProps } from '@pignal/templates';
 import { FilterBar } from '../../components/type-sidebar';
 import { Pagination } from '../../components/pagination';
 import { TypeBadge } from '../../components/type-badge';
+import { EmptyState } from '../../components/empty-state';
 import { JsonLd } from '../../components/json-ld';
 import { buildSourceJsonLd, buildMetaTags, escapeHtmlAttr, resolveOgImage } from '../../lib/seo';
 import { formatDate } from '../../lib/time';
@@ -44,6 +45,7 @@ export function PodcastSourcePage(props: SourcePageProps) {
     paginationBase,
     sourceUrl,
     vocabulary,
+    t,
   } = props;
 
   const sourceTitle = settings.source_title || 'Podcast';
@@ -102,22 +104,22 @@ export function PodcastSourcePage(props: SourcePageProps) {
     <PodcastLayout title={sourceTitle} head={headContent} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
       <JsonLd data={jsonLd} />
 
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col">
-        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} />
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full flex flex-col fade-in-page">
+        <FilterBar types={types} activeTypeId={filters.typeId} workspaces={workspaces} activeWorkspaceId={filters.workspaceId} activeTag={filters.tag} sort={filters.sort} counts={counts} query={filters.q} t={t} />
 
         <div id="source-loading" class="source-loading htmx-indicator">
           <span class="app-spinner" />
         </div>
-        <div id="source-results">
+        <div id="source-results" aria-live="polite">
           {items.length === 0 ? (
-            <div class="empty-state">
-              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="10" width="36" height="28" rx="3"/><path d="M6 22h12l3 4h6l3-4h12"/><path d="M20 18h8M22 14h4"/></svg>
-              <p class="empty-state-title">No items found</p>
-              <p class="empty-state-description">No {vocabulary.itemPlural} matching this filter.</p>
-            </div>
+            <EmptyState
+              icon="search"
+              title={`No ${vocabulary.itemPlural} found`}
+              description={`No ${vocabulary.itemPlural} matching this filter.`}
+            />
           ) : (
             <>
-              <div class="flex flex-col gap-6 py-4">
+              <div class="flex flex-col gap-5 py-4">
                 {items.map((item, index) => {
                   const episodeNum = filters.sort === 'oldest'
                     ? startEpisodeNum + index
@@ -126,9 +128,9 @@ export function PodcastSourcePage(props: SourcePageProps) {
                   const preview = stripMarkdown(item.content).slice(0, 150);
 
                   return (
-                    <article class="flex flex-col sm:flex-row border border-border-subtle shadow-card rounded-xl overflow-hidden bg-surface hover:shadow-card-hover transition-shadow">
+                    <article class="group card-hover flex flex-col sm:flex-row border border-border-subtle shadow-card rounded-xl overflow-hidden bg-surface">
                       <div class="flex items-center justify-center sm:min-w-16 md:min-w-[4.5rem] px-4 py-2 sm:py-4 bg-primary shrink-0 sm:flex-col">
-                        <span class="text-xs font-bold uppercase tracking-widest text-white text-center leading-tight">EP {episodeNum}</span>
+                        <span class="text-xs font-bold uppercase tracking-widest text-primary-inverse text-center leading-tight">EP {episodeNum}</span>
                       </div>
                       <div class="flex-1 min-w-0 px-4 py-3">
                         <div class="mb-1">
@@ -138,8 +140,8 @@ export function PodcastSourcePage(props: SourcePageProps) {
                               {formatDate(item.vouchedAt || item.createdAt)}
                             </time>
                             {duration && (
-                              <span class="inline-flex items-center gap-1 text-xs font-medium text-primary">
-                                <span class="w-1.5 h-1.5 rounded-full bg-primary/50" />
+                              <span class="inline-flex items-center gap-1 text-xs font-medium text-primary" aria-label={`Duration: ${duration}`}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                 {duration}
                               </span>
                             )}
@@ -156,7 +158,7 @@ export function PodcastSourcePage(props: SourcePageProps) {
                         {item.tags && item.tags.length > 0 && (
                           <div class="flex flex-wrap gap-1.5 mb-1.5">
                             {item.tags.map((t) => (
-                              <a href={`/?tag=${encodeURIComponent(t)}`} class="text-[0.7rem] text-primary hover:underline">#{t}</a>
+                              <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-flex items-center rounded-full text-[0.7rem] px-2 py-0.5 no-underline text-muted hover:bg-primary/5 hover:text-primary transition-colors border border-border-subtle">#{t}</a>
                             ))}
                           </div>
                         )}
@@ -173,6 +175,7 @@ export function PodcastSourcePage(props: SourcePageProps) {
                 limit={pagination.limit}
                 offset={pagination.offset}
                 baseUrl={paginationBase}
+                t={t}
               />
             </>
           )}

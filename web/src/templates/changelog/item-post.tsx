@@ -7,15 +7,15 @@ import { formatDate } from '../../lib/time';
 import { raw } from 'hono/html';
 import { ChangelogLayout } from './layout';
 
-/** Map type name to Tailwind badge classes */
+/** Map type name to design-token-based badge classes */
 function getTypeBadgeClasses(typeName: string): string {
   const lower = typeName.toLowerCase();
-  if (lower.includes('feature') || lower.includes('new')) return 'bg-primary/85 text-white';
-  if (lower.includes('fix') || lower.includes('bug')) return 'bg-emerald-600/85 text-white';
-  if (lower.includes('breaking')) return 'bg-red-600/85 text-white';
-  if (lower.includes('improvement') || lower.includes('enhance')) return 'bg-primary/60 text-white';
-  if (lower.includes('deprecat')) return 'bg-red-600/50 text-white';
-  return 'bg-muted/60 text-white';
+  if (lower.includes('feature') || lower.includes('new')) return 'bg-primary text-primary-inverse';
+  if (lower.includes('fix') || lower.includes('bug')) return 'bg-success text-primary-inverse';
+  if (lower.includes('breaking')) return 'bg-error text-primary-inverse';
+  if (lower.includes('improvement') || lower.includes('enhance')) return 'bg-info text-primary-inverse';
+  if (lower.includes('deprecat')) return 'bg-warning text-primary-inverse';
+  return 'bg-muted/60 text-primary-inverse';
 }
 
 export function ChangelogItemPost(props: ItemPostProps) {
@@ -52,14 +52,14 @@ export function ChangelogItemPost(props: ItemPostProps) {
 
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
         <main class="min-w-0 max-w-full break-words">
-          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
           <article class="source-article min-w-0 max-w-full">
             <header>
               <div class="flex items-center gap-2 flex-wrap mb-2">
                 <span class={`inline-block px-2 py-0.5 rounded text-[0.72rem] font-semibold tracking-tight whitespace-nowrap ${badgeClasses}`}>{item.typeName}</span>
                 {item.workspaceName && (
-                  <a href={`/?workspace=${item.workspaceId}`} class="inline-block px-1.5 py-0.5 rounded text-[0.72rem] font-medium bg-muted/20 text-text no-underline hover:bg-muted/35 transition-colors">{item.workspaceName}</a>
+                  <a href={`/?workspace=${item.workspaceId}`} class="inline-block px-1.5 py-0.5 rounded text-[0.72rem] font-medium bg-surface-raised text-text no-underline hover:bg-surface-hover transition-colors">{item.workspaceName}</a>
                 )}
               </div>
               <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight mb-4">{item.keySummary}</h1>
@@ -75,7 +75,7 @@ export function ChangelogItemPost(props: ItemPostProps) {
                   {formatDate(item.vouchedAt || item.createdAt)}
                 </time>
                 {item.validationActionLabel && (
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-success/80 bg-success/10">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success-bg text-success border border-success-border">
                     {item.validationActionLabel} by {sourceAuthor}
                   </span>
                 )}
@@ -88,7 +88,7 @@ export function ChangelogItemPost(props: ItemPostProps) {
               <footer class="mt-10 pt-6 border-t border-border-subtle">
                 <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag text-sm text-primary hover:underline">#{t}</a>
+                    <a href={`/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                   ))}
                 </div>
               </footer>

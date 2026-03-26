@@ -25,6 +25,10 @@ export function BlogItemPost(props: ItemPostProps) {
     sourceUrl,
     sourceAuthor,
     githubUrl,
+    t: _t,
+    locale: _locale,
+    defaultLocale: _defaultLocale,
+    localePrefix,
   } = props;
 
   const sourceTitle = settings.source_title || 'My Pignal';
@@ -44,20 +48,20 @@ export function BlogItemPost(props: ItemPostProps) {
   });
 
   return (
-    <BlogLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings}>
+    <BlogLayout title={item.keySummary} head={metaTags} sourceTitle={sourceTitle} sourceUrl={sourceUrl} settings={settings} t={props.t} locale={props.locale} defaultLocale={props.defaultLocale}>
       <JsonLd data={jsonLd} />
 
       <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-16 w-full">
 
         <main class="min-w-0 max-w-full break-words">
-          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} />
+          <SourceActionBar slug={item.slug ?? undefined} sourceUrl={sourceUrl} t={props.t} />
 
-          <article class="source-article min-w-0 max-w-full">
+          <article class="source-article min-w-0 max-w-full drop-cap">
             <header>
               <div class="mb-4">
                 <TypeBadge typeName={item.typeName} />
                 {item.workspaceName && (
-                  <a href={`/?workspace=${item.workspaceId}`} class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary ml-2">{item.workspaceName}</a>
+                  <a href={`${localePrefix}/?workspace=${item.workspaceId}`} class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary ml-2">{item.workspaceName}</a>
                 )}
               </div>
               <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight mb-4">{item.keySummary}</h1>
@@ -100,7 +104,7 @@ export function BlogItemPost(props: ItemPostProps) {
               <footer class="mt-10 pt-6 border-t border-border-subtle">
                 <div class="flex flex-wrap gap-2">
                   {item.tags.map((t) => (
-                    <a href={`/?tag=${encodeURIComponent(t)}`} class="item-tag text-sm text-primary hover:underline">#{t}</a>
+                    <a href={`${localePrefix}/?tag=${encodeURIComponent(t)}`} class="inline-block px-3 py-1 rounded-full text-sm font-medium text-muted no-underline border border-border-subtle hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">#{t}</a>
                   ))}
                 </div>
               </footer>
