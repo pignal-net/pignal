@@ -31,6 +31,11 @@ import type { Env, Variables } from './types';
 // Re-export MCP agent class for Cloudflare Workers to instantiate
 export { SelfHostedMcpAgent };
 
+/** MCP is enabled by default (self-hosted). Set MCP_ENABLED="false" to disable. */
+function isMcpEnabled(env: Env): boolean {
+  return env.MCP_ENABLED !== 'false';
+}
+
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // Store middleware — creates ItemStore from D1 for every request
@@ -73,6 +78,7 @@ app.get('/.well-known/pignal', async (c) => {
 
   const templateConfig = resolvedConfig;
   const { profile } = templateConfig;
+  const mcpEnabled = isMcpEnabled(c.env);
 
   c.header('Cache-Control', 'public, max-age=300');
   return c.json({
@@ -84,7 +90,7 @@ app.get('/.well-known/pignal', async (c) => {
     },
     capabilities: {
       items: true,
-      mcp: true,
+      mcp: mcpEnabled,
       web_ui: true,
       federation: true,
     },
@@ -95,7 +101,7 @@ app.get('/.well-known/pignal', async (c) => {
     },
     endpoints: {
       api: '/api',
-      mcp: '/mcp',
+      ...(mcpEnabled ? { mcp: '/mcp' } : {}),
       public_items: '/api/public/items',
     },
     language: {
@@ -181,10 +187,17 @@ const mcpHandler = SelfHostedMcpAgent.serveSSE('/mcp', {
 
 // Permission enforcement for MCP: tokenAuth sets authPermissions, mcpPermissionCheck
 // parses JSON-RPC body and blocks tool calls that exceed the token's permissions.
+// When MCP_ENABLED="false" (SaaS managed sites), returns 404 — hub uses REST API proxy instead.
 app.all('/mcp', rateLimit('mcp'), tokenAuth, mcpPermissionCheck, (c) => {
+  if (!isMcpEnabled(c.env)) {
+    return c.json({ error: 'MCP endpoint is not enabled on this deployment' }, 404);
+  }
   return mcpHandler.fetch(c.req.raw, c.env, c.executionCtx);
 });
 app.all('/mcp/*', rateLimit('mcp'), tokenAuth, mcpPermissionCheck, (c) => {
+  if (!isMcpEnabled(c.env)) {
+    return c.json({ error: 'MCP endpoint is not enabled on this deployment' }, 404);
+  }
   return mcpHandler.fetch(c.req.raw, c.env, c.executionCtx);
 });
 

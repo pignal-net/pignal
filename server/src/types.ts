@@ -5,9 +5,11 @@ import type { EventBus } from '@pignal/core/events/event-bus';
 
 export type Env = {
   DB: D1Database;
-  MCP_AGENT: DurableObjectNamespace;
+  MCP_AGENT?: DurableObjectNamespace;
   SERVER_TOKEN: string;
   TEMPLATE?: string;
+  /** "true" (default, self-hosted) or "false" (SaaS managed) to disable MCP DO endpoint. */
+  MCP_ENABLED?: string;
   /** CORS allowed origins: unset = same-origin, "*" = all, comma-separated = explicit list */
   CORS_ORIGIN?: string;
   /** Per-site visitor secret for hub SSO (managed sites only). */
