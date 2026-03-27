@@ -132,6 +132,21 @@ const bookshelfProfile: TemplateProfile = {
         content: { min: 50, max: 10000 },
       },
     },
+    actions: [
+      {
+        name: 'Book Recommendation',
+        slug: 'book-recommendation',
+        description: 'Recommend a book to add to the shelf',
+        fields: [
+          { name: 'name', type: 'text', label: 'Your Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'book_title', type: 'text', label: 'Book Title', required: true, placeholder: 'Title of the book', maxLength: 200 },
+          { name: 'author', type: 'text', label: 'Author', required: true, placeholder: 'Author name', maxLength: 200 },
+          { name: 'why', type: 'textarea', label: 'Why do you recommend it?', required: true, placeholder: 'What makes this book worth reading?', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for the recommendation! We\'ll check it out and consider adding it to the shelf.', require_honeypot: true },
+      },
+    ],
   },
 };
 

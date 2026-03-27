@@ -123,6 +123,28 @@ const writingProfile: TemplateProfile = {
         content: { min: 100, max: 50000 },
       },
     },
+    actions: [
+      {
+        name: 'Newsletter',
+        slug: 'newsletter',
+        description: 'Subscribe to new writing updates',
+        fields: [
+          { name: 'email', type: 'email', label: 'Email Address', required: true, placeholder: 'you@example.com' },
+        ],
+        settings: { success_message: 'You\'re subscribed! New pieces will arrive in your inbox.', require_honeypot: true },
+      },
+      {
+        name: 'Feedback',
+        slug: 'feedback',
+        description: 'Share your thoughts on a piece',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'message', type: 'textarea', label: 'Your Thoughts', required: true, placeholder: 'What resonated with you? What could be stronger?', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for the feedback! Hearing from readers is invaluable.', require_honeypot: true },
+      },
+    ],
   },
 };
 

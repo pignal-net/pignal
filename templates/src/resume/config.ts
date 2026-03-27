@@ -123,6 +123,19 @@ const resumeProfile: TemplateProfile = {
         content: { min: 20, max: 10000 },
       },
     },
+    actions: [
+      {
+        name: 'Contact',
+        slug: 'contact',
+        description: 'Get in touch about opportunities',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'message', type: 'textarea', label: 'Message', required: true, placeholder: 'Tell me about the opportunity or how I can help...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for reaching out! I\'ll review your message and respond soon.', require_honeypot: true },
+      },
+    ],
   },
 };
 

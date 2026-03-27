@@ -95,6 +95,28 @@ export interface TemplateWorkspaceSeed {
   visibility: 'public' | 'private';
 }
 
+export interface TemplateSiteActionFieldSeed {
+  name: string;
+  type: 'text' | 'email' | 'textarea' | 'select' | 'url' | 'tel' | 'number' | 'checkbox';
+  label: string;
+  required: boolean;
+  placeholder?: string;
+  maxLength?: number;
+  options?: string[];
+}
+
+export interface TemplateSiteActionSeed {
+  name: string;
+  slug: string;
+  description: string;
+  fields: TemplateSiteActionFieldSeed[];
+  settings?: {
+    success_message?: string;
+    require_honeypot?: boolean;
+    rate_limit_per_hour?: number;
+  };
+}
+
 export interface TemplateSettingsSeed {
   sourceTitle: string;
   sourceDescription: string;
@@ -114,6 +136,7 @@ export interface TemplateSeedData {
   types: TemplateTypeSeed[];
   workspaces: TemplateWorkspaceSeed[];
   settings: TemplateSettingsSeed;
+  actions?: TemplateSiteActionSeed[];
 }
 
 // --- The Profile: identity + generation spec ---

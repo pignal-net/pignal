@@ -4,6 +4,11 @@ import { createDirectiveRegistry } from '@pignal/core/directives/registry';
 import type { DirectiveHandler, DirectiveContext } from '@pignal/core/directives/registry';
 import { renderTestimonialsHtml } from '../components/testimonials';
 import { renderActionFormHtml } from '../components/action-form';
+import { renderCalloutHtml } from '../components/callout';
+import { renderButtonHtml } from '../components/button-directive';
+import { renderLatestItemsHtml } from '../components/latest-items';
+import { renderGalleryHtml } from '../components/gallery';
+import { renderStatsBarHtml } from '../components/stats-bar';
 
 /** Escape HTML attribute values. */
 function escapeAttr(str: string): string {
@@ -108,9 +113,102 @@ export const testimonialsDirectiveHandler: DirectiveHandler = {
 };
 
 /**
+ * The callout directive handler — renders a colored callout box.
+ *
+ * Syntax: {{callout type="info" text="Some important note"}}
+ * Syntax: {{callout type="warning" text="Be careful" title="Watch out"}}
+ *
+ * - `type`: info (default), warning, success, error, or tip
+ * - `text` (required): Callout message
+ * - `title`: Optional custom title (defaults to type name capitalized)
+ */
+export const calloutDirectiveHandler: DirectiveHandler = {
+  name: 'callout',
+  render(params, _context) {
+    const type = params.named['type'] || 'info';
+    const text = params.named['text'];
+    if (!text) return null;
+    return renderCalloutHtml(type, text, params.named['title']);
+  },
+};
+
+/**
+ * The button directive handler — renders a standalone button link.
+ *
+ * Syntax: {{button text="Get Started" url="/form/contact" variant="primary"}}
+ *
+ * - `text` (required): Button label
+ * - `url` (required): Link URL (must start with / or http:// or https://)
+ * - `variant`: primary (default), secondary, or outline
+ */
+export const buttonDirectiveHandler: DirectiveHandler = {
+  name: 'button',
+  render(params, _context) {
+    const text = params.named['text'];
+    const url = params.named['url'];
+    if (!text || !url) return null;
+    return renderButtonHtml(text, url, params.named['variant']);
+  },
+};
+
+/**
+ * The latest directive handler — shows the most recent items.
+ *
+ * Syntax:
+ * - `{{latest}}` — show latest 5 items
+ * - `{{latest type="Article" limit="3"}}` — filter by type, limit count
+ * - `{{latest tag="featured" limit="5"}}` — filter by tag
+ *
+ * Requires `items` in the DirectiveContext.
+ */
+export const latestDirectiveHandler: DirectiveHandler = {
+  name: 'latest',
+  render(params, context) {
+    if (!context.items || context.items.length === 0) return '';
+    const limit = params.named['limit'] ? parseInt(params.named['limit'], 10) : undefined;
+    return renderLatestItemsHtml(context.items, params.named['type'], limit, params.named['tag']);
+  },
+};
+
+/**
+ * The gallery directive handler — renders items in a responsive grid.
+ *
+ * Syntax:
+ * - `{{gallery tag="photos"}}` — show items with the "photos" tag in a 3-column grid
+ * - `{{gallery tag="photos" columns="2" limit="6"}}` — customize columns and limit
+ *
+ * Requires `items` in the DirectiveContext.
+ */
+export const galleryDirectiveHandler: DirectiveHandler = {
+  name: 'gallery',
+  render(params, context) {
+    if (!context.items || context.items.length === 0) return '';
+    const columns = params.named['columns'] ? parseInt(params.named['columns'], 10) : undefined;
+    const limit = params.named['limit'] ? parseInt(params.named['limit'], 10) : undefined;
+    return renderGalleryHtml(context.items, params.named['tag'], columns, limit);
+  },
+};
+
+/**
+ * The stats directive handler — renders source statistics.
+ *
+ * Syntax: {{stats}}
+ *
+ * Requires `stats` in the DirectiveContext.
+ */
+export const statsDirectiveHandler: DirectiveHandler = {
+  name: 'stats',
+  render(_params, context) {
+    if (!context.stats) return '';
+    return renderStatsBarHtml(context.stats);
+  },
+};
+
+/**
  * Render markdown content with directive processing.
  *
- * Processes `{{action:slug}}`, `{{cta:...}}`, and `{{testimonials}}` directives
+ * Processes `{{action:slug}}`, `{{cta:...}}`, `{{testimonials}}`, `{{callout:...}}`,
+ * `{{button:...}}`, `{{latest:...}}`, `{{gallery:...}}`, and `{{stats}}` directives
  * by replacing them with rendered HTML.
  * Returns both the processed HTML and extracted headings for table of contents.
  */
@@ -123,6 +221,11 @@ export function renderContentWithDirectives(
   registry.register(actionDirectiveHandler);
   registry.register(ctaDirectiveHandler);
   registry.register(testimonialsDirectiveHandler);
+  registry.register(calloutDirectiveHandler);
+  registry.register(buttonDirectiveHandler);
+  registry.register(latestDirectiveHandler);
+  registry.register(galleryDirectiveHandler);
+  registry.register(statsDirectiveHandler);
 
   const normalized = normalizeHeadings(content);
 

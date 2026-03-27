@@ -125,6 +125,33 @@ const servicesProfile: TemplateProfile = {
         content: { min: 50, max: 15000 },
       },
     },
+    actions: [
+      {
+        name: 'Get a Quote',
+        slug: 'get-quote',
+        description: 'Request a quote for our services',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'phone', type: 'tel', label: 'Phone', required: false, placeholder: '+1 (555) 000-0000' },
+          { name: 'service_type', type: 'select', label: 'Service Type', required: true, options: ['Starter', 'Professional', 'Enterprise', 'Custom'] },
+          { name: 'details', type: 'textarea', label: 'Project Details', required: true, placeholder: 'Describe what you need and any relevant context...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for your request! We\'ll send you a quote within 2 business days.', require_honeypot: true },
+      },
+      {
+        name: 'Book a Consultation',
+        slug: 'book-consultation',
+        description: 'Schedule a free consultation call',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'phone', type: 'tel', label: 'Phone', required: false, placeholder: '+1 (555) 000-0000' },
+          { name: 'preferred_time', type: 'select', label: 'Preferred Time', required: true, options: ['Morning', 'Afternoon', 'Evening'] },
+        ],
+        settings: { success_message: 'Consultation request received! We\'ll confirm your time slot shortly.', require_honeypot: true },
+      },
+    ],
   },
 };
 

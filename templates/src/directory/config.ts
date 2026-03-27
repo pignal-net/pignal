@@ -139,6 +139,31 @@ const directoryProfile: TemplateProfile = {
         content: { min: 1, max: 3000 },
       },
     },
+    actions: [
+      {
+        name: 'Submit Listing',
+        slug: 'submit-listing',
+        description: 'Submit a resource for inclusion in the directory',
+        fields: [
+          { name: 'name', type: 'text', label: 'Your Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'resource_url', type: 'url', label: 'Resource URL', required: true, placeholder: 'https://...', maxLength: 500 },
+          { name: 'description', type: 'textarea', label: 'Why should this be listed?', required: true, placeholder: 'Describe the resource and why it belongs in the directory...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for the submission! We\'ll review it for inclusion in the directory.', require_honeypot: true },
+      },
+      {
+        name: 'Report Listing',
+        slug: 'report-listing',
+        description: 'Report an issue with a listed resource',
+        fields: [
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'reason', type: 'select', label: 'Reason', required: true, options: ['Broken Link', 'Outdated Information', 'Spam or Inappropriate', 'Duplicate Entry', 'Other'] },
+          { name: 'details', type: 'textarea', label: 'Details', required: true, placeholder: 'Provide additional context about the issue...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Report received! We\'ll review the listing and take appropriate action.', require_honeypot: true },
+      },
+    ],
   },
 };
 

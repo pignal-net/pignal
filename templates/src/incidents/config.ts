@@ -110,6 +110,21 @@ const incidentsProfile: TemplateProfile = {
         content: { min: 100, max: 15000 },
       },
     },
+    actions: [
+      {
+        name: 'Report Incident',
+        slug: 'report-incident',
+        description: 'Report a service issue or outage',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'severity', type: 'select', label: 'Severity', required: true, options: ['P0 — Critical', 'P1 — Major', 'P2 — Minor', 'P3 — Low'] },
+          { name: 'affected_service', type: 'select', label: 'Affected Service', required: true, options: ['API Gateway', 'Database', 'Authentication', 'CDN', 'Other'] },
+          { name: 'description', type: 'textarea', label: 'Incident Description', required: true, placeholder: 'Describe the issue, when it started, and any error messages...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Incident report received! Our team will investigate immediately.', require_honeypot: true },
+      },
+    ],
   },
 };
 

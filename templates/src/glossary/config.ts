@@ -122,6 +122,20 @@ const glossaryProfile: TemplateProfile = {
         content: { min: 10, max: 5000 },
       },
     },
+    actions: [
+      {
+        name: 'Suggest a Term',
+        slug: 'suggest-term',
+        description: 'Suggest a term to add to the glossary',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'term', type: 'text', label: 'Term', required: true, placeholder: 'The term to define', maxLength: 200 },
+          { name: 'context', type: 'textarea', label: 'Context or Definition', required: true, placeholder: 'Provide a definition or explain why this term should be included...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for the suggestion! We\'ll review and add the term if it fits the glossary.', require_honeypot: true },
+      },
+    ],
   },
 };
 

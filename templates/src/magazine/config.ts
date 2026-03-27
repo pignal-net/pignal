@@ -124,6 +124,28 @@ const magazineProfile: TemplateProfile = {
         content: { min: 200, max: 30000 },
       },
     },
+    actions: [
+      {
+        name: 'Newsletter',
+        slug: 'newsletter',
+        description: 'Subscribe to get the latest stories delivered',
+        fields: [
+          { name: 'email', type: 'email', label: 'Email Address', required: true, placeholder: 'you@example.com' },
+        ],
+        settings: { success_message: 'You\'re subscribed! The latest stories will arrive in your inbox.', require_honeypot: true },
+      },
+      {
+        name: 'Pitch a Story',
+        slug: 'pitch-story',
+        description: 'Pitch a story idea to our editorial team',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'pitch', type: 'textarea', label: 'Story Pitch', required: true, placeholder: 'Describe your story idea, angle, and why it matters now...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for the pitch! Our editorial team will review it and follow up if interested.', require_honeypot: true },
+      },
+    ],
   },
 };
 

@@ -110,6 +110,31 @@ const podcastProfile: TemplateProfile = {
         content: { min: 50, max: 15000 },
       },
     },
+    actions: [
+      {
+        name: 'Guest Application',
+        slug: 'guest-application',
+        description: 'Apply to be a guest on the show',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'website', type: 'url', label: 'Website or Profile', required: false, placeholder: 'https://yoursite.com', maxLength: 500 },
+          { name: 'pitch', type: 'textarea', label: 'Why would you be a great guest?', required: true, placeholder: 'Tell us about your expertise and what topics you could discuss...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for applying! We\'ll review your application and reach out if there\'s a fit.', require_honeypot: true },
+      },
+      {
+        name: 'Topic Suggestion',
+        slug: 'topic-suggestion',
+        description: 'Suggest a topic for a future episode',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'topic', type: 'textarea', label: 'Topic Suggestion', required: true, placeholder: 'What topic would you like us to cover?', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Great suggestion! We\'ll add it to our episode planning list.', require_honeypot: true },
+      },
+    ],
   },
 };
 

@@ -142,6 +142,32 @@ const courseProfile: TemplateProfile = {
         content: { min: 200, max: 30000 },
       },
     },
+    actions: [
+      {
+        name: 'Enrollment Interest',
+        slug: 'enrollment-interest',
+        description: 'Express interest in enrolling',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'experience_level', type: 'select', label: 'Experience Level', required: true, options: ['Beginner', 'Intermediate', 'Advanced'] },
+          { name: 'goals', type: 'textarea', label: 'Learning Goals', required: true, placeholder: 'What do you hope to learn from this course?', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for your interest! We\'ll notify you when enrollment opens.', require_honeypot: true },
+      },
+      {
+        name: 'Feedback',
+        slug: 'feedback',
+        description: 'Share feedback on the course material',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'rating', type: 'select', label: 'Overall Rating', required: true, options: ['1 - Poor', '2 - Fair', '3 - Good', '4 - Very Good', '5 - Excellent'] },
+          { name: 'feedback', type: 'textarea', label: 'Your Feedback', required: true, placeholder: 'What worked well? What could be improved?', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for the feedback! It helps us improve the course for everyone.', require_honeypot: true },
+      },
+    ],
   },
 };
 

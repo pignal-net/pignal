@@ -94,6 +94,29 @@ const shopProfile: TemplateProfile = {
         content: { min: 1, max: 20000 },
       },
     },
+    actions: [
+      {
+        name: 'Product Inquiry',
+        slug: 'product-inquiry',
+        description: 'Ask a question about a product',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'product_type', type: 'select', label: 'Product Type', required: true, options: ['Physical Product', 'Digital Product', 'Service', 'Other'] },
+          { name: 'message', type: 'textarea', label: 'Your Question', required: true, placeholder: 'What would you like to know?', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for your inquiry! We\'ll get back to you shortly.', require_honeypot: true },
+      },
+      {
+        name: 'Newsletter',
+        slug: 'newsletter',
+        description: 'Subscribe to product updates and offers',
+        fields: [
+          { name: 'email', type: 'email', label: 'Email Address', required: true, placeholder: 'you@example.com' },
+        ],
+        settings: { success_message: 'You\'re subscribed! Watch your inbox for product updates and special offers.', require_honeypot: true },
+      },
+    ],
   },
 };
 

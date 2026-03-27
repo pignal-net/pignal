@@ -143,6 +143,32 @@ const wikiProfile: TemplateProfile = {
         content: { min: 100, max: 30000 },
       },
     },
+    actions: [
+      {
+        name: 'Suggest Edit',
+        slug: 'suggest-edit',
+        description: 'Suggest an improvement to an article',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'article_url', type: 'url', label: 'Article URL', required: false, placeholder: 'https://...', maxLength: 500 },
+          { name: 'suggestion', type: 'textarea', label: 'Suggested Edit', required: true, placeholder: 'Describe the change you\'d suggest...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for the suggestion! We\'ll review it and update the article if appropriate.', require_honeypot: true },
+      },
+      {
+        name: 'Report Issue',
+        slug: 'report-issue',
+        description: 'Report an issue with the knowledge base',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'issue_type', type: 'select', label: 'Issue Type', required: true, options: ['Outdated Information', 'Incorrect Content', 'Broken Link', 'Missing Topic', 'Other'] },
+          { name: 'details', type: 'textarea', label: 'Details', required: true, placeholder: 'Describe the issue...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Issue reported! We\'ll investigate and make corrections as needed.', require_honeypot: true },
+      },
+    ],
   },
 };
 

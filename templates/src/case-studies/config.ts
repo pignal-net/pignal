@@ -124,6 +124,19 @@ const caseStudiesProfile: TemplateProfile = {
         content: { min: 200, max: 20000 },
       },
     },
+    actions: [
+      {
+        name: 'Contact',
+        slug: 'contact',
+        description: 'Get in touch about working together',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'message', type: 'textarea', label: 'Message', required: true, placeholder: 'Tell us about your challenge and how we can help...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for reaching out! We\'ll review your message and respond within 2 business days.', require_honeypot: true },
+      },
+    ],
   },
 };
 

@@ -120,6 +120,21 @@ const awesomeProfile: TemplateProfile = {
         content: { min: 1, max: 3000 },
       },
     },
+    actions: [
+      {
+        name: 'Submit Resource',
+        slug: 'submit-resource',
+        description: 'Submit a resource for inclusion in the list',
+        fields: [
+          { name: 'name', type: 'text', label: 'Your Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'resource_url', type: 'url', label: 'Resource URL', required: true, placeholder: 'https://...', maxLength: 500 },
+          { name: 'resource_title', type: 'text', label: 'Resource Title', required: true, placeholder: 'Name of the resource', maxLength: 200 },
+          { name: 'why', type: 'textarea', label: 'Why should this be included?', required: true, placeholder: 'Describe the resource and why it deserves a spot on the list...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for the submission! We\'ll review the resource and add it if it meets our curation standards.', require_honeypot: true },
+      },
+    ],
   },
 };
 

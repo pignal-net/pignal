@@ -123,6 +123,29 @@ const reviewsProfile: TemplateProfile = {
         content: { min: 50, max: 10000 },
       },
     },
+    actions: [
+      {
+        name: 'Submit a Review',
+        slug: 'submit-review',
+        description: 'Submit your own review for consideration',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'rating', type: 'select', label: 'Rating', required: true, options: ['1 - Poor', '2 - Fair', '3 - Good', '4 - Very Good', '5 - Excellent'] },
+          { name: 'review', type: 'textarea', label: 'Your Review', required: true, placeholder: 'Share your honest opinion...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for sharing your review! We\'ll consider it for publication.', require_honeypot: true },
+      },
+      {
+        name: 'Newsletter',
+        slug: 'newsletter',
+        description: 'Get notified about new reviews',
+        fields: [
+          { name: 'email', type: 'email', label: 'Email Address', required: true, placeholder: 'you@example.com' },
+        ],
+        settings: { success_message: 'You\'re subscribed! New reviews will land in your inbox.', require_honeypot: true },
+      },
+    ],
   },
 };
 

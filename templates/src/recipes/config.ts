@@ -133,6 +133,28 @@ const recipesProfile: TemplateProfile = {
         content: { min: 100, max: 15000 },
       },
     },
+    actions: [
+      {
+        name: 'Recipe Request',
+        slug: 'recipe-request',
+        description: 'Request a recipe or suggest a dish',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'message', type: 'textarea', label: 'Recipe Request', required: true, placeholder: 'What dish would you like to see a recipe for?', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for the suggestion! We\'ll consider adding that recipe.', require_honeypot: true },
+      },
+      {
+        name: 'Newsletter',
+        slug: 'newsletter',
+        description: 'Get new recipes delivered to your inbox',
+        fields: [
+          { name: 'email', type: 'email', label: 'Email Address', required: true, placeholder: 'you@example.com' },
+        ],
+        settings: { success_message: 'You\'re subscribed! New recipes will land in your inbox.', require_honeypot: true },
+      },
+    ],
   },
 };
 

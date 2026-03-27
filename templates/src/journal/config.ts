@@ -121,6 +121,28 @@ const journalProfile: TemplateProfile = {
         content: { min: 1, max: 5000 },
       },
     },
+    actions: [
+      {
+        name: 'Newsletter',
+        slug: 'newsletter',
+        description: 'Subscribe to shared journal entries',
+        fields: [
+          { name: 'email', type: 'email', label: 'Email Address', required: true, placeholder: 'you@example.com' },
+        ],
+        settings: { success_message: 'You\'re subscribed! You\'ll receive new shared entries when they\'re published.', require_honeypot: true },
+      },
+      {
+        name: 'Feedback',
+        slug: 'feedback',
+        description: 'Share your thoughts on a shared entry',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'message', type: 'textarea', label: 'Your Thoughts', required: true, placeholder: 'Share how this entry resonated with you...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for sharing your thoughts! It means a lot.', require_honeypot: true },
+      },
+    ],
   },
 };
 

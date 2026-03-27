@@ -132,6 +132,20 @@ const flashcardsProfile: TemplateProfile = {
         content: { min: 1, max: 5000 },
       },
     },
+    actions: [
+      {
+        name: 'Suggest Cards',
+        slug: 'suggest-cards',
+        description: 'Suggest flashcard topics or specific cards',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'topic', type: 'text', label: 'Topic', required: true, placeholder: 'e.g., Calculus, Spanish Vocabulary', maxLength: 200 },
+          { name: 'details', type: 'textarea', label: 'Card Suggestions', required: true, placeholder: 'Describe the cards you\'d like to see or specific questions/answers...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for the suggestion! We\'ll consider adding those cards to the study set.', require_honeypot: true },
+      },
+    ],
   },
 };
 

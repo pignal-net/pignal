@@ -121,6 +121,28 @@ const tilProfile: TemplateProfile = {
         content: { min: 1, max: 2000 },
       },
     },
+    actions: [
+      {
+        name: 'Newsletter',
+        slug: 'newsletter',
+        description: 'Get daily TIL snippets in your inbox',
+        fields: [
+          { name: 'email', type: 'email', label: 'Email Address', required: true, placeholder: 'you@example.com' },
+        ],
+        settings: { success_message: 'You\'re subscribed! Daily snippets will arrive in your inbox.', require_honeypot: true },
+      },
+      {
+        name: 'Suggest Topic',
+        slug: 'suggest-topic',
+        description: 'Suggest a topic to learn about',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'topic', type: 'textarea', label: 'Topic Suggestion', required: true, placeholder: 'What topic or trick would you like to see covered?', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for the suggestion! We\'ll explore that topic soon.', require_honeypot: true },
+      },
+    ],
   },
 };
 

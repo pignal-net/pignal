@@ -131,6 +131,32 @@ const portfolioProfile: TemplateProfile = {
         content: { min: 50, max: 15000 },
       },
     },
+    actions: [
+      {
+        name: 'Contact',
+        slug: 'contact',
+        description: 'Get in touch about a project or collaboration',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'message', type: 'textarea', label: 'Message', required: true, placeholder: 'Tell me about your project or idea...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for reaching out! I\'ll get back to you soon.', require_honeypot: true },
+      },
+      {
+        name: 'Project Inquiry',
+        slug: 'project-inquiry',
+        description: 'Inquire about hiring for a project',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'website', type: 'url', label: 'Website', required: false, placeholder: 'https://yourcompany.com', maxLength: 500 },
+          { name: 'budget', type: 'select', label: 'Budget Range', required: true, options: ['Under $5K', '$5K-$15K', '$15K-$50K', '$50K+'] },
+          { name: 'details', type: 'textarea', label: 'Project Details', required: true, placeholder: 'Describe the project scope, timeline, and goals...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for your inquiry! I\'ll review the details and respond within 48 hours.', require_honeypot: true },
+      },
+    ],
   },
 };
 

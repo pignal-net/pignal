@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import type { TemplateSeedData, TemplateTypeSeed, TemplateWorkspaceSeed, TemplateSettingsSeed } from '../src/config';
+import type { TemplateSeedData, TemplateTypeSeed, TemplateWorkspaceSeed, TemplateSettingsSeed, TemplateSiteActionSeed } from '../src/config';
 import { getTemplateConfig } from '../src/all-configs';
 
 // ---------------------------------------------------------------------------
@@ -69,9 +69,17 @@ function generateTypeSql(templateId: string, type: TemplateTypeSeed, sortOrder: 
   return lines.join('\n');
 }
 
-function generateWorkspaceSql(templateId: string, ws: TemplateWorkspaceSeed): string {
+function generateWorkspaceSql(templateId: string, ws: TemplateWorkspaceSeed, index: number): string {
   const wsId = deterministicUuid(templateId, `workspace:${ws.name}`);
-  return `INSERT OR IGNORE INTO \`workspaces\` (\`id\`, \`name\`, \`description\`, \`visibility\`, \`is_default\`, \`created_at\`, \`updated_at\`) VALUES ('${wsId}', '${escapeSql(ws.name)}', '${escapeSql(ws.description)}', '${ws.visibility}', 1, '${now}', '${now}');`;
+  const isDefault = index === 0 ? 1 : 0;
+  return `INSERT OR IGNORE INTO \`workspaces\` (\`id\`, \`name\`, \`description\`, \`visibility\`, \`is_default\`, \`created_at\`, \`updated_at\`) VALUES ('${wsId}', '${escapeSql(ws.name)}', '${escapeSql(ws.description)}', '${ws.visibility}', ${isDefault}, '${now}', '${now}');`;
+}
+
+function generateSiteActionSql(templateId: string, action: TemplateSiteActionSeed): string {
+  const actionId = deterministicUuid(templateId, `site-action:${action.slug}`);
+  const fields = JSON.stringify(action.fields);
+  const settings = JSON.stringify(action.settings ?? {});
+  return `INSERT OR IGNORE INTO \`site_actions\` (\`id\`, \`name\`, \`slug\`, \`description\`, \`fields\`, \`settings\`, \`status\`, \`created_at\`, \`updated_at\`) VALUES ('${actionId}', '${escapeSql(action.name)}', '${action.slug}', '${escapeSql(action.description)}', '${escapeSql(fields)}', '${escapeSql(settings)}', 'active', '${now}', '${now}');`;
 }
 
 function generateSettingsSql(settings: TemplateSettingsSeed): string {
@@ -117,13 +125,21 @@ function generateSeedSql(templateId: string, seedData: TemplateSeedData): string
 
   // Workspaces
   sections.push(`\n-- ${vocab.workspacePlural.charAt(0).toUpperCase() + vocab.workspacePlural.slice(1)} (${templateId})`);
-  for (const ws of seedData.workspaces) {
-    sections.push(generateWorkspaceSql(templateId, ws));
+  for (let i = 0; i < seedData.workspaces.length; i++) {
+    sections.push(generateWorkspaceSql(templateId, seedData.workspaces[i], i));
   }
 
   // Settings
   sections.push(`\n-- ${templateId}-specific settings`);
   sections.push(generateSettingsSql(seedData.settings));
+
+  // Site actions (forms)
+  if (seedData.actions?.length) {
+    sections.push(`\n-- Site actions (${templateId})`);
+    for (const action of seedData.actions) {
+      sections.push(generateSiteActionSql(templateId, action));
+    }
+  }
 
   return sections.join('\n') + '\n';
 }

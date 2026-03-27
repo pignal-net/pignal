@@ -109,6 +109,28 @@ const blogProfile: TemplateProfile = {
         content: { min: 1, max: 10000 },
       },
     },
+    actions: [
+      {
+        name: 'Newsletter Signup',
+        slug: 'newsletter',
+        description: 'Subscribe to receive new posts via email',
+        fields: [
+          { name: 'email', type: 'email', label: 'Email Address', required: true, placeholder: 'you@example.com' },
+        ],
+        settings: { success_message: 'Thanks for subscribing! You\'ll receive new posts in your inbox.', require_honeypot: true },
+      },
+      {
+        name: 'Feedback',
+        slug: 'feedback',
+        description: 'Share your thoughts or suggestions',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'message', type: 'textarea', label: 'Message', required: true, placeholder: 'Your feedback...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for your feedback!', require_honeypot: true },
+      },
+    ],
   },
 };
 

@@ -121,6 +121,31 @@ const changelogProfile: TemplateProfile = {
         content: { min: 50, max: 10000 },
       },
     },
+    actions: [
+      {
+        name: 'Feature Request',
+        slug: 'feature-request',
+        description: 'Request a new feature or enhancement',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'request', type: 'textarea', label: 'Feature Request', required: true, placeholder: 'Describe the feature you\'d like and how it would help...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Feature request received! We\'ll add it to our roadmap for consideration.', require_honeypot: true },
+      },
+      {
+        name: 'Bug Report',
+        slug: 'bug-report',
+        description: 'Report a bug or unexpected behavior',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'severity', type: 'select', label: 'Severity', required: true, options: ['Low', 'Medium', 'High', 'Critical'] },
+          { name: 'description', type: 'textarea', label: 'Bug Description', required: true, placeholder: 'Describe the bug, steps to reproduce, and expected vs actual behavior...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Bug report received! We\'ll investigate and include a fix in an upcoming release.', require_honeypot: true },
+      },
+    ],
   },
 };
 

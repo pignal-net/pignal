@@ -20,6 +20,8 @@ export interface DirectiveContext {
   items?: ItemWithMeta[];
   /** Base URL of the source */
   sourceUrl: string;
+  /** Source statistics for the stats directive */
+  stats?: { totalItems: number; totalTypes: number; totalWorkspaces: number };
 }
 
 /** Interface for directive handlers. Implement to add new directive types. */

@@ -107,6 +107,33 @@ const menuProfile: TemplateProfile = {
         content: { min: 1, max: 2000 },
       },
     },
+    actions: [
+      {
+        name: 'Reservation',
+        slug: 'reservation',
+        description: 'Make a table reservation',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'phone', type: 'tel', label: 'Phone', required: true, placeholder: '+1 (555) 000-0000' },
+          { name: 'party_size', type: 'number', label: 'Party Size', required: true, placeholder: '2' },
+          { name: 'preferred_time', type: 'select', label: 'Preferred Time', required: true, options: ['Morning', 'Afternoon', 'Evening'] },
+        ],
+        settings: { success_message: 'Reservation request received! We\'ll confirm your booking shortly.', require_honeypot: true },
+      },
+      {
+        name: 'Catering Inquiry',
+        slug: 'catering-inquiry',
+        description: 'Inquire about catering services',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'phone', type: 'tel', label: 'Phone', required: true, placeholder: '+1 (555) 000-0000' },
+          { name: 'details', type: 'textarea', label: 'Event Details', required: true, placeholder: 'Describe your event, guest count, dietary requirements, and preferred date...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for your inquiry! Our catering team will reach out within 24 hours.', require_honeypot: true },
+      },
+    ],
   },
 };
 

@@ -143,6 +143,20 @@ const runbookProfile: TemplateProfile = {
         content: { min: 200, max: 20000 },
       },
     },
+    actions: [
+      {
+        name: 'Suggest Improvement',
+        slug: 'suggest-improvement',
+        description: 'Suggest an improvement to a procedure',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true, placeholder: 'Your name', maxLength: 100 },
+          { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@example.com' },
+          { name: 'procedure_url', type: 'url', label: 'Procedure URL', required: false, placeholder: 'https://...', maxLength: 500 },
+          { name: 'suggestion', type: 'textarea', label: 'Improvement Suggestion', required: true, placeholder: 'Describe the improvement, why the current procedure is insufficient, and your proposed change...', maxLength: 2000 },
+        ],
+        settings: { success_message: 'Thanks for the suggestion! We\'ll review and update the procedure if appropriate.', require_honeypot: true },
+      },
+    ],
   },
 };
 
