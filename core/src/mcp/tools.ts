@@ -7,6 +7,8 @@ import type {
   ActionStoreRpc,
   SiteActionSelect,
   SubmissionWithAction,
+  TypeActionSelect,
+  ActionStats,
 } from '@pignal/db';
 
 import {
@@ -24,6 +26,24 @@ import {
   listActionsToolSchema,
   listSubmissionsToolSchema,
   manageSubmissionToolSchema,
+  deleteItemToolSchema,
+  archiveItemToolSchema,
+  unarchiveItemToolSchema,
+  updateTypeToolSchema,
+  deleteTypeToolSchema,
+  addTypeActionToolSchema,
+  removeTypeActionToolSchema,
+  updateWorkspaceToolSchema,
+  deleteWorkspaceToolSchema,
+  updateSettingsToolSchema,
+  deleteActionToolSchema,
+  deleteSubmissionToolSchema,
+  getSubmissionStatsToolSchema,
+  exportSubmissionsToolSchema,
+  getMetadataToolSchema,
+  batchUpdateSettingsSchema,
+  ALLOWED_SETTINGS_KEYS,
+  getSettingsRegistryByGroup,
   type SaveItemToolInput,
   type ListItemsToolInput,
   type SearchItemsToolInput,
@@ -38,6 +58,20 @@ import {
   type ListActionsToolInput,
   type ListSubmissionsToolInput,
   type ManageSubmissionToolInput,
+  type DeleteItemToolInput,
+  type ArchiveItemToolInput,
+  type UnarchiveItemToolInput,
+  type UpdateTypeToolInput,
+  type DeleteTypeToolInput,
+  type AddTypeActionToolInput,
+  type RemoveTypeActionToolInput,
+  type UpdateWorkspaceToolInput,
+  type DeleteWorkspaceToolInput,
+  type UpdateSettingsToolInput,
+  type DeleteActionToolInput,
+  type DeleteSubmissionToolInput,
+  type ExportSubmissionsToolInput,
+  type GetMetadataToolInput,
 } from '../validation/schemas';
 
 // --- Metadata fields for formatting ---
@@ -416,6 +450,79 @@ export async function manageSubmissionOp(store: ActionStoreRpc, input: ManageSub
   return `Submission ${input.submissionId} marked as "${input.status}".`;
 }
 
+// --- Lifecycle tool operations ---
+
+export async function deleteItem(store: ItemStoreRpc, input: DeleteItemToolInput): Promise<boolean> {
+  return store.delete(input.itemId);
+}
+
+export async function archiveItem(store: ItemStoreRpc, input: ArchiveItemToolInput): Promise<ItemWithMeta | null> {
+  return store.archive(input.itemId);
+}
+
+export async function unarchiveItem(store: ItemStoreRpc, input: UnarchiveItemToolInput): Promise<ItemWithMeta | null> {
+  return store.unarchive(input.itemId);
+}
+
+export async function updateTypeOp(store: ItemStoreRpc, input: UpdateTypeToolInput): Promise<ItemTypeWithActions | null> {
+  const { typeId, ...params } = input;
+  return store.updateType(typeId, params);
+}
+
+export async function deleteTypeOp(store: ItemStoreRpc, input: DeleteTypeToolInput): Promise<boolean> {
+  return store.deleteType(input.typeId);
+}
+
+export async function addTypeActionOp(store: ItemStoreRpc, input: AddTypeActionToolInput): Promise<TypeActionSelect> {
+  return store.addTypeAction(input.typeId, { label: input.label, sortOrder: input.sortOrder });
+}
+
+export async function removeTypeActionOp(store: ItemStoreRpc, input: RemoveTypeActionToolInput): Promise<boolean> {
+  return store.removeTypeAction(input.actionId);
+}
+
+export async function updateWorkspaceOp(store: ItemStoreRpc, input: UpdateWorkspaceToolInput): Promise<WorkspaceSelect | null> {
+  const { workspaceId, ...params } = input;
+  return store.updateWorkspace(workspaceId, params);
+}
+
+export async function deleteWorkspaceOp(store: ItemStoreRpc, input: DeleteWorkspaceToolInput): Promise<boolean> {
+  return store.deleteWorkspace(input.workspaceId);
+}
+
+export async function updateSettingsOp(
+  store: ItemStoreRpc,
+  input: UpdateSettingsToolInput
+): Promise<{ updated: string[]; errors: Array<{ key: string; error: string }> }> {
+  const updated: string[] = [];
+  const errors: Array<{ key: string; error: string }> = [];
+  for (const { key, value } of input.settings) {
+    if (!ALLOWED_SETTINGS_KEYS.has(key)) {
+      errors.push({ key, error: `Unknown setting key: ${key}` });
+      continue;
+    }
+    await store.updateSetting(key, value);
+    updated.push(key);
+  }
+  return { updated, errors };
+}
+
+export async function deleteActionOp(store: ActionStoreRpc, input: DeleteActionToolInput): Promise<boolean> {
+  return store.deleteAction(input.actionId);
+}
+
+export async function deleteSubmissionOp(store: ActionStoreRpc, input: DeleteSubmissionToolInput): Promise<boolean> {
+  return store.deleteSubmission(input.submissionId);
+}
+
+export async function getSubmissionStatsOp(store: ActionStoreRpc): Promise<ActionStats> {
+  return store.submissionStats();
+}
+
+export async function exportSubmissionsOp(store: ActionStoreRpc, input: ExportSubmissionsToolInput): Promise<string> {
+  return store.exportSubmissions(input.actionId, input.format ?? 'json');
+}
+
 // --- Re-export schemas for tool registration ---
 
 export {
@@ -433,6 +540,24 @@ export {
   listActionsToolSchema,
   listSubmissionsToolSchema,
   manageSubmissionToolSchema,
+  deleteItemToolSchema,
+  archiveItemToolSchema,
+  unarchiveItemToolSchema,
+  updateTypeToolSchema,
+  deleteTypeToolSchema,
+  addTypeActionToolSchema,
+  removeTypeActionToolSchema,
+  updateWorkspaceToolSchema,
+  deleteWorkspaceToolSchema,
+  updateSettingsToolSchema,
+  deleteActionToolSchema,
+  deleteSubmissionToolSchema,
+  getSubmissionStatsToolSchema,
+  exportSubmissionsToolSchema,
+  getMetadataToolSchema,
+  batchUpdateSettingsSchema,
+  ALLOWED_SETTINGS_KEYS,
+  getSettingsRegistryByGroup,
   type SaveItemToolInput,
   type ListItemsToolInput,
   type SearchItemsToolInput,
@@ -447,4 +572,18 @@ export {
   type ListActionsToolInput,
   type ListSubmissionsToolInput,
   type ManageSubmissionToolInput,
+  type DeleteItemToolInput,
+  type ArchiveItemToolInput,
+  type UnarchiveItemToolInput,
+  type UpdateTypeToolInput,
+  type DeleteTypeToolInput,
+  type AddTypeActionToolInput,
+  type RemoveTypeActionToolInput,
+  type UpdateWorkspaceToolInput,
+  type DeleteWorkspaceToolInput,
+  type UpdateSettingsToolInput,
+  type DeleteActionToolInput,
+  type DeleteSubmissionToolInput,
+  type ExportSubmissionsToolInput,
+  type GetMetadataToolInput,
 };

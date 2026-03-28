@@ -2,7 +2,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import type { RouteFactoryConfig } from '../types';
-import { updateSettingSchema, ALLOWED_SETTINGS_KEYS } from '../validation/schemas';
+import { updateSettingSchema, batchUpdateSettingsSchema, ALLOWED_SETTINGS_KEYS } from '../validation/schemas';
 
 /**
  * Create settings management routes with configurable store resolution and middleware.
@@ -34,6 +34,26 @@ export function createSettingsRoutes(config: RouteFactoryConfig) {
     }
 
     return c.json({ key, value });
+  });
+
+  // PATCH / — batch update multiple settings
+  router.patch('/', zValidator('json', batchUpdateSettingsSchema), async (c) => {
+    const store = config.getStore(c);
+    const { settings } = c.req.valid('json');
+
+    const updated: string[] = [];
+    const errors: Array<{ key: string; error: string }> = [];
+
+    for (const { key, value } of settings) {
+      if (!ALLOWED_SETTINGS_KEYS.has(key)) {
+        errors.push({ key, error: `Unknown setting key: ${key}` });
+        continue;
+      }
+      await store.updateSetting(key, value);
+      updated.push(key);
+    }
+
+    return c.json({ updated, errors });
   });
 
   // PATCH /:key — update a single setting value

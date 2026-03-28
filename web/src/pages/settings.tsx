@@ -33,6 +33,10 @@ const DEFAULTS: Record<string, string> = {
   source_custom_head: '',
   source_color_accent: '',
   max_actions_per_type: '3',
+  testimonial_type_name: '',
+  webhook_url: '',
+  webhook_events: '',
+  webhook_secret: '',
 };
 
 /* --- Field type definitions --- */
@@ -55,11 +59,47 @@ interface FieldConfig {
 
 /* --- Static category definitions (keys only, for ALLOWED_KEYS) --- */
 
+/** CTA sub-section definitions for collapsible rendering. */
+const CTA_SUB_SECTIONS = [
+  {
+    i18nKey: 'ctaHero',
+    keys: [
+      'cta_hero_enabled',
+      'cta_hero_title',
+      'cta_hero_description',
+      'cta_hero_button_text',
+      'cta_hero_button_url',
+      'cta_hero_action_slug',
+    ],
+  },
+  {
+    i18nKey: 'ctaPost',
+    keys: [
+      'cta_post_enabled',
+      'cta_post_title',
+      'cta_post_description',
+      'cta_post_button_text',
+      'cta_post_button_url',
+      'cta_post_action_slug',
+    ],
+  },
+  {
+    i18nKey: 'ctaSticky',
+    keys: [
+      'cta_sticky_enabled',
+      'cta_sticky_text',
+      'cta_sticky_button_text',
+      'cta_sticky_button_url',
+      'cta_sticky_action_slug',
+    ],
+  },
+] as const;
+
 const CATEGORY_DEFS = [
   {
-    slug: 'identity',
-    i18nKey: 'identity',
-    keys: ['owner_name', 'source_title', 'source_description'],
+    slug: 'general',
+    i18nKey: 'general',
+    keys: ['owner_name', 'source_title', 'source_description', 'source_locale'],
   },
   {
     slug: 'branding',
@@ -69,6 +109,7 @@ const CATEGORY_DEFS = [
       'source_logo_url',
       'source_favicon_url',
       'source_og_image_url',
+      'source_color_accent',
       'source_font_heading',
       'source_font_body',
     ],
@@ -86,57 +127,34 @@ const CATEGORY_DEFS = [
     ],
   },
   {
-    slug: 'theme',
-    i18nKey: 'theme',
-    keys: ['source_color_accent'],
-  },
-  {
-    slug: 'layout',
-    i18nKey: 'layout',
+    slug: 'content',
+    i18nKey: 'content',
     keys: [
       'source_posts_per_page',
       'source_show_reading_time',
       'source_code_theme',
       'source_custom_footer',
+      'quality_guidelines',
+      'validation_limits',
+      'max_actions_per_type',
+      'testimonial_type_name',
     ],
-  },
-  {
-    slug: 'language',
-    i18nKey: 'language',
-    keys: ['source_locale'],
-  },
-  {
-    slug: 'advanced',
-    i18nKey: 'advanced',
-    keys: ['source_custom_css', 'source_custom_head'],
   },
   {
     slug: 'cta',
     i18nKey: 'cta',
-    keys: [
-      'cta_hero_enabled',
-      'cta_hero_title',
-      'cta_hero_description',
-      'cta_hero_button_text',
-      'cta_hero_button_url',
-      'cta_hero_action_slug',
-      'cta_post_enabled',
-      'cta_post_title',
-      'cta_post_description',
-      'cta_post_button_text',
-      'cta_post_button_url',
-      'cta_post_action_slug',
-      'cta_sticky_enabled',
-      'cta_sticky_text',
-      'cta_sticky_button_text',
-      'cta_sticky_button_url',
-      'cta_sticky_action_slug',
-    ],
+    keys: CTA_SUB_SECTIONS.flatMap((s) => [...s.keys]),
   },
   {
-    slug: 'content-quality',
-    i18nKey: 'contentQuality',
-    keys: ['quality_guidelines', 'validation_limits', 'max_actions_per_type'],
+    slug: 'advanced',
+    i18nKey: 'advanced',
+    keys: [
+      'source_custom_css',
+      'source_custom_head',
+      'webhook_url',
+      'webhook_events',
+      'webhook_secret',
+    ],
   },
 ] as const;
 
@@ -150,6 +168,13 @@ function getCategories(t: TFunction) {
     title: t(`settings.category.${def.i18nKey}`),
     slug: def.slug,
     description: t(`settings.category.${def.i18nKey}Description`),
+    keys: [...def.keys],
+  }));
+}
+
+function getCtaSubSections(t: TFunction) {
+  return CTA_SUB_SECTIONS.map((def) => ({
+    title: t(`settings.category.${def.i18nKey}`),
     keys: [...def.keys],
   }));
 }
@@ -352,6 +377,34 @@ function getFields(t: TFunction): Record<string, FieldConfig> {
       description: t('settings.field.accentColorDescription'),
       type: 'color',
       placeholder: t('settings.field.accentColorPlaceholder'),
+    },
+    testimonial_type_name: {
+      label: t('settings.field.testimonialTypeName'),
+      description: t('settings.field.testimonialTypeNameDescription'),
+      type: 'text',
+      placeholder: t('settings.field.testimonialTypeNamePlaceholder'),
+      maxLength: 100,
+    },
+    webhook_url: {
+      label: t('settings.field.webhookUrl'),
+      description: t('settings.field.webhookUrlDescription'),
+      type: 'url',
+      placeholder: t('settings.field.webhookUrlPlaceholder'),
+      maxLength: 2000,
+    },
+    webhook_events: {
+      label: t('settings.field.webhookEvents'),
+      description: t('settings.field.webhookEventsDescription'),
+      type: 'text',
+      placeholder: t('settings.field.webhookEventsPlaceholder'),
+      maxLength: 500,
+    },
+    webhook_secret: {
+      label: t('settings.field.webhookSecret'),
+      description: t('settings.field.webhookSecretDescription'),
+      type: 'text',
+      placeholder: t('settings.field.webhookSecretPlaceholder'),
+      maxLength: 200,
     },
     // CTA Hero settings
     cta_hero_enabled: {
@@ -647,6 +700,7 @@ export async function settingsPage(c: Context<{ Bindings: WebEnv; Variables: Web
     c.req.query('error') ? { type: 'error' as const, message: c.req.query('error')! } : undefined;
 
   const categories = getCategories(t);
+  const ctaSubSections = getCtaSubSections(t);
 
   return c.html(
     <AppLayout
@@ -700,6 +754,7 @@ export async function settingsPage(c: Context<{ Bindings: WebEnv; Variables: Web
         <div class="flex-1 min-w-0 space-y-8">
           {categories.map((category) => {
             const resetKeys = category.keys.filter((k) => k in DEFAULTS);
+            const isCta = category.slug === 'cta';
             return (
               <section
                 id={`settings-${category.slug}`}
@@ -709,9 +764,26 @@ export async function settingsPage(c: Context<{ Bindings: WebEnv; Variables: Web
                   <h2 class="text-lg font-semibold">{category.title}</h2>
                   <p class="text-sm text-muted mt-1">{category.description}</p>
                 </div>
-                {category.keys.map((key) => (
-                  <SettingField settingKey={key} value={settings[key] ?? ''} t={t} />
-                ))}
+                {isCta ? (
+                  <div class="space-y-4">
+                    {ctaSubSections.map((sub) => (
+                      <details class="border border-border-subtle rounded-lg">
+                        <summary class="px-4 py-3 text-sm font-medium cursor-pointer hover:bg-surface-hover transition-colors rounded-lg">
+                          {sub.title}
+                        </summary>
+                        <div class="px-4 pb-4 pt-2">
+                          {sub.keys.map((key) => (
+                            <SettingField settingKey={key} value={settings[key] ?? ''} t={t} />
+                          ))}
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                ) : (
+                  category.keys.map((key) => (
+                    <SettingField settingKey={key} value={settings[key] ?? ''} t={t} />
+                  ))
+                )}
                 {resetKeys.length > 0 && (
                   <button
                     type="button"

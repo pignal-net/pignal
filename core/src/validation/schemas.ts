@@ -99,70 +99,95 @@ export const updateWorkspaceSchema = z.object({
   visibility: workspaceVisibilitySchema.optional(),
 });
 
-// --- Settings schema ---
+// --- Settings registry ---
 
-/** Allowed setting keys — prevents arbitrary key writes via the API. */
-export const ALLOWED_SETTINGS_KEYS = new Set([
-  // Identity
-  'owner_name',
-  'source_title',
-  'source_description',
-  'source_logo_text',
-  // Social
-  'source_social_github',
-  'source_social_twitter',
-  'source_social_linkedin',
-  'source_social_mastodon',
-  'source_social_youtube',
-  'source_social_website',
-  // Display
-  'source_posts_per_page',
-  'source_show_toc',
-  'source_show_reading_time',
-  'source_code_theme',
-  'source_custom_footer',
-  // Customization (admin-only: allows arbitrary CSS/HTML)
-  'source_custom_css',
-  'source_custom_head',
-  // Theme
-  'source_color_accent',
-  // Branding
-  'source_favicon_url',
-  'source_logo_url',
-  'source_og_image_url',
-  'source_font_heading',
-  'source_font_body',
-  // Content quality
-  'quality_guidelines',
-  'validation_limits',
-  'max_actions_per_type',
-  // CTA settings
-  'cta_hero_enabled',
-  'cta_hero_title',
-  'cta_hero_description',
-  'cta_hero_button_text',
-  'cta_hero_button_url',
-  'cta_hero_action_slug',
-  'cta_post_enabled',
-  'cta_post_title',
-  'cta_post_description',
-  'cta_post_button_text',
-  'cta_post_button_url',
-  'cta_post_action_slug',
-  'cta_sticky_enabled',
-  'cta_sticky_text',
-  'cta_sticky_button_text',
-  'cta_sticky_button_url',
-  'cta_sticky_action_slug',
-  // Webhooks
-  'webhook_url',
-  'webhook_events',
-  'webhook_secret',
-  // Testimonials
-  'testimonial_type_name',
-  // Internationalization
-  'source_locale',
-]);
+export type SettingValueType = 'string' | 'boolean' | 'number' | 'color' | 'url' | 'json' | 'select' | 'textarea';
+export type SettingGroup = 'general' | 'branding' | 'social' | 'content' | 'cta' | 'advanced';
+
+export interface SettingDefinition {
+  group: SettingGroup;
+  description: string;
+  valueType: SettingValueType;
+  options?: string[];
+}
+
+/** Single source of truth for all allowed settings. Adding a key here auto-enables it in the API and MCP. */
+export const SETTINGS_REGISTRY: Record<string, SettingDefinition> = {
+  // --- General ---
+  owner_name: { group: 'general', description: 'Site owner display name (used in SEO and JSON-LD)', valueType: 'string' },
+  source_title: { group: 'general', description: 'Site title shown in navigation and browser tab', valueType: 'string' },
+  source_description: { group: 'general', description: 'Site description for SEO meta tags', valueType: 'textarea' },
+  source_locale: { group: 'general', description: 'Default site language', valueType: 'select', options: ['en', 'vi', 'zh'] },
+
+  // --- Branding ---
+  source_logo_text: { group: 'branding', description: 'Text-based logo shown when no logo image is set', valueType: 'string' },
+  source_logo_url: { group: 'branding', description: 'Logo image URL displayed in navigation', valueType: 'url' },
+  source_favicon_url: { group: 'branding', description: 'Favicon URL for browser tab icon', valueType: 'url' },
+  source_og_image_url: { group: 'branding', description: 'Default Open Graph image for social media previews', valueType: 'url' },
+  source_color_accent: { group: 'branding', description: 'Primary accent color for buttons, links, and highlights (hex)', valueType: 'color' },
+  source_font_heading: { group: 'branding', description: 'Google Font for headings', valueType: 'select', options: ['Inter', 'Source Sans 3', 'DM Sans', 'Open Sans', 'Lora', 'Merriweather', 'Source Serif 4', 'Playfair Display', 'JetBrains Mono', 'Fira Code'] },
+  source_font_body: { group: 'branding', description: 'Google Font for body text', valueType: 'select', options: ['Inter', 'Source Sans 3', 'DM Sans', 'Open Sans', 'Lora', 'Merriweather', 'Source Serif 4', 'Playfair Display', 'JetBrains Mono', 'Fira Code'] },
+
+  // --- Social ---
+  source_social_github: { group: 'social', description: 'GitHub profile URL', valueType: 'url' },
+  source_social_twitter: { group: 'social', description: 'Twitter/X profile URL', valueType: 'url' },
+  source_social_linkedin: { group: 'social', description: 'LinkedIn profile URL', valueType: 'url' },
+  source_social_mastodon: { group: 'social', description: 'Mastodon profile URL', valueType: 'url' },
+  source_social_youtube: { group: 'social', description: 'YouTube channel URL', valueType: 'url' },
+  source_social_website: { group: 'social', description: 'Personal or company website URL', valueType: 'url' },
+
+  // --- Content ---
+  source_posts_per_page: { group: 'content', description: 'Number of items per page on the public source page', valueType: 'number' },
+  source_show_reading_time: { group: 'content', description: 'Show estimated reading time on item posts', valueType: 'boolean' },
+  source_code_theme: { group: 'content', description: 'Syntax highlighting theme for code blocks', valueType: 'select', options: ['default', 'github', 'monokai'] },
+  source_custom_footer: { group: 'content', description: 'Custom footer text (replaces default "Powered by Pignal")', valueType: 'textarea' },
+  quality_guidelines: { group: 'content', description: 'JSON quality rules for AI-authored content (keySummary tips, content tips, formatting, avoid list)', valueType: 'json' },
+  validation_limits: { group: 'content', description: 'JSON field length limits (keySummary min/max, content min/max)', valueType: 'json' },
+  max_actions_per_type: { group: 'content', description: 'Maximum validation actions allowed per item type (1-10)', valueType: 'number' },
+  testimonial_type_name: { group: 'content', description: 'Item type name used for testimonial rendering via {{testimonials}} directive', valueType: 'string' },
+
+  // --- CTA (Hero) ---
+  cta_hero_enabled: { group: 'cta', description: 'Show hero CTA block on the source page', valueType: 'boolean' },
+  cta_hero_title: { group: 'cta', description: 'Hero CTA heading text', valueType: 'string' },
+  cta_hero_description: { group: 'cta', description: 'Hero CTA description text', valueType: 'textarea' },
+  cta_hero_button_text: { group: 'cta', description: 'Hero CTA button label', valueType: 'string' },
+  cta_hero_button_url: { group: 'cta', description: 'Hero CTA button link URL (mutually exclusive with action slug)', valueType: 'url' },
+  cta_hero_action_slug: { group: 'cta', description: 'Hero CTA action form slug for inline form display', valueType: 'string' },
+  // --- CTA (Post) ---
+  cta_post_enabled: { group: 'cta', description: 'Show CTA block after item post content', valueType: 'boolean' },
+  cta_post_title: { group: 'cta', description: 'Post CTA heading text', valueType: 'string' },
+  cta_post_description: { group: 'cta', description: 'Post CTA description text', valueType: 'textarea' },
+  cta_post_button_text: { group: 'cta', description: 'Post CTA button label', valueType: 'string' },
+  cta_post_button_url: { group: 'cta', description: 'Post CTA button link URL', valueType: 'url' },
+  cta_post_action_slug: { group: 'cta', description: 'Post CTA action form slug', valueType: 'string' },
+  // --- CTA (Sticky) ---
+  cta_sticky_enabled: { group: 'cta', description: 'Show sticky CTA bar at page bottom', valueType: 'boolean' },
+  cta_sticky_text: { group: 'cta', description: 'Sticky CTA text content', valueType: 'string' },
+  cta_sticky_button_text: { group: 'cta', description: 'Sticky CTA button label', valueType: 'string' },
+  cta_sticky_button_url: { group: 'cta', description: 'Sticky CTA button link URL', valueType: 'url' },
+  cta_sticky_action_slug: { group: 'cta', description: 'Sticky CTA action form slug', valueType: 'string' },
+
+  // --- Advanced ---
+  source_custom_css: { group: 'advanced', description: 'Custom CSS injected into public pages (sanitized)', valueType: 'textarea' },
+  source_custom_head: { group: 'advanced', description: 'Custom HTML injected into <head> (for analytics, fonts, scripts)', valueType: 'textarea' },
+  webhook_url: { group: 'advanced', description: 'Webhook endpoint URL for event delivery (HTTP POST)', valueType: 'url' },
+  webhook_events: { group: 'advanced', description: 'Comma-separated list of webhook event types (empty = all events)', valueType: 'string' },
+  webhook_secret: { group: 'advanced', description: 'HMAC-SHA256 secret for webhook signature verification', valueType: 'string' },
+};
+
+/** Derived from SETTINGS_REGISTRY — always in sync. */
+export const ALLOWED_SETTINGS_KEYS = new Set(Object.keys(SETTINGS_REGISTRY));
+
+/** Returns settings grouped by category for sectioned metadata and UI rendering. */
+export function getSettingsRegistryByGroup(): Record<SettingGroup, Array<SettingDefinition & { key: string }>> {
+  const groups: Record<SettingGroup, Array<SettingDefinition & { key: string }>> = {
+    general: [], branding: [], social: [], content: [], cta: [], advanced: [],
+  };
+  for (const [key, def] of Object.entries(SETTINGS_REGISTRY)) {
+    groups[def.group].push({ key, ...def });
+  }
+  return groups;
+}
 
 export const updateSettingSchema = z.object({
   value: z.string().min(1).max(10000),
@@ -474,6 +499,95 @@ export const manageSubmissionToolSchema = z.object({
   status: z.enum(['new', 'read', 'replied', 'archived', 'spam']).describe('New status for the submission.'),
 });
 
+// --- New MCP tool schemas (lifecycle management) ---
+
+export const deleteItemToolSchema = z.object({
+  itemId: z.string().describe('ID of the item to permanently delete.'),
+});
+
+export const archiveItemToolSchema = z.object({
+  itemId: z.string().describe('ID of the item to archive.'),
+});
+
+export const unarchiveItemToolSchema = z.object({
+  itemId: z.string().describe('ID of the item to unarchive (restore to active).'),
+});
+
+export const updateTypeToolSchema = z.object({
+  typeId: z.string().describe('ID of the type to update (from get_metadata).'),
+  name: z.string().min(1).max(50).optional().describe('Updated type name.'),
+  description: z.string().max(500).optional().describe('Updated description.'),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable().optional().describe('Updated hex color, or null to clear.'),
+  icon: z.string().min(1).max(10).nullable().optional().describe('Updated emoji icon, or null to clear.'),
+  guidance: z.object({
+    pattern: z.string().max(500).optional(),
+    example: z.string().max(1000).optional(),
+    whenToUse: z.string().max(500).optional(),
+    contentHints: z.string().max(500).optional(),
+  }).nullable().optional().describe('Updated writing guidance, or null to clear.'),
+});
+
+export const deleteTypeToolSchema = z.object({
+  typeId: z.string().describe('ID of the type to delete. Fails if items of this type exist.'),
+});
+
+export const addTypeActionToolSchema = z.object({
+  typeId: z.string().describe('ID of the type to add the validation action to.'),
+  label: z.string().min(1).max(50).describe('Label for the validation action (e.g., "Reviewed", "Approved").'),
+  sortOrder: z.number().int().optional().describe('Display order (lower = first).'),
+});
+
+export const removeTypeActionToolSchema = z.object({
+  actionId: z.string().describe('ID of the validation action to remove (from get_metadata type details).'),
+});
+
+export const updateWorkspaceToolSchema = z.object({
+  workspaceId: z.string().describe('ID of the workspace to update (from get_metadata).'),
+  name: z.string().min(1).max(100).optional().describe('Updated name.'),
+  description: z.string().max(500).optional().describe('Updated description.'),
+  visibility: z.enum(['public', 'private']).optional().describe('Updated visibility.'),
+});
+
+export const deleteWorkspaceToolSchema = z.object({
+  workspaceId: z.string().describe('ID of the workspace to delete.'),
+});
+
+export const updateSettingsToolSchema = z.object({
+  settings: z.array(z.object({
+    key: z.string().describe('Setting key (from get_metadata sections=settings).'),
+    value: z.string().max(10000).describe('New value for the setting.'),
+  })).min(1).max(20).describe('Array of settings to update (max 20 per batch). Call get_metadata with sections=settings to discover available keys.'),
+});
+
+export const deleteActionToolSchema = z.object({
+  actionId: z.string().describe('ID of the site action (form) to delete.'),
+});
+
+export const deleteSubmissionToolSchema = z.object({
+  submissionId: z.string().describe('ID of the submission to delete.'),
+});
+
+export const getSubmissionStatsToolSchema = z.object({});
+
+export const exportSubmissionsToolSchema = z.object({
+  actionId: z.string().describe('ID of the action whose submissions to export.'),
+  format: z.enum(['json', 'csv']).optional().default('json').describe('Export format.'),
+});
+
+export const getMetadataToolSchema = z.object({
+  sections: z.array(z.enum(['types', 'workspaces', 'settings', 'guidelines'])).optional()
+    .describe('Sections to retrieve (e.g. ["types","settings"]). Omit for a lightweight summary. Pass multiple to fetch several at once.'),
+});
+
+export const batchUpdateSettingsSchema = z.object({
+  settings: z.array(z.object({
+    key: z.string(),
+    value: z.string().max(10000),
+  })).min(1).max(50),
+});
+
+// --- Type exports ---
+
 export type SaveItemToolInput = z.infer<typeof saveItemToolSchema>;
 export type ListItemsToolInput = z.infer<typeof listItemsToolSchema>;
 export type SearchItemsToolInput = z.infer<typeof searchItemsToolSchema>;
@@ -490,3 +604,17 @@ export type UpdateActionToolInput = z.infer<typeof updateActionToolSchema>;
 export type ListActionsToolInput = z.infer<typeof listActionsToolSchema>;
 export type ListSubmissionsToolInput = z.infer<typeof listSubmissionsToolSchema>;
 export type ManageSubmissionToolInput = z.infer<typeof manageSubmissionToolSchema>;
+export type DeleteItemToolInput = z.infer<typeof deleteItemToolSchema>;
+export type ArchiveItemToolInput = z.infer<typeof archiveItemToolSchema>;
+export type UnarchiveItemToolInput = z.infer<typeof unarchiveItemToolSchema>;
+export type UpdateTypeToolInput = z.infer<typeof updateTypeToolSchema>;
+export type DeleteTypeToolInput = z.infer<typeof deleteTypeToolSchema>;
+export type AddTypeActionToolInput = z.infer<typeof addTypeActionToolSchema>;
+export type RemoveTypeActionToolInput = z.infer<typeof removeTypeActionToolSchema>;
+export type UpdateWorkspaceToolInput = z.infer<typeof updateWorkspaceToolSchema>;
+export type DeleteWorkspaceToolInput = z.infer<typeof deleteWorkspaceToolSchema>;
+export type UpdateSettingsToolInput = z.infer<typeof updateSettingsToolSchema>;
+export type DeleteActionToolInput = z.infer<typeof deleteActionToolSchema>;
+export type DeleteSubmissionToolInput = z.infer<typeof deleteSubmissionToolSchema>;
+export type ExportSubmissionsToolInput = z.infer<typeof exportSubmissionsToolSchema>;
+export type GetMetadataToolInput = z.infer<typeof getMetadataToolSchema>;
